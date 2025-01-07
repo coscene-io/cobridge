@@ -18,11 +18,6 @@ jobs:
         with:
           path: src/cobridge
 
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt-get install -y python3-bloom devscripts fakeroot debhelper
-
       - name: Generate debian/ directory and build .deb package
         run: |
           rosdep update
@@ -30,15 +25,25 @@ jobs:
           bloom-generate rosdebian --ros-distro noetic
           fakeroot debian/rules binary
           cd ..
-          ls -lah
-          cd ..
+          pwd
           ls -lah
 
-      - name: Upload .deb package to GitHub Release
-        uses: softprops/action-gh-release@v1
+      - name: Upload Artifacts with Dynamic Name
+        run: |
+          echo "ARTIFACT_NAME=$(basename $(dirname $(find . -name '*.deb' | head -n 1)))" >> $GITHUB_ENV
+          echo $GITHUB_ENV
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
         with:
-          files: ./src/*.deb
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: ${{ env.ARTIFACT_NAME }}
+          path: '**/*.deb'
+
+#      - name: Upload .deb package to GitHub Release
+#        uses: softprops/action-gh-release@v1
+#        with:
+#          files: ./src/*.deb
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
