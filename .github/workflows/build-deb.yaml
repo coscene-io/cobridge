@@ -31,7 +31,6 @@ jobs:
           cd ./src/cobridge
           bloom-generate rosdebian --ros-distro noetic
           fakeroot debian/rules binary
-          ls .. -lah
 
       - name: Upload Artifacts with Dynamic Name
         run: |
