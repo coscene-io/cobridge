@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
     <name>cobridge</name>
-    <version>0.0.1</version>
+    <version>25.1.0</version>
     <description>bridge for ROS2</description>
     <maintainer email="coscene@coscene.io">coscene</maintainer>
     <license>Apache License 2.0</license>

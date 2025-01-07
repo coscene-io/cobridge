@@ -1,9 +1,6 @@
 ---
 name: build deb
 on:
-  push:
-    branches:
-      - feat-deb-action
   workflow_dispatch:
 
 jobs:
@@ -29,19 +26,9 @@ jobs:
       - name: Upload Artifacts with Dynamic Name
         run: |
           echo "ARTIFACT_NAME=$(basename $(find ./src -name '*.deb'))" >> $GITHUB_ENV
-          echo "upload file name: $ARTIFACT_NAME"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ARTIFACT_NAME }}
           path: ./src/*.deb
-
-#      - name: Upload .deb package to GitHub Release
-#        uses: softprops/action-gh-release@v1
-#        with:
-#          files: ./src/*.deb
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
