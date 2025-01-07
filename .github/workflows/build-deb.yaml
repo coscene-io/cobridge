@@ -13,26 +13,40 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          path: src/cobridge
 
       - name: Set up ROS environment
-        uses: ros-tooling/setup-ros@v0.6.3
+        uses: ros-tooling/setup-ros@v0.7
         with:
-          distribution: noetic
+          ros_distribution: noetic
 
-      - name: Install build dependencies
+      - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y dpkg-dev debhelper
+          sudo apt update
+          sudo apt install -y python3-rosdep python3-rosinstall-generator python3-vcstool
+          sudo apt-get install -y python3-bloom devscripts fakeroot
+          sudo rosdep init
+          rosdep update
+          rosdep install --from-paths src --ignore-src -r -y
 
-      - name: Build Debian package
+      - name: Build ROS workspace
         run: |
-          mkdir -p ~/debBuild/SOURCES
-          cp -r . ~/debBuild/SOURCES/
-          cd ~/debBuild/SOURCES
-          dpkg-buildpackage -us -uc -b
+          source /opt/ros/noetic/setup.bash
+          catkin_make
 
-      - name: Upload Debian package
-        uses: actions/upload-artifact@v3
+      - name: Generate debian/ directory and build .deb package
+        run: |
+          cd ./src/cobridge
+          source /opt/ros/noetic/setup.bash        
+          bloom-generate rosdebian --ros-distro noetic
+          fakeroot debian/rules binary
+
+      - name: Upload .deb package to GitHub Release
+        uses: softprops/action-gh-release@v1
         with:
-          name: coBridge-deb
-          path: ~/debBuild/*.deb
+          files: ./src/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
