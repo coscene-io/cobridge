@@ -1,3 +1,4 @@
+---
 name: build-deb.yaml
 on:
   workflow_dispatch:
@@ -22,13 +23,13 @@ jobs:
 
       - name: Build Debian package
         run: |
-          mkdir -p ~/debbuild/SOURCES
-          cp -r . ~/debbuild/SOURCES/
-          cd ~/debbuild/SOURCES
+          mkdir -p ~/debBuild/SOURCES
+          cp -r . ~/debBuild/SOURCES/
+          cd ~/debBuild/SOURCES
           dpkg-buildpackage -us -uc -b
 
       - name: Upload Debian package
         uses: actions/upload-artifact@v3
         with:
           name: coBridge-deb
-          path: ~/debbuild/*.deb
+          path: ~/debBuild/*.deb
