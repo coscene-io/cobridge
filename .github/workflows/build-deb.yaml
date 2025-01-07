@@ -26,8 +26,7 @@ jobs:
       - name: Generate debian/ directory and build .deb package
         run: |
           cd ./src/cobridge
-          ls -lah /etc/ros/rosdep/sources.list.d
-          /ros_entrypoint.sh bloom-generate rosdebian --ros-distro noetic
+          bloom-generate rosdebian --ros-distro noetic
           fakeroot debian/rules binary
           cd ..
           ls -lah
