@@ -19,7 +19,7 @@ jobs:
       - name: Set up ROS environment
         uses: ros-tooling/setup-ros@v0.7
         with:
-          ros_distribution: noetic
+          required-ros-distributions: noetic
 
       - name: Install dependencies
         run: |
