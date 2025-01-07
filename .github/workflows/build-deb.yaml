@@ -29,8 +29,8 @@ jobs:
         run: |
           rosdep update --include-eol-distros
           cd ./src/cobridge
-          bloom-generate rosdebian --ros-distro noetic
-          fakeroot debian/rules binary
+          bloom-generate rosdebian --ros-distro ${{ matrix.ros_distribution }}
+          DEB_BUILD_OPTIONS=nocheck fakeroot debian/rules binary
 
       - name: Upload Artifacts with Dynamic Name
         run: |
