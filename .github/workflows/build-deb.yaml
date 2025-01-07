@@ -1,5 +1,5 @@
 ---
-name: build-deb.yaml
+name: build deb
 on:
   push:
     branches:
@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-20.04
+    container:
+      image: cobridge/ros-noetic:24.09.06
 
     steps:
       - name: Checkout code
@@ -16,24 +18,10 @@ jobs:
         with:
           path: src/cobridge
 
-      - name: Set up ROS environment
-        uses: ros-tooling/setup-ros@v0.7
-        with:
-          required-ros-distributions: noetic
-
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3-rosdep python3-rosinstall-generator python3-vcstool
-          sudo apt-get install -y python3-bloom devscripts fakeroot
-          sudo rosdep init
-          rosdep update
-          rosdep install --from-paths src --ignore-src -r -y
-
-      - name: Build ROS workspace
-        run: |
-          source /opt/ros/noetic/setup.bash
-          catkin_make
+          sudo apt-get install -y python3-bloom devscripts fakeroot debhelper
 
       - name: Generate debian/ directory and build .deb package
         run: |
@@ -41,6 +29,10 @@ jobs:
           source /opt/ros/noetic/setup.bash        
           bloom-generate rosdebian --ros-distro noetic
           fakeroot debian/rules binary
+          cd ..
+          ls -lah
+          cd ..
+          ls -lah
 
       - name: Upload .deb package to GitHub Release
         uses: softprops/action-gh-release@v1
