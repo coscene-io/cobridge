@@ -1,13 +1,22 @@
 ---
 name: build deb
 on:
+  push:
+    branches:
+      - feat-deb-action
   workflow_dispatch:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        ros_distribution: [foxy, noetic]
+
+    name: Build deb (ROS ${{ matrix.ros_distribution }})
+
     runs-on: ubuntu-20.04
     container:
-      image: cobridge/ros-noetic:latest
+      image: cobridge/ros-${{ matrix.ros_distribution }}:latest
 
     steps:
       - name: Checkout code
@@ -17,7 +26,7 @@ jobs:
 
       - name: Generate debian/ directory and build .deb package
         run: |
-          rosdep update
+          rosdep update --include-eol-distros
           cd ./src/cobridge
           bloom-generate rosdebian --ros-distro noetic
           fakeroot debian/rules binary
