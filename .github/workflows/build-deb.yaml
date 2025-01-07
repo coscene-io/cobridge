@@ -25,9 +25,8 @@ jobs:
 
       - name: Generate debian/ directory and build .deb package
         run: |
-          cd ./src/cobridge
-          sudo rosdep init
           rosdep update
+          cd ./src/cobridge
           bloom-generate rosdebian --ros-distro noetic
           fakeroot debian/rules binary
           cd ..
