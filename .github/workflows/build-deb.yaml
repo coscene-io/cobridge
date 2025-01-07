@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         ros_distribution: [foxy, noetic]
 
