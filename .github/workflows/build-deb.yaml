@@ -30,8 +30,9 @@ jobs:
 
       - name: Upload Artifacts with Dynamic Name
         run: |
+          pwd
           echo "ARTIFACT_NAME=$(basename $(dirname $(find . -name '*.deb' | head -n 1)))" >> $GITHUB_ENV
-          echo $GITHUB_ENV
+          echo $ARTIFACT_NAME
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
