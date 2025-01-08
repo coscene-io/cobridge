@@ -84,15 +84,6 @@ jobs:
           echo "\n----------------------------------\n"
           cat dists/stable/Release
 
-#          cp cobridge.gpg-key.asc ./apt/cobridge.gpg-key.asc
-#          cd ./apt
-#          dpkg-scanpackages -m . > Packages
-#          apt-ftparchive release . > Release
-#          gzip -k -f Packages
-#          gpg --armor --detach-sign --sign -o Release.gpg Release
-#          gpg --clearsign -o InRelease Release
-#          ls -alh
-
       - name: Upload file to OSS
         uses: tvrcgo/oss-action@master
         with:
@@ -101,9 +92,9 @@ jobs:
           region: oss-cn-hangzhou
           bucket: coscene-download
           assets: |
-            ./dists/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}:/APT/cobridge/dists/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
-            ./dists/stable/main/binary-${{ matrix.arch }}/Packages:/APT/cobridge/dists/stable/main/binary-${{ matrix.arch }}/Packages
-            ./dists/stable/main/binary-${{ matrix.arch }}/Packages.gz:/APT/cobridge/dists/stable/main/binary-${{ matrix.arch }}/Packages.gz
-            ./dists/stable/Release:/APT/cobridge/dists/stable/Release
-            ./dists/stable/InRelease:/APT/cobridge/dists/stable/InRelease
-            ./dists/stable/Release.gpg:/APT/cobridge/dists/stable/Release.gpg
+            ./dists/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}:/cobridge/dists/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
+            ./dists/stable/main/binary-${{ matrix.arch }}/Packages:/cobridge/dists/stable/main/binary-${{ matrix.arch }}/Packages
+            ./dists/stable/main/binary-${{ matrix.arch }}/Packages.gz:/cobridge/dists/stable/main/binary-${{ matrix.arch }}/Packages.gz
+            ./dists/stable/Release:/cobridge/dists/stable/Release
+            ./dists/stable/InRelease:/cobridge/dists/stable/InRelease
+            ./dists/stable/Release.gpg:/cobridge/dists/stable/Release.gpg
