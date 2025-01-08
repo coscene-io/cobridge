@@ -87,12 +87,12 @@ jobs:
         run: |
           mkdir ./apt
           cp ./src/${{ env.ARTIFACT_NAME }} ./apt/${{ env.ARTIFACT_NAME }}
+          cp cobridge.gpg-key.asc ./apt/cobridge.gpg-key.asc     
           cd ./apt
           dpkg-scanpackages -m . > Packages
           apt-ftparchive release . > Release
           gpg --armor --detach-sign --sign -o Release.gpg Release
-          gpg --clearsign -o InRelease Release
-          cp cobridge.gpg-key.asc ./apt/cobridge.gpg-key.asc          
+          gpg --clearsign -o InRelease Release     
           ls -alh
 
       - name: Upload file to OSS
