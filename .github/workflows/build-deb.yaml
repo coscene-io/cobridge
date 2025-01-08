@@ -109,3 +109,4 @@ jobs:
             ./apt/Release:/coBridge/apt/${{ matrix.arch }}/${{ matrix.ros_distribution }}/Release
             ./apt/Release.gpg:/coBridge/apt/${{ matrix.arch }}/${{ matrix.ros_distribution }}/Release.gpg
             ./apt/InRelease:/coBridge/apt/${{ matrix.arch }}/${{ matrix.ros_distribution }}/InRelease
+            ./apt/cobridge.gpg-key.asc:/coBridge/apt/${{ matrix.arch }}/${{ matrix.ros_distribution }}/cobridge.gpg-key.asc
