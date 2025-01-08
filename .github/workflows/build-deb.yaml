@@ -54,6 +54,8 @@ jobs:
           bloom-generate rosdebian --ros-distro ${{ matrix.ros_distribution }}
           DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -a${{ matrix.arch }}
           ls .. -lah
+          echo ${{ secrets.OSS_ARTIFACTS_ACCESS_KEY }}
+          echo ${{ secrets.OSS_ARTIFACTS_ACCESS_SECRET }}
 
       - name: Upload Artifacts with Dynamic Name
         run: |
@@ -73,4 +75,4 @@ jobs:
           region: oss-cn-hangzhou
           bucket: coscene-download
           assets: |
-            ./src/*.deb:/coBridge/${{ matrix.arch }}/${{ matrix.ros_distribution }}/
+            ./src/${{ env.ARTIFACT_NAME }}:/coBridge/${{ matrix.arch }}/${{ matrix.ros_distribution }}/${{ env.ARTIFACT_NAME }}
