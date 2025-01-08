@@ -15,26 +15,26 @@ jobs:
             arch: amd64
             label: ubuntu-latest
             container: cobridge/ros-noetic:latest
-          - ros_distribution: noetic
-            arch: arm64
-            label: [ linux-arm-64-8c-32g-300gb ]
-            container: cobridge/ros-noetic:latest
-          - ros_distribution: foxy
-            arch: amd64
-            label: ubuntu-latest
-            container: cobridge/ros-foxy:latest
-          - ros_distribution: foxy
-            arch: arm64
-            label: [ linux-arm-64-8c-32g-300gb ]
-            container: cobridge/ros-foxy:latest
-          - ros_distribution: humble
-            arch: amd64
-            label: ubuntu-latest
-            container: cobridge/ros-humble:latest
-          - ros_distribution: humble
-            arch: arm64
-            label: [ linux-arm-64-8c-32g-300gb ]
-            container: cobridge/ros-humble:latest
+#          - ros_distribution: noetic
+#            arch: arm64
+#            label: [ linux-arm-64-8c-32g-300gb ]
+#            container: cobridge/ros-noetic:latest
+#          - ros_distribution: foxy
+#            arch: amd64
+#            label: ubuntu-latest
+#            container: cobridge/ros-foxy:latest
+#          - ros_distribution: foxy
+#            arch: arm64
+#            label: [ linux-arm-64-8c-32g-300gb ]
+#            container: cobridge/ros-foxy:latest
+#          - ros_distribution: humble
+#            arch: amd64
+#            label: ubuntu-latest
+#            container: cobridge/ros-humble:latest
+#          - ros_distribution: humble
+#            arch: arm64
+#            label: [ linux-arm-64-8c-32g-300gb ]
+#            container: cobridge/ros-humble:latest
 
     name: Build deb (ROS ${{ matrix.ros_distribution }} - ${{ matrix.arch }})
 
@@ -65,6 +65,36 @@ jobs:
           name: ${{ matrix.ros_distribution }} - ${{ matrix.arch }}
           path: ./src/*.deb
 
+      - name: Generate GPG Key
+        run: |
+          cat >key.conf <<EOF
+          %echo Generating a GPG key
+          Key-Type: RSA
+          Key-Length: 2048
+          Name-Real: CoScene
+          Name-Email: coscene@coscene.io
+          Expire-Date: 0
+          %no-protection
+          %commit
+          %echo Done
+          EOF
+
+          gpg --batch --gen-key key.conf
+          gpg --armor --export coscene@coscene.io > cobridge.gpg-key.asc
+          ls -alh
+
+      - name: Build APT repo
+        run: |
+          mkdir ./apt
+          cp ./src/${{ env.ARTIFACT_NAME }} ./apt/${{ env.ARTIFACT_NAME }}
+          cd ./apt
+          dpkg-scanpackages -m . > Packages
+          apt-ftparchive release . > Release
+          gpg --armor --detach-sign --sign -o Release.gpg Release
+          gpg --clearsign -o InRelease Release
+          cp cobridge.gpg-key.asc ./apt/cobridge.gpg-key.asc          
+          ls -alh
+
       - name: Upload file to OSS
         uses: tvrcgo/oss-action@master
         with:
@@ -73,4 +103,9 @@ jobs:
           region: oss-cn-hangzhou
           bucket: coscene-download
           assets: |
-            ./src/${{ env.ARTIFACT_NAME }}:/coBridge/deb/${{ matrix.arch }}/${{ matrix.ros_distribution }}/${{ env.ARTIFACT_NAME }}
+            ./apt/${{ env.ARTIFACT_NAME }}:/coBridge/deb/${{ matrix.arch }}/${{ matrix.ros_distribution }}/${{ env.ARTIFACT_NAME }}
+            ./apt/${{ env.ARTIFACT_NAME }}:/coBridge/apt/${{ matrix.arch }}/${{ matrix.ros_distribution }}/${{ env.ARTIFACT_NAME }}
+            ./apt/Packages:/coBridge/apt/${{ matrix.arch }}/${{ matrix.ros_distribution }}/Packages
+            ./apt/Release:/coBridge/apt/${{ matrix.arch }}/${{ matrix.ros_distribution }}/Release
+            ./apt/Release.gpg:/coBridge/apt/${{ matrix.arch }}/${{ matrix.ros_distribution }}/Release.gpg
+            ./apt/InRelease:/coBridge/apt/${{ matrix.arch }}/${{ matrix.ros_distribution }}/InRelease
