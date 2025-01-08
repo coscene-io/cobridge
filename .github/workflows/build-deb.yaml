@@ -1,4 +1,3 @@
----
 name: build deb
 on:
   push:
@@ -12,14 +11,19 @@ jobs:
       fail-fast: false
       matrix:
         ros_distribution: [foxy, humble, noetic]
+        arch: [amd64, arm64]
 
-    name: Build deb (ROS ${{ matrix.ros_distribution }})
+    name: Build deb (ROS ${{ matrix.ros_distribution }} - ${{ matrix.arch }})
 
     runs-on: ubuntu-20.04
     container:
       image: cobridge/ros-${{ matrix.ros_distribution }}:latest
 
     steps:
+      - name: Setup QEMU for ARM builds
+        if: matrix.arch == 'arm64'
+        uses: docker/setup-qemu-action@v2
+
       - name: Checkout code
         uses: actions/checkout@v3
         with:
@@ -30,14 +34,15 @@ jobs:
           rosdep update --include-eol-distros
           cd ./src/cobridge
           bloom-generate rosdebian --ros-distro ${{ matrix.ros_distribution }}
-          DEB_BUILD_OPTIONS=nocheck fakeroot debian/rules binary
+          DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -a${{ matrix.arch }}
 
       - name: Upload Artifacts with Dynamic Name
         run: |
-          echo "ARTIFACT_NAME=$(basename $(find ./src -name '*.deb'))" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=$(basename $(find ./src -name '*_${{ matrix.arch }}.deb'))" >> $GITHUB_ENV
+          ls .. -lah
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ARTIFACT_NAME }}
-          path: ./src/*.deb
+          path: ./src/*_${{ matrix.arch }}.deb
