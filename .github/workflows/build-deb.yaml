@@ -65,23 +65,9 @@ jobs:
           name: ${{ matrix.ros_distribution }} - ${{ matrix.arch }}
           path: ./src/*.deb
 
-      - name: Generate GPG Key
+      - name: Import gpg key
         run: |
-          cat >key.conf <<EOF
-          %echo Generating a GPG key
-          Key-Type: RSA
-          Key-Length: 2048
-          Name-Real: CoScene
-          Name-Email: coscene@coscene.io
-          Expire-Date: 0
-          %no-protection
-          %commit
-          %echo Done
-          EOF
-
-          gpg --batch --gen-key key.conf
-          gpg --armor --export coscene@coscene.io > cobridge.gpg-key.asc
-          ls -alh
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 -d | gpg --batch --import
 
       - name: Build APT repo
         run: |
@@ -97,10 +83,7 @@ jobs:
           cat dists/stable/main/binary-${{ matrix.arch }}/Packages
           echo "\n----------------------------------\n"
           cat dists/stable/Release
-          
-          ls -alh
-          
-#
+
 #          cp cobridge.gpg-key.asc ./apt/cobridge.gpg-key.asc
 #          cd ./apt
 #          dpkg-scanpackages -m . > Packages
@@ -118,9 +101,9 @@ jobs:
           region: oss-cn-hangzhou
           bucket: coscene-download
           assets: |
-            ./dists/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}:/coBridge/apt/cobridge/dists/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
-            ./dists/stable/main/binary-${{ matrix.arch }}/Packages:/coBridge/apt/cobridge/dists/stable/main/binary-${{ matrix.arch }}/Packages
-            ./dists/stable/main/binary-${{ matrix.arch }}/Packages.gz:/coBridge/apt/cobridge/dists/stable/main/binary-${{ matrix.arch }}/Packages.gz
-            ./dists/stable/Release:/coBridge/apt/cobridge/dists/stable/Release
-            ./dists/stable/InRelease:/coBridge/apt/cobridge/dists/stable/InRelease
-            ./dists/stable/Release.gpg:/coBridge/apt/cobridge/dists/stable/Release.gpg
+            ./dists/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}:/APT/cobridge/dists/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
+            ./dists/stable/main/binary-${{ matrix.arch }}/Packages:/APT/cobridge/dists/stable/main/binary-${{ matrix.arch }}/Packages
+            ./dists/stable/main/binary-${{ matrix.arch }}/Packages.gz:/APT/cobridge/dists/stable/main/binary-${{ matrix.arch }}/Packages.gz
+            ./dists/stable/Release:/APT/cobridge/dists/stable/Release
+            ./dists/stable/InRelease:/APT/cobridge/dists/stable/InRelease
+            ./dists/stable/Release.gpg:/APT/cobridge/dists/stable/Release.gpg
