@@ -75,7 +75,7 @@ jobs:
           cp ./src/${{ env.ARTIFACT_NAME }} ./dists/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
           dpkg-scanpackages dists/stable/main/binary-${{ matrix.arch }} /dev/null > dists/stable/main/binary-${{ matrix.arch }}/Packages          
           gzip -k -f dists/stable/main/binary-${{ matrix.arch }}/Packages
-          apt-ftparchive release dists/stable > dists/stable/Release
+          apt-ftparchive release dists/stable -c ./src/cobridge/apt-ftparchive.conf > dists/stable/Release
           
           gpg --clearsign -o dists/stable/InRelease dists/stable/Release
           gpg -abs -o dists/stable/Release.gpg dists/stable/Release
@@ -83,6 +83,8 @@ jobs:
           cat dists/stable/main/binary-${{ matrix.arch }}/Packages
           echo "\n----------------------------------\n"
           cat dists/stable/Release
+          echo "\n----------------------------------\n"
+          cat dists/stable/InRelease
 
       - name: Upload file to OSS
         uses: tvrcgo/oss-action@master
