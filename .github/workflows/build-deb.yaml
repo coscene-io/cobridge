@@ -15,22 +15,22 @@ jobs:
             arch: amd64
             label: ubuntu-latest
             container: cobridge/ros-noetic:latest
-          - ros_distribution: foxy
-            arch: amd64
-            label: ubuntu-latest
-            container: cobridge/ros-foxy:latest
-          - ros_distribution: humble
-            arch: amd64
-            label: ubuntu-latest
-            container: cobridge/ros-humble:latest
           - ros_distribution: noetic
             arch: arm64
             label: [ linux-arm-64-8c-32g-300gb ]
             container: cobridge/ros-noetic:latest
           - ros_distribution: foxy
+            arch: amd64
+            label: ubuntu-latest
+            container: cobridge/ros-foxy:latest
+          - ros_distribution: foxy
             arch: arm64
             label: [ linux-arm-64-8c-32g-300gb ]
             container: cobridge/ros-foxy:latest
+          - ros_distribution: humble
+            arch: amd64
+            label: ubuntu-latest
+            container: cobridge/ros-humble:latest
           - ros_distribution: humble
             arch: arm64
             label: [ linux-arm-64-8c-32g-300gb ]
@@ -53,14 +53,24 @@ jobs:
           cd ./src/cobridge
           bloom-generate rosdebian --ros-distro ${{ matrix.ros_distribution }}
           DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -a${{ matrix.arch }}
+          ls .. -lah
 
       - name: Upload Artifacts with Dynamic Name
         run: |
           echo "ARTIFACT_NAME=$(basename $(find ./src -name '*_${{ matrix.arch }}.deb'))" >> $GITHUB_ENV
-          ls .. -lah
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.ARTIFACT_NAME }}
-          path: ./src/*_${{ matrix.arch }}.deb
+          name: ${{ matrix.ros_distribution }} - ${{ matrix.arch }}
+          path: ./src/*.deb
+
+      - name: Upload file to OSS
+        uses: tvrcgo/oss-action@master
+        with:
+          key-id: ${{ secrets.OSS_ARTIFACTS_ACCESS_KEY }}
+          key-secret: ${{ secrets.OSS_ARTIFACTS_ACCESS_SECRET }}
+          region: oss-cn-hangzhou
+          bucket: coscene-download
+          assets: |
+            ./src/*.deb:/coBridge/${{ matrix.arch }}/${{ matrix.ros_distribution }}/
