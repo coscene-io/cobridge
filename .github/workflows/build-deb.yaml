@@ -10,20 +10,38 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ros_distribution: [foxy, humble, noetic]
-        arch: [amd64, arm64]
+        include:
+          - ros_distribution: noetic
+            arch: amd64
+            label: ubuntu-latest
+            container: cobridge/ros-noetic:latest
+          - ros_distribution: foxy
+            arch: amd64
+            label: ubuntu-latest
+            container: cobridge/ros-foxy:latest
+          - ros_distribution: humble
+            arch: amd64
+            label: ubuntu-latest
+            container: cobridge/ros-humble:latest
+          - ros_distribution: noetic
+            arch: arm64
+            label: [ linux-arm-64-8c-32g-300gb ]
+            container: cobridge/ros-noetic:latest
+          - ros_distribution: foxy
+            arch: arm64
+            label: [ linux-arm-64-8c-32g-300gb ]
+            container: cobridge/ros-foxy:latest
+          - ros_distribution: humble
+            arch: arm64
+            label: [ linux-arm-64-8c-32g-300gb ]
+            container: cobridge/ros-humble:latest
 
     name: Build deb (ROS ${{ matrix.ros_distribution }} - ${{ matrix.arch }})
 
-    runs-on: ubuntu-20.04
-    container:
-      image: cobridge/ros-${{ matrix.ros_distribution }}:latest
+    runs-on: ${{ matrix.label }}
+    container: ${{ matrix.container }}
 
     steps:
-      - name: Setup QEMU for ARM builds
-        if: matrix.arch == 'arm64'
-        uses: docker/setup-qemu-action@v2
-
       - name: Checkout code
         uses: actions/checkout@v3
         with:
