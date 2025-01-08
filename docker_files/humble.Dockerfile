@@ -6,4 +6,4 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 4B63CF8FDE
 RUN apt-get update && apt-get install -y --no-install-recommends nlohmann-json3-dev  \
     libasio-dev ros-${ROS_DISTRO}-cv-bridge zip \
     libwebsocketpp-dev ros-${ROS_DISTRO}-resource-retriever \
-    python3-bloom devscripts fakeroot debhelper
+    python3-bloom devscripts fakeroot debhelper apt-utils
