@@ -65,36 +65,50 @@ jobs:
           name: ${{ matrix.ros_distribution }} - ${{ matrix.arch }}
           path: ./src/*.deb
 
-      - name: Generate GPG Key
-        run: |
-          cat >key.conf <<EOF
-          %echo Generating a GPG key
-          Key-Type: RSA
-          Key-Length: 2048
-          Name-Real: CoScene
-          Name-Email: coscene@coscene.io
-          Expire-Date: 0
-          %no-protection
-          %commit
-          %echo Done
-          EOF
-
-          gpg --batch --gen-key key.conf
-          gpg --armor --export coscene@coscene.io > cobridge.gpg-key.asc
-          ls -alh
+#      - name: Generate GPG Key
+#        run: |
+#          cat >key.conf <<EOF
+#          %echo Generating a GPG key
+#          Key-Type: RSA
+#          Key-Length: 2048
+#          Name-Real: CoScene
+#          Name-Email: coscene@coscene.io
+#          Expire-Date: 0
+#          %no-protection
+#          %commit
+#          %echo Done
+#          EOF
+#
+#          gpg --batch --gen-key key.conf
+#          gpg --armor --export coscene@coscene.io > cobridge.gpg-key.asc
+#          ls -alh
 
       - name: Build APT repo
         run: |
-          mkdir ./apt
-          cp ./src/${{ env.ARTIFACT_NAME }} ./apt/${{ env.ARTIFACT_NAME }}
-          cp cobridge.gpg-key.asc ./apt/cobridge.gpg-key.asc     
-          cd ./apt
-          dpkg-scanpackages -m . > Packages
-          apt-ftparchive release . > Release
-          gzip -k -f Packages
-          gpg --armor --detach-sign --sign -o Release.gpg Release
-          gpg --clearsign -o InRelease Release     
+          mkdir -p dists/stable/main/binary-${{ matrix.arch }}
+          cp ./src/${{ env.ARTIFACT_NAME }} ./dists/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
+          dpkg-scanpackages dists/stable/main/binary-${{ matrix.arch }} /dev/null > dists/stable/main/binary-${{ matrix.arch }}/Packages          
+          gzip -k -f dists/stable/main/binary-${{ matrix.arch }}/Packages
+          apt-ftparchive release dists/stable > dists/stable/Release
+          
+          gpg --clearsign -o dists/stable/InRelease dists/stable/Release
+          gpg -abs -o dists/stable/Release.gpg dists/stable/Release
+          
+          cat dists/stable/main/binary-${{ matrix.arch }}/Packages
+          echo "\n----------------------------------\n"
+          cat dists/stable/Release
+          
           ls -alh
+          
+#
+#          cp cobridge.gpg-key.asc ./apt/cobridge.gpg-key.asc
+#          cd ./apt
+#          dpkg-scanpackages -m . > Packages
+#          apt-ftparchive release . > Release
+#          gzip -k -f Packages
+#          gpg --armor --detach-sign --sign -o Release.gpg Release
+#          gpg --clearsign -o InRelease Release
+#          ls -alh
 
       - name: Upload file to OSS
         uses: tvrcgo/oss-action@master
@@ -104,10 +118,9 @@ jobs:
           region: oss-cn-hangzhou
           bucket: coscene-download
           assets: |
-            ./apt/${{ env.ARTIFACT_NAME }}:/coBridge/apt/cobridge/dists/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
-            ./apt/Packages:/coBridge/apt/cobridge/dists/stable/main/binary-${{ matrix.arch }}/Packages
-            ./apt/Packages.gz:/coBridge/apt/cobridge/dists/stable/main/binary-${{ matrix.arch }}/Packages.gz
-            ./apt/Release:/coBridge/apt/cobridge/dists/stable/Release
-            ./apt/InRelease:/coBridge/apt/cobridge/dists/stable/InRelease
-            ./apt/Release.gpg:/coBridge/apt/cobridge/dists/stable/Release.gpg
-            ./apt/cobridge.gpg-key.asc:/coBridge/apt/cobridge.gpg-key.asc
+            ./dists/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}:/coBridge/apt/cobridge/dists/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
+            ./dists/stable/main/binary-${{ matrix.arch }}/Packages:/coBridge/apt/cobridge/dists/stable/main/binary-${{ matrix.arch }}/Packages
+            ./dists/stable/main/binary-${{ matrix.arch }}/Packages.gz:/coBridge/apt/cobridge/dists/stable/main/binary-${{ matrix.arch }}/Packages.gz
+            ./dists/stable/Release:/coBridge/apt/cobridge/dists/stable/Release
+            ./dists/stable/InRelease:/coBridge/apt/cobridge/dists/stable/InRelease
+            ./dists/stable/Release.gpg:/coBridge/apt/cobridge/dists/stable/Release.gpg
