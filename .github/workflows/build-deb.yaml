@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ros_distribution: [foxy, noetic]
+        ros_distribution: [foxy, humble, noetic]
 
     name: Build deb (ROS ${{ matrix.ros_distribution }})
 
