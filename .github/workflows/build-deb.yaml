@@ -13,26 +13,32 @@ jobs:
         include:
           - ros_distribution: noetic
             arch: amd64
+            distro: focal
             label: ubuntu-latest
             container: cobridge/ros-noetic:latest
 #          - ros_distribution: noetic
 #            arch: arm64
+#            distro: focal
 #            label: [ linux-arm-64-8c-32g-300gb ]
 #            container: cobridge/ros-noetic:latest
 #          - ros_distribution: foxy
 #            arch: amd64
+#            distro: focal
 #            label: ubuntu-latest
 #            container: cobridge/ros-foxy:latest
 #          - ros_distribution: foxy
 #            arch: arm64
+#            distro: focal
 #            label: [ linux-arm-64-8c-32g-300gb ]
 #            container: cobridge/ros-foxy:latest
 #          - ros_distribution: humble
 #            arch: amd64
+#            distro: Jammy
 #            label: ubuntu-latest
 #            container: cobridge/ros-humble:latest
 #          - ros_distribution: humble
 #            arch: arm64
+#            distro: Jammy
 #            label: [ linux-arm-64-8c-32g-300gb ]
 #            container: cobridge/ros-humble:latest
 
@@ -65,26 +71,39 @@ jobs:
           name: ${{ matrix.ros_distribution }} - ${{ matrix.arch }}
           path: ./src/*.deb
 
-      - name: Import gpg key
+      - name: Import gpg key and write apt config
         run: |
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 -d | gpg --batch --import
+          cat <<EOF > ./src/cobridge/apt-ftparchive.conf
+          APT {
+            FTPArchive {
+              Release {
+                Origin "cobridge";
+                Label "cobridge";
+                Suite "stable";
+                Codename "${{ matrix.distro }}";
+                Version "${{ matrix.ros_distribution }}";
+              }
+            }
+          }
+          EOF
 
       - name: Build APT repo
         run: |
-          mkdir -p dists/stable/main/binary-${{ matrix.arch }}
-          cp ./src/${{ env.ARTIFACT_NAME }} ./dists/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
-          dpkg-scanpackages dists/stable/main/binary-${{ matrix.arch }} /dev/null > dists/stable/main/binary-${{ matrix.arch }}/Packages          
-          gzip -k -f dists/stable/main/binary-${{ matrix.arch }}/Packages
-          apt-ftparchive release dists/stable -c ./src/cobridge/apt-ftparchive.conf > dists/stable/Release
+          mkdir -p dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}
+          cp ./src/${{ env.ARTIFACT_NAME }} ./dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
+          dpkg-scanpackages dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }} /dev/null > dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/Packages          
+          gzip -k -f dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/Packages
+          apt-ftparchive release dists/${{ matrix.distro }}/stable -c ./src/cobridge/apt-ftparchive.conf > dists/${{ matrix.distro }}/stable/Release
           
-          gpg --clearsign -o dists/stable/InRelease dists/stable/Release
-          gpg -abs -o dists/stable/Release.gpg dists/stable/Release
+          gpg --clearsign -o dists/${{ matrix.distro }}/stable/InRelease dists/${{ matrix.distro }}/stable/Release
+          gpg -abs -o dists/${{ matrix.distro }}/stable/Release.gpg dists/${{ matrix.distro }}/stable/Release
           
-          cat dists/stable/main/binary-${{ matrix.arch }}/Packages
+          cat dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/Packages
           echo "\n----------------------------------\n"
-          cat dists/stable/Release
+          cat dists/${{ matrix.distro }}/stable/Release
           echo "\n----------------------------------\n"
-          cat dists/stable/InRelease
+          cat dists/${{ matrix.distro }}/stable/InRelease
 
       - name: Upload file to OSS
         uses: tvrcgo/oss-action@master
@@ -94,9 +113,9 @@ jobs:
           region: oss-cn-hangzhou
           bucket: coscene-download
           assets: |
-            ./dists/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}:/cobridge/dists/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
-            ./dists/stable/main/binary-${{ matrix.arch }}/Packages:/cobridge/dists/stable/main/binary-${{ matrix.arch }}/Packages
-            ./dists/stable/main/binary-${{ matrix.arch }}/Packages.gz:/cobridge/dists/stable/main/binary-${{ matrix.arch }}/Packages.gz
-            ./dists/stable/Release:/cobridge/dists/stable/Release
-            ./dists/stable/InRelease:/cobridge/dists/stable/InRelease
-            ./dists/stable/Release.gpg:/cobridge/dists/stable/Release.gpg
+            ./dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}:/cobridge/dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
+            ./dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/Packages:/cobridge/dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/Packages
+            ./dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/Packages.gz:/cobridge/dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/Packages.gz
+            ./dists/${{ matrix.distro }}/stable/Release:/cobridge/dists/${{ matrix.distro }}/stable/Release
+            ./dists/${{ matrix.distro }}/stable/InRelease:/cobridge/dists/${{ matrix.distro }}/stable/InRelease
+            ./dists/${{ matrix.distro }}/stable/Release.gpg:/cobridge/dists/${{ matrix.distro }}/stable/Release.gpg

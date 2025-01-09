@@ -3,7 +3,28 @@
 cobridge runs as a ros node on the robot side, and interacts with the cloud via websocket. cobridge establishes a link with the cloud to subscribe to a ros topic and invoke a ros service according to cloud instructions.
 After cobridge establishes a link with the cloud, it can subscribe to ros topic and call ros service according to the instructions from the cloud, so as to real-time monitor the status of the robot and remotely issue commands.
 
-## Compile
+## Install
+
+* Import public key
+  
+  ``` bash
+  wget https://coscene-download.oss-cn-hangzhou.aliyuncs.com/cobridge/coscene.gpg && sudo apt-key add coscene.gpg
+  ```
+  
+* Add source
+
+  ``` bash
+  echo "deb https://coscene-download.oss-cn-hangzhou.aliyuncs.com/cobridge stable main" | sudo tee /etc/apt/sources.list.d/cobridge.list
+  ```
+  
+* Update and install
+
+  ``` bash
+  sudo apt update
+  sudo apt install ros-${ROS_DISTRO}-cobridge
+  ```
+
+## Compile by source (Recommended)
 
 * Install deps 
   ``` bash
