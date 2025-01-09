@@ -4,6 +4,8 @@ cobridge runs as a ros node on the robot side, and interacts with the cloud via 
 After cobridge establishes a link with the cloud, it can subscribe to ros topic and call ros service according to the instructions from the cloud, so as to real-time monitor the status of the robot and remotely issue commands.
 
 ## Install
+  
+**CAUTION: only support `noetic`, `foxy`, `humble` now**
 
 * Import public key
   

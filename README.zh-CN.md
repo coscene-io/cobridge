@@ -4,6 +4,8 @@ cobridge 会以 ros node 的方式运行在机器人端，并通过 websocket �
 
 ## 安装
 
+**注意: 当前仅支持 `noetic`, `foxy`, `humble`版本**
+
 * 导入公钥
 
   ``` bash
