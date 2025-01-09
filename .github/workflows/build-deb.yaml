@@ -67,7 +67,7 @@ jobs:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ${{ needs.build-deb.outputs.ros_distribution }}-${{ needs.build-deb.outputs.arch }}
+          name: ${{ needs.build-deb.outputs.ros_distribution }} - ${{ needs.build-deb.outputs.arch }}
 
       - name: Generate apt-ftparchive.conf
         run: |
