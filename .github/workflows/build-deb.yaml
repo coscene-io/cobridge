@@ -103,8 +103,6 @@ jobs:
           mkdir -p dists/${{ matrix.distro }}/main/binary-amd64
           mkdir -p dists/${{ matrix.distro }}/main/binary-arm64
 
-#         ros-foxy-cobridge_25.1.0-0focal_amd64.deb
-#         ros-noetic-cobridge_25.1.0-0focal_amd64.deb
           find ./artifacts -name "*-${{ matrix.distro }}_amd64.deb" -exec cp {} ./dists/${{ matrix.distro }}/main/binary-amd64/ \;
           find ./artifacts -name "*-${{ matrix.distro }}_arm64.deb" -exec cp {} ./dists/${{ matrix.distro }}/main/binary-arm64/ \;
                
@@ -123,49 +121,3 @@ jobs:
           bucket: coscene-download
           assets: |
             ./dists/**:/cobridge/dists/
-
-
-#
-#      - name: Build APT repo
-#        run: |
-#          mkdir -p dists/focal/main/binary-amd64
-#          mkdir -p dists/jammy/main/binary-amd64
-#
-#          # Move .deb files into appropriate directories
-#          find ./deb-files -name "*.deb" -exec cp {} ./dists/focal/main/binary-amd64/ \;
-#          find ./deb-files -name "*.deb" -exec cp {} ./dists/jammy/main/binary-amd64/ \;
-#
-#          # Generate Packages and Release files for focal
-#          dpkg-scanpackages dists/focal/main/binary-amd64 /dev/null > dists/focal/main/binary-amd64/Packages
-#          gzip -k -f dists/focal/main/binary-amd64/Packages
-#          apt-ftparchive release dists/focal -c ./deb-files/apt-ftparchive.conf > dists/focal/Release
-#
-#          # Generate Packages and Release files for jammy
-#          dpkg-scanpackages dists/jammy/main/binary-amd64 /dev/null > dists/jammy/main/binary-amd64/Packages
-#          gzip -k -f dists/jammy/main/binary-amd64/Packages
-#          apt-ftparchive release dists/jammy -c ./deb-files/apt-ftparchive.conf > dists/jammy/Release
-#
-#          # Sign both releases
-#          gpg --clearsign -o dists/focal/InRelease dists/focal/Release
-#          gpg -abs -o dists/focal/Release.gpg dists/focal/Release
-#          gpg --clearsign -o dists/jammy/InRelease dists/jammy/Release
-#          gpg -abs -o dists/jammy/Release.gpg dists/jammy/Release
-#
-#      - name: Upload APT repo to OSS
-#        uses: tvrcgo/oss-action@master
-#        with:
-#          key-id: ${{ secrets.OSS_ARTIFACTS_ACCESS_KEY }}
-#          key-secret: ${{ secrets.OSS_ARTIFACTS_ACCESS_SECRET }}
-#          region: oss-cn-hangzhou
-#          bucket: coscene-download
-#          assets: |
-#            ./dists/focal/main/binary-amd64/Packages:/cobridge/dists/focal/main/binary-amd64/Packages
-#            ./dists/focal/main/binary-amd64/Packages.gz:/cobridge/dists/focal/main/binary-amd64/Packages.gz
-#            ./dists/focal/Release:/cobridge/dists/focal/Release
-#            ./dists/focal/InRelease:/cobridge/dists/focal/InRelease
-#            ./dists/focal/Release.gpg:/cobridge/dists/focal/Release.gpg
-#            ./dists/jammy/main/binary-amd64/Packages:/cobridge/dists/jammy/main/binary-amd64/Packages
-#            ./dists/jammy/main/binary-amd64/Packages.gz:/cobridge/dists/jammy/main/binary-amd64/Packages.gz
-#            ./dists/jammy/Release:/cobridge/dists/jammy/Release
-#            ./dists/jammy/InRelease:/cobridge/dists/jammy/InRelease
-#            ./dists/jammy/Release.gpg:/cobridge/dists/jammy/Release.gpg
