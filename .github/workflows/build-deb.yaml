@@ -16,21 +16,21 @@ jobs:
             distro: focal
             label: ubuntu-latest
             container: cobridge/ros-noetic:latest
-#          - ros_distribution: noetic
-#            arch: arm64
-#            distro: focal
-#            label: [ linux-arm-64-8c-32g-300gb ]
-#            container: cobridge/ros-noetic:latest
+          - ros_distribution: noetic
+            arch: arm64
+            distro: focal
+            label: [ linux-arm-64-8c-32g-300gb ]
+            container: cobridge/ros-noetic:latest
           - ros_distribution: foxy
             arch: amd64
             distro: focal
             label: ubuntu-latest
             container: cobridge/ros-foxy:latest
-#          - ros_distribution: foxy
-#            arch: arm64
-#            distro: focal
-#            label: [ linux-arm-64-8c-32g-300gb ]
-#            container: cobridge/ros-foxy:latest
+          - ros_distribution: foxy
+            arch: arm64
+            distro: focal
+            label: [ linux-arm-64-8c-32g-300gb ]
+            container: cobridge/ros-foxy:latest
 #          - ros_distribution: humble
 #            arch: amd64
 #            distro: jammy
@@ -99,15 +99,18 @@ jobs:
 
       - name: Build APT repo
         run: |
-          /cobridge/dists/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
           mkdir -p dists/${{ matrix.distro }}/main/binary-amd64
           mkdir -p dists/${{ matrix.distro }}/main/binary-arm64
 
           find ./artifacts -name "*-${{ matrix.distro }}_amd64.deb" -exec cp {} ./dists/${{ matrix.distro }}/main/binary-amd64/ \;
           find ./artifacts -name "*-${{ matrix.distro }}_arm64.deb" -exec cp {} ./dists/${{ matrix.distro }}/main/binary-arm64/ \;
-               
-          dpkg-scanpackages dists/${{ matrix.distro }}/main/binary-amd64 /dev/null > dists/${{ matrix.distro }}/main/binary-amd64/Packages
+          
+          dpkg-scanpackages dists/${{ matrix.distro }}/main/binary-amd64 /dev/null > dists/${{ matrix.distro }}/main/binary-amd64/Packages          
+          dpkg-scanpackages dists/${{ matrix.distro }}/main/binary-arm64 /dev/null > dists/${{ matrix.distro }}/main/binary-arm64/Packages
+          
           gzip -k -f dists/${{ matrix.distro }}/main/binary-amd64/Packages
+          gzip -k -f dists/${{ matrix.distro }}/main/binary-arm64/Packages
+          
           apt-ftparchive release dists/${{ matrix.distro }} -c ./artifacts/apt-ftparchive.conf > dists/${{ matrix.distro }}/Release
           gpg --clearsign -o dists/${{ matrix.distro }}/InRelease dists/${{ matrix.distro }}/Release
           gpg -abs -o dists/${{ matrix.distro }}/Release.gpg dists/${{ matrix.distro }}/Release
