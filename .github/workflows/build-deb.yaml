@@ -16,15 +16,30 @@ jobs:
             distro: focal
             label: ubuntu-latest
             container: cobridge/ros-noetic:latest
+#          - ros_distribution: noetic
+#            arch: arm64
+#            distro: focal
+#            label: [ linux-arm-64-8c-32g-300gb ]
+#            container: cobridge/ros-noetic:latest
           - ros_distribution: foxy
             arch: amd64
             distro: focal
             label: ubuntu-latest
             container: cobridge/ros-foxy:latest
+#          - ros_distribution: foxy
+#            arch: arm64
+#            distro: focal
+#            label: [ linux-arm-64-8c-32g-300gb ]
+#            container: cobridge/ros-foxy:latest
 #          - ros_distribution: humble
 #            arch: amd64
 #            distro: jammy
 #            label: ubuntu-latest
+#            container: cobridge/ros-humble:latest#
+#         - ros_distribution: humble
+#            arch: arm64
+#            distro: Jammy
+#            label: [ linux-arm-64-8c-32g-300gb ]
 #            container: cobridge/ros-humble:latest
 
     name: Build deb (ROS ${{ matrix.ros_distribution }} - ${{ matrix.arch }})
@@ -64,9 +79,8 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          # TODO: find a better way to download artifacts
-          name: noetic-amd64, foxy-amd64
-          path: ./dists  # Download location for all artifacts
+          path: ./dists
+          merge-multiple: true
 
       - name: Generate apt-ftparchive.conf
         run: |
