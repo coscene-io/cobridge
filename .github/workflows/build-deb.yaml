@@ -1,6 +1,6 @@
 name: build deb
 on:
-  release：
+  release:
 
 jobs:
   build-deb:
