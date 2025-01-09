@@ -31,16 +31,16 @@ jobs:
             distro: focal
             label: [ linux-arm-64-8c-32g-300gb ]
             container: cobridge/ros-foxy:latest
-#          - ros_distribution: humble
-#            arch: amd64
-#            distro: jammy
-#            label: ubuntu-latest
-#            container: cobridge/ros-humble:latest#
-#         - ros_distribution: humble
-#            arch: arm64
-#            distro: Jammy
-#            label: [ linux-arm-64-8c-32g-300gb ]
-#            container: cobridge/ros-humble:latest
+          - ros_distribution: humble
+            arch: amd64
+            distro: jammy
+            label: ubuntu-latest
+            container: cobridge/ros-humble:latest
+          - ros_distribution: humble
+            arch: arm64
+            distro: Jammy
+            label: [ linux-arm-64-8c-32g-300gb ]
+            container: cobridge/ros-humble:latest
 
     name: Build deb (ROS ${{ matrix.ros_distribution }} - ${{ matrix.arch }})
     runs-on: ${{ matrix.label }}
