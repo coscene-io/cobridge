@@ -53,7 +53,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.ros_distribution }} - ${{ matrix.arch }}
+          name: deb-packages
           path: ./src/*.deb
 
   build-apt-repo:
@@ -61,17 +61,16 @@ jobs:
     needs: build-deb
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
 
-      - name: Download Artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ${{ needs.build-deb.outputs.ros_distribution }} - ${{ needs.build-deb.outputs.arch }}
+          name: deb-packages
+          path: ./dists
 
       - name: Generate apt-ftparchive.conf
         run: |
-          cat <<EOF > ./apt-ftparchive.conf
+          cat <<EOF > ./dists/apt-ftparchive.conf
           APT {
             FTPArchive {
               Release {
@@ -83,7 +82,7 @@ jobs:
             }
           }
           EOF
-          ls -lah
+          ls -lah ./dists
 #
 #      - name: Build APT repo
 #        run: |
