@@ -90,20 +90,20 @@ jobs:
 
       - name: Build APT repo
         run: |
-          mkdir -p dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}
-          cp ./src/${{ env.ARTIFACT_NAME }} ./dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
-          dpkg-scanpackages dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }} /dev/null > dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/Packages          
-          gzip -k -f dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/Packages
-          apt-ftparchive release dists/${{ matrix.distro }}/stable -c ./src/cobridge/apt-ftparchive.conf > dists/${{ matrix.distro }}/stable/Release
+          mkdir -p dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}
+          cp ./src/${{ env.ARTIFACT_NAME }} ./dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
+          dpkg-scanpackages dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }} /dev/null > dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/Packages          
+          gzip -k -f dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/Packages
+          apt-ftparchive release dists/${{ matrix.distro }} -c ./src/cobridge/apt-ftparchive.conf > dists/${{ matrix.distro }}/Release
           
-          gpg --clearsign -o dists/${{ matrix.distro }}/stable/InRelease dists/${{ matrix.distro }}/stable/Release
-          gpg -abs -o dists/${{ matrix.distro }}/stable/Release.gpg dists/${{ matrix.distro }}/stable/Release
+          gpg --clearsign -o dists/${{ matrix.distro }}/InRelease dists/${{ matrix.distro }}/Release
+          gpg -abs -o dists/${{ matrix.distro }}/Release.gpg dists/${{ matrix.distro }}/Release
           
-          cat dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/Packages
+          cat dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/Packages
           echo "\n----------------------------------\n"
-          cat dists/${{ matrix.distro }}/stable/Release
+          cat dists/${{ matrix.distro }}/Release
           echo "\n----------------------------------\n"
-          cat dists/${{ matrix.distro }}/stable/InRelease
+          cat dists/${{ matrix.distro }}/InRelease
 
       - name: Upload file to OSS
         uses: tvrcgo/oss-action@master
@@ -113,9 +113,9 @@ jobs:
           region: oss-cn-hangzhou
           bucket: coscene-download
           assets: |
-            ./dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}:/cobridge/dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
-            ./dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/Packages:/cobridge/dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/Packages
-            ./dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/Packages.gz:/cobridge/dists/${{ matrix.distro }}/stable/main/binary-${{ matrix.arch }}/Packages.gz
-            ./dists/${{ matrix.distro }}/stable/Release:/cobridge/dists/${{ matrix.distro }}/stable/Release
-            ./dists/${{ matrix.distro }}/stable/InRelease:/cobridge/dists/${{ matrix.distro }}/stable/InRelease
-            ./dists/${{ matrix.distro }}/stable/Release.gpg:/cobridge/dists/${{ matrix.distro }}/stable/Release.gpg
+            ./dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}:/cobridge/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
+            ./dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/Packages:/cobridge/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/Packages
+            ./dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/Packages.gz:/cobridge/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/Packages.gz
+            ./dists/${{ matrix.distro }}/Release:/cobridge/dists/${{ matrix.distro }}/Release
+            ./dists/${{ matrix.distro }}/InRelease:/cobridge/dists/${{ matrix.distro }}/InRelease
+            ./dists/${{ matrix.distro }}/Release.gpg:/cobridge/dists/${{ matrix.distro }}/Release.gpg
