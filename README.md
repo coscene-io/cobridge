@@ -8,13 +8,13 @@ After cobridge establishes a link with the cloud, it can subscribe to ros topic 
 * Import public key
   
   ``` bash
-  wget https://coscene-download.oss-cn-hangzhou.aliyuncs.com/cobridge/coscene.gpg && sudo apt-key add coscene.gpg
+  wget https://coscene-download.oss-cn-hangzhou.aliyuncs.com/cobridge/coscene.gpg && sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/coscene.gpg coscene.gpg
   ```
   
 * Add source
 
   ``` bash
-  echo "deb https://coscene-download.oss-cn-hangzhou.aliyuncs.com/cobridge focal main" | sudo tee /etc/apt/sources.list.d/cobridge.list
+  echo "deb [signed-by=/etc/apt/trusted.gpg.d/coscene.gpg] https://coscene-download.oss-cn-hangzhou.aliyuncs.com/cobridge $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/cobridge.list
   ```
   
 * Update and install
@@ -24,7 +24,7 @@ After cobridge establishes a link with the cloud, it can subscribe to ros topic 
   sudo apt install ros-${ROS_DISTRO}-cobridge
   ```
 
-## Compile by source (Recommended)
+## Compile by source (Recommended !)
 
 * Install deps 
   ``` bash

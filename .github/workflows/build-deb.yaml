@@ -90,7 +90,7 @@ jobs:
               Release {
                 Origin "cobridge";
                 Label "cobridge";
-                Suite "stable";
+                Suite "${{ matrix.distro }}";
                 Codename "${{ matrix.distro }}";
               }
             }
