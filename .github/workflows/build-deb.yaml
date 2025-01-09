@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-deb:
     strategy:
       fail-fast: false
       matrix:
@@ -16,30 +16,15 @@ jobs:
             distro: focal
             label: ubuntu-latest
             container: cobridge/ros-noetic:latest
-#          - ros_distribution: noetic
-#            arch: arm64
-#            distro: focal
-#            label: [ linux-arm-64-8c-32g-300gb ]
-#            container: cobridge/ros-noetic:latest
           - ros_distribution: foxy
             arch: amd64
             distro: focal
             label: ubuntu-latest
             container: cobridge/ros-foxy:latest
-#          - ros_distribution: foxy
-#            arch: arm64
-#            distro: focal
-#            label: [ linux-arm-64-8c-32g-300gb ]
-#            container: cobridge/ros-foxy:latest
-          - ros_distribution: humble
-            arch: amd64
-            distro: Jammy
-            label: ubuntu-latest
-            container: cobridge/ros-humble:latest
 #          - ros_distribution: humble
-#            arch: arm64
-#            distro: Jammy
-#            label: [ linux-arm-64-8c-32g-300gb ]
+#            arch: amd64
+#            distro: jammy
+#            label: ubuntu-latest
 #            container: cobridge/ros-humble:latest
 
     name: Build deb (ROS ${{ matrix.ros_distribution }} - ${{ matrix.arch }})
@@ -61,55 +46,81 @@ jobs:
           DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -a${{ matrix.arch }}
           ls .. -lah
 
-      - name: Get DEB file name
-        run: |
-          echo "ARTIFACT_NAME=$(basename $(find ./src -name '*_${{ matrix.arch }}.deb'))" >> $GITHUB_ENV
-
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.ros_distribution }} - ${{ matrix.arch }}
           path: ./src/*.deb
 
-      - name: Import gpg key and write apt config
+  build-apt-repo:
+    name: Build APT Repository
+    needs: build-deb
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download all .deb files
+        uses: actions/download-artifact@v3
+        with:
+          path: ./deb-files
+
+      - name: Generate apt-ftparchive.conf
         run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 -d | gpg --batch --import
-          cat <<EOF > ./src/cobridge/apt-ftparchive.conf
+          ls -lah ./deb-files
+          cat <<EOF > ./deb-files/apt-ftparchive.conf
           APT {
             FTPArchive {
               Release {
                 Origin "cobridge";
                 Label "cobridge";
-                Suite "${{ matrix.distro }}";
-                Codename "${{ matrix.distro }}";
-                Version "${{ matrix.ros_distribution }}";
+                Suite "stable";
+                Codename "focal";
               }
             }
           }
           EOF
-
-      - name: Build APT repo
-        run: |
-          mkdir -p dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}
-          cp ./src/${{ env.ARTIFACT_NAME }} ./dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
-          dpkg-scanpackages dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }} /dev/null > dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/Packages          
-          gzip -k -f dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/Packages
-          apt-ftparchive release dists/${{ matrix.distro }} -c ./src/cobridge/apt-ftparchive.conf > dists/${{ matrix.distro }}/Release
-          
-          gpg --clearsign -o dists/${{ matrix.distro }}/InRelease dists/${{ matrix.distro }}/Release
-          gpg -abs -o dists/${{ matrix.distro }}/Release.gpg dists/${{ matrix.distro }}/Release
-
-      - name: Upload file to OSS
-        uses: tvrcgo/oss-action@master
-        with:
-          key-id: ${{ secrets.OSS_ARTIFACTS_ACCESS_KEY }}
-          key-secret: ${{ secrets.OSS_ARTIFACTS_ACCESS_SECRET }}
-          region: oss-cn-hangzhou
-          bucket: coscene-download
-          assets: |
-            ./dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}:/cobridge/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
-            ./dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/Packages:/cobridge/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/Packages
-            ./dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/Packages.gz:/cobridge/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/Packages.gz
-            ./dists/${{ matrix.distro }}/Release:/cobridge/dists/${{ matrix.distro }}/Release
-            ./dists/${{ matrix.distro }}/InRelease:/cobridge/dists/${{ matrix.distro }}/InRelease
-            ./dists/${{ matrix.distro }}/Release.gpg:/cobridge/dists/${{ matrix.distro }}/Release.gpg
+#
+#      - name: Build APT repo
+#        run: |
+#          mkdir -p dists/focal/main/binary-amd64
+#          mkdir -p dists/jammy/main/binary-amd64
+#
+#          # Move .deb files into appropriate directories
+#          find ./deb-files -name "*.deb" -exec cp {} ./dists/focal/main/binary-amd64/ \;
+#          find ./deb-files -name "*.deb" -exec cp {} ./dists/jammy/main/binary-amd64/ \;
+#
+#          # Generate Packages and Release files for focal
+#          dpkg-scanpackages dists/focal/main/binary-amd64 /dev/null > dists/focal/main/binary-amd64/Packages
+#          gzip -k -f dists/focal/main/binary-amd64/Packages
+#          apt-ftparchive release dists/focal -c ./deb-files/apt-ftparchive.conf > dists/focal/Release
+#
+#          # Generate Packages and Release files for jammy
+#          dpkg-scanpackages dists/jammy/main/binary-amd64 /dev/null > dists/jammy/main/binary-amd64/Packages
+#          gzip -k -f dists/jammy/main/binary-amd64/Packages
+#          apt-ftparchive release dists/jammy -c ./deb-files/apt-ftparchive.conf > dists/jammy/Release
+#
+#          # Sign both releases
+#          gpg --clearsign -o dists/focal/InRelease dists/focal/Release
+#          gpg -abs -o dists/focal/Release.gpg dists/focal/Release
+#          gpg --clearsign -o dists/jammy/InRelease dists/jammy/Release
+#          gpg -abs -o dists/jammy/Release.gpg dists/jammy/Release
+#
+#      - name: Upload APT repo to OSS
+#        uses: tvrcgo/oss-action@master
+#        with:
+#          key-id: ${{ secrets.OSS_ARTIFACTS_ACCESS_KEY }}
+#          key-secret: ${{ secrets.OSS_ARTIFACTS_ACCESS_SECRET }}
+#          region: oss-cn-hangzhou
+#          bucket: coscene-download
+#          assets: |
+#            ./dists/focal/main/binary-amd64/Packages:/cobridge/dists/focal/main/binary-amd64/Packages
+#            ./dists/focal/main/binary-amd64/Packages.gz:/cobridge/dists/focal/main/binary-amd64/Packages.gz
+#            ./dists/focal/Release:/cobridge/dists/focal/Release
+#            ./dists/focal/InRelease:/cobridge/dists/focal/InRelease
+#            ./dists/focal/Release.gpg:/cobridge/dists/focal/Release.gpg
+#            ./dists/jammy/main/binary-amd64/Packages:/cobridge/dists/jammy/main/binary-amd64/Packages
+#            ./dists/jammy/main/binary-amd64/Packages.gz:/cobridge/dists/jammy/main/binary-amd64/Packages.gz
+#            ./dists/jammy/Release:/cobridge/dists/jammy/Release
+#            ./dists/jammy/InRelease:/cobridge/dists/jammy/InRelease
+#            ./dists/jammy/Release.gpg:/cobridge/dists/jammy/Release.gpg
