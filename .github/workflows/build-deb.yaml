@@ -32,6 +32,10 @@ jobs:
     runs-on: ${{ matrix.label }}
     container: ${{ matrix.container }}
 
+    outputs:
+      ros_distribution: ${{ matrix.ros_distribution }}
+      arch: ${{ matrix.arch }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -60,15 +64,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Download all .deb files
-        uses: actions/download-artifact@v3
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
         with:
-          path: ./deb-files
+          name: ${{ needs.build-deb.outputs.ros_distribution }}-${{ needs.build-deb.outputs.arch }}
 
       - name: Generate apt-ftparchive.conf
         run: |
-          ls -lah ./deb-files
-          cat <<EOF > ./deb-files/apt-ftparchive.conf
+          cat <<EOF > ./apt-ftparchive.conf
           APT {
             FTPArchive {
               Release {
@@ -80,6 +83,7 @@ jobs:
             }
           }
           EOF
+          ls -lah
 #
 #      - name: Build APT repo
 #        run: |
