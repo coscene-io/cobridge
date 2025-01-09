@@ -2,8 +2,42 @@
 
 cobridge 会以 ros node 的方式运行在机器人端，并通过 websocket 方式与云端进行交互。cobridge 与云端建立链接后，根据云端指令可以实现订阅 ros topic，调用 ros service，实现实时监控机器人状态、远程下发指令等功能。
 
+## 安装
 
-## 编译
+* 导入公钥
+
+  ``` bash
+  wget https://coscene-download.oss-cn-hangzhou.aliyuncs.com/cobridge/coscene.gpg && sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/coscene.gpg coscene.gpg
+  ```
+
+* 添加源
+
+  ``` bash
+  echo "deb [signed-by=/etc/apt/trusted.gpg.d/coscene.gpg] https://coscene-download.oss-cn-hangzhou.aliyuncs.com/cobridge $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/cobridge.list
+  ```
+
+* 更新apt并安装
+
+  ``` bash
+  sudo apt update
+  # 注意: 如果 ROS_DISTRO 没有在你的环境变量里面，${ROS_DISTRO} 需要被 'noetic', 'foxy' or 'humble' 替换
+  sudo apt install ros-${ROS_DISTRO}-cobridge -y
+  ```
+
+* 运行 coBridge
+
+  ``` bash
+  source /opt/ros/${ROS_DISTRO}/setup.bash
+  
+  # for ros 1 distribution
+  roslaunch cobridge cobridge.launch
+  
+  # for ros 2 distribution
+  ros2 launch cobridge cobridge_launch.xml 
+  ```
+
+
+## 编译 (推荐！)
 
 * 安装依赖库
 

@@ -1,9 +1,6 @@
 name: build deb
 on:
-  push:
-    branches:
-      - feat-deb-action
-  workflow_dispatch:
+  release：
 
 jobs:
   build-deb:
