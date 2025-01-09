@@ -61,23 +61,12 @@ jobs:
     needs: build-deb
     runs-on: ubuntu-latest
     steps:
-
       - name: Download all artifacts
-        run: |
-          distributions=("noetic" "foxy")
-          architectures=("amd64")
-
-          for dist in "${distributions[@]}"; do
-            for arch in "${architectures[@]}"; do
-              artifact_name="deb-packages-${dist}-${arch}"
-              echo "Downloading artifact: $artifact_name"
-          
-              uses: actions/download-artifact@v4
-              with:
-                name: $artifact_name
-                path: ./dists/${dist}-${arch}  # Create corresponding directories for each artifact
-            done
-          done
+        uses: actions/download-artifact@v4
+        with:
+          # TODO: find a better way to download artifacts
+          name: noetic-amd64, foxy-amd64
+          path: ./dists  # Download location for all artifacts
 
       - name: Generate apt-ftparchive.conf
         run: |
