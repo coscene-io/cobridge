@@ -80,7 +80,7 @@ jobs:
               Release {
                 Origin "cobridge";
                 Label "cobridge";
-                Suite "stable";
+                Suite "${{ matrix.distro }}";
                 Codename "${{ matrix.distro }}";
                 Version "${{ matrix.ros_distribution }}";
               }
@@ -98,12 +98,6 @@ jobs:
           
           gpg --clearsign -o dists/${{ matrix.distro }}/InRelease dists/${{ matrix.distro }}/Release
           gpg -abs -o dists/${{ matrix.distro }}/Release.gpg dists/${{ matrix.distro }}/Release
-          
-          cat dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/Packages
-          echo "\n----------------------------------\n"
-          cat dists/${{ matrix.distro }}/Release
-          echo "\n----------------------------------\n"
-          cat dists/${{ matrix.distro }}/InRelease
 
       - name: Upload file to OSS
         uses: tvrcgo/oss-action@master
