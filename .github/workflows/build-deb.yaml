@@ -43,14 +43,8 @@ jobs:
 #            container: cobridge/ros-humble:latest
 
     name: Build deb (ROS ${{ matrix.ros_distribution }} - ${{ matrix.arch }})
-
     runs-on: ${{ matrix.label }}
     container: ${{ matrix.container }}
-
-    outputs:
-      ros_distribution: ${{ matrix.ros_distribution }}
-      arch: ${{ matrix.arch }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -72,6 +66,11 @@ jobs:
           path: ./src/*.deb
 
   build-apt-repo:
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [ focal, jammy ]
+
     name: Build APT Repository
     needs: build-deb
     runs-on: ubuntu-latest
@@ -79,24 +78,53 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: ./dists
+          path: ./artifacts
           merge-multiple: true
 
       - name: Generate apt-ftparchive.conf
         run: |
-          cat <<EOF > ./dists/apt-ftparchive.conf
+          cat <<EOF > ./artifacts/apt-ftparchive.conf
           APT {
             FTPArchive {
               Release {
                 Origin "cobridge";
                 Label "cobridge";
                 Suite "stable";
-                Codename "focal";
+                Codename "${{ matrix.distro }}";
               }
             }
           }
           EOF
-          ls -lah ./dists
+          ls -lah ./artifacts
+
+      - name: Build APT repo
+        run: |
+          /cobridge/dists/stable/main/binary-${{ matrix.arch }}/${{ env.ARTIFACT_NAME }}
+          mkdir -p dists/${{ matrix.distro }}/main/binary-amd64
+          mkdir -p dists/${{ matrix.distro }}/main/binary-arm64
+
+#         ros-foxy-cobridge_25.1.0-0focal_amd64.deb
+#         ros-noetic-cobridge_25.1.0-0focal_amd64.deb
+          find ./artifacts -name "*-${{ matrix.distro }}_amd64.deb" -exec cp {} ./dists/${{ matrix.distro }}/main/binary-amd64/ \;
+          find ./artifacts -name "*-${{ matrix.distro }}_arm64.deb" -exec cp {} ./dists/${{ matrix.distro }}/main/binary-arm64/ \;
+               
+          dpkg-scanpackages dists/${{ matrix.distro }}/main/binary-amd64 /dev/null > dists/${{ matrix.distro }}/main/binary-amd64/Packages
+          gzip -k -f dists/${{ matrix.distro }}/main/binary-amd64/Packages
+          apt-ftparchive release dists/${{ matrix.distro }} -c ./artifacts/apt-ftparchive.conf > dists/${{ matrix.distro }}/Release
+          gpg --clearsign -o dists/${{ matrix.distro }}/InRelease dists/${{ matrix.distro }}/Release
+          gpg -abs -o dists/${{ matrix.distro }}/Release.gpg dists/${{ matrix.distro }}/Release
+
+      - name: Upload APT repo to OSS
+        uses: tvrcgo/oss-action@master
+        with:
+          key-id: ${{ secrets.OSS_ARTIFACTS_ACCESS_KEY }}
+          key-secret: ${{ secrets.OSS_ARTIFACTS_ACCESS_SECRET }}
+          region: oss-cn-hangzhou
+          bucket: coscene-download
+          assets: |
+            ./dists/**:/cobridge/dists/
+
+
 #
 #      - name: Build APT repo
 #        run: |
