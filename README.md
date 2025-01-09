@@ -14,7 +14,7 @@ After cobridge establishes a link with the cloud, it can subscribe to ros topic 
 * Add source
 
   ``` bash
-  echo "deb https://coscene-download.oss-cn-hangzhou.aliyuncs.com/cobridge stable main" | sudo tee /etc/apt/sources.list.d/cobridge.list
+  echo "deb https://coscene-download.oss-cn-hangzhou.aliyuncs.com/cobridge focal main" | sudo tee /etc/apt/sources.list.d/cobridge.list
   ```
   
 * Update and install
