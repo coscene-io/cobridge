@@ -103,8 +103,8 @@ jobs:
           mkdir -p dists/${{ matrix.distro }}/main/binary-amd64
           mkdir -p dists/${{ matrix.distro }}/main/binary-arm64
 
-          find ./artifacts -name "*-${{ matrix.distro }}_amd64.deb" -exec cp {} ./dists/${{ matrix.distro }}/main/binary-amd64/ \;
-          find ./artifacts -name "*-${{ matrix.distro }}_arm64.deb" -exec cp {} ./dists/${{ matrix.distro }}/main/binary-arm64/ \;
+          find ./artifacts -name "*${{ matrix.distro }}_amd64.deb" -exec cp {} ./dists/${{ matrix.distro }}/main/binary-amd64/ \;
+          find ./artifacts -name "*${{ matrix.distro }}_arm64.deb" -exec cp {} ./dists/${{ matrix.distro }}/main/binary-arm64/ \;
           
           dpkg-scanpackages dists/${{ matrix.distro }}/main/binary-amd64 /dev/null > dists/${{ matrix.distro }}/main/binary-amd64/Packages          
           dpkg-scanpackages dists/${{ matrix.distro }}/main/binary-arm64 /dev/null > dists/${{ matrix.distro }}/main/binary-arm64/Packages
