@@ -7,3 +7,4 @@ RUN apt-get update && apt-get install -y --no-install-recommends nlohmann-json3-
     libasio-dev ros-${ROS_DISTRO}-cv-bridge zip \
     libwebsocketpp-dev ros-${ROS_DISTRO}-resource-retriever ros-${ROS_DISTRO}-ros-babel-fish \
     python3-bloom devscripts fakeroot debhelper apt-utils gnupg
+RUN rm -rf /var/lib/apt/lists/*

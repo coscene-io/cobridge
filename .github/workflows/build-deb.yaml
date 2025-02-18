@@ -35,7 +35,7 @@ jobs:
             container: cobridge/ros-humble:latest
           - ros_distribution: humble
             arch: arm64
-            distro: Jammy
+            distro: jammy
             label: [ linux-arm-64-8c-32g-300gb ]
             container: cobridge/ros-humble:latest
 
