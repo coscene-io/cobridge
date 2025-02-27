@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ros_distribution: [foxy, noetic, humble]
+        ros_distribution: [humble]
 
     steps:
       - name: Checkout repository
