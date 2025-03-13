@@ -1,5 +1,7 @@
 name: build deb
 on:
+  pull_request:
+  workflow_dispatch:
   release:
 
 jobs:
@@ -48,9 +50,14 @@ jobs:
         with:
           path: src/cobridge
 
+      - name: Update package version
+        run: |
+          VERSION=$(echo $GITHUB_REF | sed 's/refs\/tags\/v//')
+          sed -i "s/<version>.*<\/version>/<version>$VERSION<\/version>/" ./src/cobridge/package.xml
+
       - name: Generate debian/ directory and build .deb package
         run: |
-          rosdep update --rosdistro=${{ matrix.ros_distribution }}
+          rosdep update --rosdistro=${{ matrix.ros_distribution }} --include-eol-distros
           cd ./src/cobridge
           bloom-generate rosdebian --ros-distro ${{ matrix.ros_distribution }}
           DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -a${{ matrix.arch }}
