@@ -51,6 +51,7 @@ jobs:
           path: src/cobridge
 
       - name: Update package version
+        if: github.event_name == 'release'
         run: |
           VERSION=$(echo $GITHUB_REF | sed 's#refs/tags/v##')
           echo "Version: $VERSION"
