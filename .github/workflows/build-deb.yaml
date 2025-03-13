@@ -15,31 +15,31 @@ jobs:
             distro: focal
             label: ubuntu-latest
             container: cobridge/ros-noetic:latest
-          - ros_distribution: noetic
-            arch: arm64
-            distro: focal
-            label: [ linux-arm-64-8c-32g-300gb ]
-            container: cobridge/ros-noetic:latest
-          - ros_distribution: foxy
-            arch: amd64
-            distro: focal
-            label: ubuntu-latest
-            container: cobridge/ros-foxy:latest
-          - ros_distribution: foxy
-            arch: arm64
-            distro: focal
-            label: [ linux-arm-64-8c-32g-300gb ]
-            container: cobridge/ros-foxy:latest
-          - ros_distribution: humble
-            arch: amd64
-            distro: jammy
-            label: ubuntu-latest
-            container: cobridge/ros-humble:latest
-          - ros_distribution: humble
-            arch: arm64
-            distro: jammy
-            label: [ linux-arm-64-8c-32g-300gb ]
-            container: cobridge/ros-humble:latest
+          # - ros_distribution: noetic
+          #   arch: arm64
+          #   distro: focal
+          #   label: [ linux-arm-64-8c-32g-300gb ]
+          #   container: cobridge/ros-noetic:latest
+          # - ros_distribution: foxy
+          #   arch: amd64
+          #   distro: focal
+          #   label: ubuntu-latest
+          #   container: cobridge/ros-foxy:latest
+          # - ros_distribution: foxy
+          #   arch: arm64
+          #   distro: focal
+          #   label: [ linux-arm-64-8c-32g-300gb ]
+          #   container: cobridge/ros-foxy:latest
+          # - ros_distribution: humble
+          #   arch: amd64
+          #   distro: jammy
+          #   label: ubuntu-latest
+          #   container: cobridge/ros-humble:latest
+          # - ros_distribution: humble
+          #   arch: arm64
+          #   distro: jammy
+          #   label: [ linux-arm-64-8c-32g-300gb ]
+          #   container: cobridge/ros-humble:latest
 
     name: Build deb (ROS ${{ matrix.ros_distribution }} - ${{ matrix.arch }})
     runs-on: ${{ matrix.label }}
@@ -52,8 +52,10 @@ jobs:
 
       - name: Update package version
         run: |
-          VERSION=$(echo $GITHUB_REF | sed 's/refs\/tags\/v//')
-          sed -i "s/<version>.*<\/version>/<version>$VERSION<\/version>/" ./src/cobridge/package.xml
+          VERSION=$(echo $GITHUB_REF | sed 's#refs/tags/v##')
+          echo "Version: $VERSION"
+          echo "GITHUB_REF: $GITHUB_REF"
+          sed -i "s#<version>.*</version>#<version>$VERSION</version>#" ./src/cobridge/package.xml
 
       - name: Generate debian/ directory and build .deb package
         run: |
