@@ -14,7 +14,7 @@ jobs:
             arch: amd64
             distro: focal
             label: ubuntu-latest
-            container: cobridge/ros-noetic:latest
+            container: coscene/ros:noetic-amd64
           # - ros_distribution: noetic
           #   arch: arm64
           #   distro: focal
