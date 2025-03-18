@@ -42,7 +42,7 @@ sudo apt install -y nlohmann-json3-dev \
 
 ```bash
 # Clone this repository into your ROS workspace
-git clone https://github.com/your-username/cobridge.git ${YOUR_ROS_WS}/src/cobridge
+git clone https://github.com/coscene-io/cobridge.git ${YOUR_ROS_WS}/src/cobridge
 
 # Source ROS environment
 source /opt/ros/${ROS_DISTRO}/setup.bash
@@ -56,7 +56,7 @@ catkin_make install
 
 ```bash
 # Clone this repository into your ROS workspace
-git clone https://github.com/your-username/cobridge.git ${YOUR_ROS_WS}/src/cobridge
+git clone https://github.com/coscene-io/cobridge.git ${YOUR_ROS_WS}/src/cobridge
 
 # Source ROS environment
 source /opt/ros/${ROS_DISTRO}/setup.bash

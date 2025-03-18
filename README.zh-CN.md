@@ -1,65 +1,112 @@
 # cobridge
 
-cobridge 会以 ros node 的方式运行在机器人端，并通过 websocket 方式与云端进行交互。cobridge 与云端建立链接后，根据云端指令可以实现订阅 ros topic，调用 ros service，实现实时监控机器人状态、远程下发指令等功能。
+cobridge 是一个 ROS 节点，通过 WebSocket 在机器人和外部客户端/服务之间建立双向通信通道。它能够：
 
+- 从云端实时监控机器人状态
+- 远程执行机器人命令
+- 根据云端指令订阅 ROS 主题和调用 ROS 服务
 
-## 编译
+## 功能特点
 
-* 安装依赖库
+- 兼容 ROS 1 和 ROS 2
+- 安全的 WebSocket 通信
+- 基于 JSON 的高效数据传输
+- 支持各种 ROS 消息类型，包括通过 cv_bridge 处理图像
 
-  ``` bash
-  # for ROS 1 distribution
-  sudo apt install -y nlohmann-json3-dev  \
-    libasio-dev \
-    libwebsocketpp-dev \
-    ros-${ROS_DISTRO}-resource-retriever \
-    ros-${ROS_DISTRO}-ros-babel-fish
-  
-  # for ROS 2 distribution
-  sudo apt install -y nlohmann-json3-dev \
-      libasio-dev \
-      libwebsocketpp-dev \
-      ros-${ROS_DISTRO}-resource-retriever
-  ```
+## 前置依赖
 
-* ROS1
+### ROS 1
 
-  ``` bash 
-  # 将工程复制到 {your_ros_ws}/src/ 文件夹内
-  cp -r {this_repo} {your_ros_ws}/src/
-  
-  cd {your_ros2_ws} 
-  
-  source /opt/ros/{ros_distro}/setup.bash 
-  
-  catkin_make install
-  ```
+```bash
+sudo apt install -y nlohmann-json3-dev \
+  libasio-dev \
+  libwebsocketpp-dev \
+  ros-${ROS_DISTRO}-cv-bridge \
+  ros-${ROS_DISTRO}-resource-retriever \
+  ros-${ROS_DISTRO}-ros-babel-fish
+```
 
+### ROS 2
 
-* ROS2
+```bash
+sudo apt install -y nlohmann-json3-dev \
+  libasio-dev \
+  libwebsocketpp-dev \
+  ros-${ROS_DISTRO}-cv-bridge \
+  ros-${ROS_DISTRO}-resource-retriever
+```
 
-  ``` bash 
-   # 将工程复制到 {your_ros2_ws}/src/ 文件夹内
-   cp -r {this_repo} {your_ros_ws}/src/ 
-  
-   source /opt/ros/{ros_distro}/setup.bash
-  
-   cd {your_ros2_ws} 
-  
-   colcon build --packages-select cobridge
-  ```
+## 安装
 
-## 运行
-  ``` bash
-  # ros 1
-  roslaunch cobridge cobridge.launch
-  
-  # ros 2
-  ros2 launch cobridge cobridge_launch.xml 
-  ```
+### ROS 1
+
+```bash
+# 将此仓库克隆到您的 ROS 工作空间
+git clone https://github.com/coscene-io/cobridge.git ${YOUR_ROS_WS}/src/cobridge
+
+# 加载 ROS 环境
+source /opt/ros/${ROS_DISTRO}/setup.bash
+
+# 构建包
+cd ${YOUR_ROS_WS}
+catkin_make install
+```
+
+### ROS 2
+
+```bash
+# 将此仓库克隆到您的 ROS 工作空间
+git clone https://github.com/coscene-io/cobridge.git ${YOUR_ROS_WS}/src/cobridge
+
+# 加载 ROS 环境
+source /opt/ros/${ROS_DISTRO}/setup.bash
+
+# 构建包
+cd ${YOUR_ROS_WS}
+colcon build --packages-select cobridge
+```
+
+## 使用方法
+
+### ROS 1
+
+```bash
+roslaunch cobridge cobridge.launch
+```
+
+### ROS 2
+
+```bash
+ros2 launch cobridge cobridge_launch.xml
+```
+
+## 配置
+
+cobridge 可以通过启动参数进行配置。请查看启动文件了解可用选项：
+
+- `cobridge.launch` (ROS 1)
+- `cobridge_launch.xml` (ROS 2)
 
 ## 云端可视化
-云端可视化需配合刻行 `coLink` 组件，通过网页端实时可视化机器人端状态。
 
-## 荣誉
-最初来自 foxglove，感谢他们的出色工作。
+为了在网页端实时可视化机器人数据，cobridge 与 `colink` 组件集成，允许通过网页界面直观地监控和控制机器人。
+
+## 故障排除
+
+如果遇到连接问题：
+
+1. 验证机器人和云服务器之间的网络连接
+2. 检查 WebSocket 服务器地址是否正确配置
+3. 确保所有依赖项都已正确安装
+
+## 贡献
+
+欢迎贡献！请随时提交 Pull Request。
+
+## 许可证
+
+Apache 2.0
+
+## 致谢
+
+本项目基于 Foxglove 的工作。感谢他们对机器人社区的杰出贡献。
