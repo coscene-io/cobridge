@@ -91,18 +91,6 @@ cobridge can be configured via launch parameters. Check the launch files for ava
 
 For real-time visualization of robot data on the web, cobridge integrates with the `colink` component. This allows for intuitive monitoring and control through a web interface.
 
-## Troubleshooting
-
-If you encounter connection issues:
-
-1. Verify network connectivity between the robot and cloud server
-2. Check if the WebSocket server address is correctly configured
-3. Ensure all dependencies are properly installed
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
 ## License
 
 Apache 2.0
