@@ -10,13 +10,13 @@ After cobridge establishes a link with the cloud, it can subscribe to ros topic 
 * Import public key
   
   ``` bash
-  wget https://coscene-download.oss-cn-hangzhou.aliyuncs.com/cobridge/coscene.gpg && sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/coscene.gpg coscene.gpg
+  curl -fsSL https://coscene-download.oss-cn-hangzhou.aliyuncs.com/coscene-apt-source/coscene.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/coscene.gpg
   ```
   
 * Add source
 
   ``` bash
-  echo "deb [signed-by=/etc/apt/trusted.gpg.d/coscene.gpg] https://coscene-download.oss-cn-hangzhou.aliyuncs.com/cobridge $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/cobridge.list
+  echo "deb [signed-by=/etc/apt/trusted.gpg.d/coscene.gpg] https://coscene-download.oss-cn-hangzhou.aliyuncs.com/coscene-apt-source $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/coscene.list
   ```
   
 * Update and install

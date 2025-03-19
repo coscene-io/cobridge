@@ -81,11 +81,10 @@ jobs:
           echo "DEB_FILENAME=$DEB_FILENAME" >> $GITHUB_ENV
           
           download_url="https://coscene-download.oss-cn-hangzhou.aliyuncs.com/coscene-apt-source/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/ros-${{ matrix.ros_distribution }}-cobridge_latest_${{ matrix.arch }}.deb"
-          echo "download url: $download_url"
-          
+
           matrix_key="${{ matrix.ros_distribution }}_${{ matrix.arch }}"
           echo "matrix_result_${matrix_key}=${{ matrix.arch }},${{ matrix.ros_distribution }},${{ matrix.distro }},$download_url" >> $GITHUB_OUTPUT
-          echo "set output: matrix_result_${matrix_key}=$download_url"
+          echo "download url: $download_url"
 
       - name: Update APT Source
         uses: coscene-io/update-apt-source@main
