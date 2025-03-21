@@ -72,6 +72,7 @@ jobs:
       - name: Checkout code (indigo/melodic)
         if: matrix.ros_distribution == 'indigo' || matrix.ros_distribution == 'melodic'
         run: |
+          echo "current sha: ${{ github.sha}}, current ref: ${{ github.ref }}"
           git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
           git config --global --add safe.directory /__w/cobridge/cobridge
           
