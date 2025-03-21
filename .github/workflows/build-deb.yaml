@@ -71,6 +71,7 @@ jobs:
 
       - name: Checkout code (indigo/melodic)
         if: matrix.ros_distribution == 'indigo' || matrix.ros_distribution == 'melodic'
+        shell: bash
         run: |
           echo "current sha: ${{ github.sha}}, current ref: ${{ github.ref }}"
           git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
@@ -78,10 +79,10 @@ jobs:
           
           git clone https://github.com/${{ github.repository }}.git .
           
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "PR ref: ${{ github.event.pull_request.head.ref }}"
-            git fetch origin ${{ github.event.pull_request.head.ref }}
-            git checkout FETCH_HEAD
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "PR number: ${{ github.event.pull_request.number }}"
+            git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-branch
+            git checkout pr-branch
           else
             # 对于其他事件，使用 github.sha
             git checkout ${{ github.sha }}
