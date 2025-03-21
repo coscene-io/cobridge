@@ -45,14 +45,14 @@ cobridge 会以 ros node 的方式运行在机器人端，并通过 websocket �
 
   ``` bash
   # for ROS 1 distribution
-  sudo apt install -y nlohmann-json3-dev  \
+  sudo apt install -y \
     libasio-dev \
     libwebsocketpp-dev \
     ros-${ROS_DISTRO}-resource-retriever \
     ros-${ROS_DISTRO}-ros-babel-fish
   
   # for ROS 2 distribution
-  sudo apt install -y nlohmann-json3-dev \
+  sudo apt install -y \
       libasio-dev \
       libwebsocketpp-dev \
       ros-${ROS_DISTRO}-resource-retriever

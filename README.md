@@ -46,7 +46,7 @@ After cobridge establishes a link with the cloud, it can subscribe to ros topic 
 
   ``` bash
   # for ROS 1 distribution
-  sudo apt install -y nlohmann-json3-dev  \
+  sudo apt install -y \
     libasio-dev \
     libwebsocketpp-dev \
     ros-${ROS_DISTRO}-cv-bridge \
@@ -54,7 +54,7 @@ After cobridge establishes a link with the cloud, it can subscribe to ros topic 
     ros-${ROS_DISTRO}-ros-babel-fish
     
   # for ROS 2 distribution
-  sudo apt install -y nlohmann-json3-dev \
+  sudo apt install -y \
       libasio-dev \
       libwebsocketpp-dev \
       ros-${ROS_DISTRO}-cv-bridge \

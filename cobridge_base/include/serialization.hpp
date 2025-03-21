@@ -16,7 +16,7 @@
 #define SERIALIZATION_HPP_
 
 #include <stdint.h>
-#include <nlohmann/json.hpp>
+#include <json.hpp>
 
 #include "common.hpp"
 #include "parameter.hpp"

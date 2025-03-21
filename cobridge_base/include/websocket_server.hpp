@@ -15,7 +15,7 @@
 #ifndef WEBSOCKET_SERVER_HPP_
 #define WEBSOCKET_SERVER_HPP_
 
-#include <nlohmann/json.hpp>
+#include <json.hpp>
 #include <websocketpp/config/asio.hpp>
 #include <websocketpp/server.hpp>
 
