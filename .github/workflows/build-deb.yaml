@@ -10,36 +10,36 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - ros_distribution: noetic
-            arch: amd64
-            distro: focal
-            label: ubuntu-latest
-            container: coscene/ros:noetic-amd64
-          - ros_distribution: noetic
-            arch: arm64
-            distro: focal
-            label: [ linux-arm-64-8c-32g-300gb ]
-            container: coscene/ros:noetic-arm64
-          - ros_distribution: foxy
-            arch: amd64
-            distro: focal
-            label: ubuntu-latest
-            container: coscene/ros:foxy-amd64
-          - ros_distribution: foxy
-            arch: arm64
-            distro: focal
-            label: [ linux-arm-64-8c-32g-300gb ]
-            container: coscene/ros:foxy-arm64
-          - ros_distribution: humble
-            arch: amd64
-            distro: jammy
-            label: ubuntu-latest
-            container: coscene/ros:humble-amd64
-          - ros_distribution: humble
-            arch: arm64
-            distro: jammy
-            label: [ linux-arm-64-8c-32g-300gb ]
-            container: coscene/ros:humble-arm64
+#          - ros_distribution: noetic
+#            arch: amd64
+#            distro: focal
+#            label: ubuntu-latest
+#            container: coscene/ros:noetic-amd64
+#          - ros_distribution: noetic
+#            arch: arm64
+#            distro: focal
+#            label: [ linux-arm-64-8c-32g-300gb ]
+#            container: coscene/ros:noetic-arm64
+#          - ros_distribution: foxy
+#            arch: amd64
+#            distro: focal
+#            label: ubuntu-latest
+#            container: coscene/ros:foxy-amd64
+#          - ros_distribution: foxy
+#            arch: arm64
+#            distro: focal
+#            label: [ linux-arm-64-8c-32g-300gb ]
+#            container: coscene/ros:foxy-arm64
+#          - ros_distribution: humble
+#            arch: amd64
+#            distro: jammy
+#            label: ubuntu-latest
+#            container: coscene/ros:humble-amd64
+#          - ros_distribution: humble
+#            arch: arm64
+#            distro: jammy
+#            label: [ linux-arm-64-8c-32g-300gb ]
+#            container: coscene/ros:humble-arm64
           - ros_distribution: melodic
             arch: amd64
             distro: bionic
@@ -66,9 +66,17 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          path: src/cobridge
+        if: matrix.ros_distribution != 'indigo' && matrix.ros_distribution != 'melodic'
+        uses: actions/checkout@v4
+
+      - name: Checkout code (indigo/melodic)
+        if: matrix.ros_distribution == 'indigo' || matrix.ros_distribution == 'melodic'
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          git config --global --add safe.directory /__w/coListener/coListener
+          
+          git clone https://github.com/${{ github.repository }}.git .
+          git checkout ${{ github.sha || github.ref }}
 
       - name: Update package version
         if: github.event_name == 'release'
@@ -82,7 +90,6 @@ jobs:
         id: build_deb
         run: |
           rosdep update --rosdistro=${{ matrix.ros_distribution }} --include-eol-distros
-          cd ./src/cobridge
           bloom-generate rosdebian --ros-distro ${{ matrix.ros_distribution }}
           DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -a${{ matrix.arch }}
           
