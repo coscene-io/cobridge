@@ -73,7 +73,7 @@ jobs:
         if: matrix.ros_distribution == 'indigo' || matrix.ros_distribution == 'melodic'
         run: |
           git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
-          git config --global --add safe.directory /__w/coListener/coListener
+          git config --global --add safe.directory /__w/cobridge/cobridge
           
           git clone https://github.com/${{ github.repository }}.git .
           git checkout ${{ github.sha || github.ref }}
