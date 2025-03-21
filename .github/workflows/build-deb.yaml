@@ -40,6 +40,16 @@ jobs:
             distro: jammy
             label: [ linux-arm-64-8c-32g-300gb ]
             container: coscene/ros:humble-arm64
+          - ros_distribution: melodic
+            arch: amd64
+            distro: bionic
+            label: ubuntu-latest
+            container: coscene/ros:melodic-amd64
+          - ros_distribution: melodic
+            arch: arm64
+            distro: bionic
+            label: [ linux-arm-64-8c-32g-300gb ]
+            container: coscene/ros:melodic-arm64
 
     name: Build deb (ROS ${{ matrix.ros_distribution }} - ${{ matrix.arch }})
     runs-on: ${{ matrix.label }}
@@ -51,6 +61,8 @@ jobs:
       matrix_result_foxy_arm64: ${{ steps.build_deb.outputs.matrix_result_foxy_arm64 }}
       matrix_result_humble_amd64: ${{ steps.build_deb.outputs.matrix_result_humble_amd64 }}
       matrix_result_humble_arm64: ${{ steps.build_deb.outputs.matrix_result_humble_arm64 }}
+      matrix_result_melodic_amd64: ${{ steps.build_deb.outputs.matrix_result_melodic_amd64 }}
+      matrix_result_melodic_arm64: ${{ steps.build_deb.outputs.matrix_result_melodic_arm64 }}
 
     steps:
       - name: Checkout code
@@ -115,7 +127,6 @@ jobs:
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_foxy_arm64 }};"
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_humble_amd64 }};"
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_humble_arm64 }};"
-          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_indigo_armhf }};"
           
           IFS=';' read -ra URL_ARRAY <<< "$URLS"
           for url_item in "${URL_ARRAY[@]}"; do
