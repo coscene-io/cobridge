@@ -692,7 +692,7 @@ private:
           service.request_schema = srv_description->request->message_definition;
           service.response_schema = srv_description->response->message_definition;
         } else {
-          ROS_ERROR(
+          ROS_WARN(
             "Failed to retrieve type information for service '%s' of type '%s'",
             service_name.c_str(), service_type.c_str());
 
@@ -702,7 +702,7 @@ private:
         }
         new_services.push_back(service);
       } catch (const std::exception & e) {
-        ROS_ERROR(
+        ROS_WARN(
           "Failed to retrieve service type or service description of service %s: %s",
           service_name.c_str(), e.what());
         continue;

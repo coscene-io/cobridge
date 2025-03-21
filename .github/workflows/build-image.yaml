@@ -8,11 +8,11 @@ permissions:
 
 jobs:
   build-and-push-runner-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
-        ros_distribution: [foxy, noetic, humble]
+        ros_distribution: [humble]
 
     steps:
       - name: Checkout repository
@@ -20,7 +20,7 @@ jobs:
 
       -
         name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v2
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

@@ -1,8 +1,11 @@
 <?xml version="1.0"?>
 <package format="3">
     <name>cobridge</name>
-    <version>0.0.1</version>
-    <description>bridge for ROS2</description>
+    <version>1.0.2</version>
+    <description>
+        A ROS node that also functions as a WebSocket server, enabling seamless
+        data interaction between ROS and cloud-based services.
+    </description>
     <maintainer email="coscene@coscene.io">coscene</maintainer>
     <license>Apache License 2.0</license>
 

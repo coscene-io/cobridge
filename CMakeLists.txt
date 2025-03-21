@@ -92,11 +92,14 @@ else()
 endif()
 enable_strict_compiler_warnings(cobridge_base)
 
+find_package(catkin QUIET)
+find_package(ament_cmake QUIET)
+
 message(STATUS "ROS_VERSION: " $ENV{ROS_VERSION})
 message(STATUS "ROS_DISTRO: " $ENV{ROS_DISTRO})
 message(STATUS "ROS_ROOT: " $ENV{ROS_ROOT})
 if("$ENV{ROS_VERSION}" STREQUAL "1")
-    if(CATKIN_DEVEL_PREFIX OR catkin_FOUND OR CATKIN_BUILD_BINARY_PACKAGE)
+    if(catkin_FOUND)
         message(STATUS "Building with catkin")
         set(ROS_BUILD_TYPE "catkin")
 
@@ -140,7 +143,7 @@ elseif("$ENV{ROS_VERSION}" STREQUAL "2")
         add_compile_definitions(ROS2_VERSION_HUMBLE)
     endif()
 
-    if(DEFINED ENV{AMENT_PREFIX_PATH})
+    if(ament_cmake_FOUND)
         message(STATUS "Building with ament_cmake")
         set(ROS_BUILD_TYPE "ament_cmake")
 

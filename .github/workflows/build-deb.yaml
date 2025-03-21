@@ -1,0 +1,155 @@
+name: build deb
+on:
+  pull_request:
+  workflow_dispatch:
+  release:
+
+jobs:
+  build-deb-package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ros_distribution: noetic
+            arch: amd64
+            distro: focal
+            label: ubuntu-latest
+            container: coscene/ros:noetic-amd64
+          - ros_distribution: noetic
+            arch: arm64
+            distro: focal
+            label: [ linux-arm-64-8c-32g-300gb ]
+            container: coscene/ros:noetic-arm64
+          - ros_distribution: foxy
+            arch: amd64
+            distro: focal
+            label: ubuntu-latest
+            container: coscene/ros:foxy-amd64
+          - ros_distribution: foxy
+            arch: arm64
+            distro: focal
+            label: [ linux-arm-64-8c-32g-300gb ]
+            container: coscene/ros:foxy-arm64
+          - ros_distribution: humble
+            arch: amd64
+            distro: jammy
+            label: ubuntu-latest
+            container: coscene/ros:humble-amd64
+          - ros_distribution: humble
+            arch: arm64
+            distro: jammy
+            label: [ linux-arm-64-8c-32g-300gb ]
+            container: coscene/ros:humble-arm64
+          - ros_distribution: melodic
+            arch: amd64
+            distro: bionic
+            label: ubuntu-latest
+            container: coscene/ros:melodic-amd64
+          - ros_distribution: melodic
+            arch: arm64
+            distro: bionic
+            label: [ linux-arm-64-8c-32g-300gb ]
+            container: coscene/ros:melodic-arm64
+
+    name: Build deb (ROS ${{ matrix.ros_distribution }} - ${{ matrix.arch }})
+    runs-on: ${{ matrix.label }}
+    container: ${{ matrix.container }}
+    outputs:
+      matrix_result_noetic_amd64: ${{ steps.build_deb.outputs.matrix_result_noetic_amd64 }}
+      matrix_result_noetic_arm64: ${{ steps.build_deb.outputs.matrix_result_noetic_arm64 }}
+      matrix_result_foxy_amd64: ${{ steps.build_deb.outputs.matrix_result_foxy_amd64 }}
+      matrix_result_foxy_arm64: ${{ steps.build_deb.outputs.matrix_result_foxy_arm64 }}
+      matrix_result_humble_amd64: ${{ steps.build_deb.outputs.matrix_result_humble_amd64 }}
+      matrix_result_humble_arm64: ${{ steps.build_deb.outputs.matrix_result_humble_arm64 }}
+      matrix_result_melodic_amd64: ${{ steps.build_deb.outputs.matrix_result_melodic_amd64 }}
+      matrix_result_melodic_arm64: ${{ steps.build_deb.outputs.matrix_result_melodic_arm64 }}
+
+    steps:
+      - name: Checkout code
+        if: matrix.ros_distribution != 'indigo' && matrix.ros_distribution != 'melodic'
+        uses: actions/checkout@v4
+
+      - name: Checkout code (indigo/melodic)
+        if: matrix.ros_distribution == 'indigo' || matrix.ros_distribution == 'melodic'
+        shell: bash
+        run: |
+          echo "current sha: ${{ github.sha}}, current ref: ${{ github.ref }}"
+          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          git config --global --add safe.directory /__w/cobridge/cobridge
+          
+          git clone https://github.com/${{ github.repository }}.git .
+          
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "PR number: ${{ github.event.pull_request.number }}"
+            git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-branch
+            git checkout pr-branch
+          else
+            # 对于其他事件，使用 github.sha
+            git checkout ${{ github.sha }}
+          fi
+          
+
+      - name: Update package version
+        if: github.event_name == 'release'
+        run: |
+          VERSION=$(echo $GITHUB_REF | sed 's#refs/tags/v##')
+          echo "Version: $VERSION"
+          echo "GITHUB_REF: $GITHUB_REF"
+          sed -i "s#<version>.*</version>#<version>$VERSION</version>#" ./src/cobridge/package.xml
+
+      - name: Generate debian/ directory and build .deb package
+        id: build_deb
+        run: |
+          rosdep update --rosdistro=${{ matrix.ros_distribution }} --include-eol-distros
+          bloom-generate rosdebian --ros-distro ${{ matrix.ros_distribution }}
+          DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -a${{ matrix.arch }}
+          
+          mkdir -p $GITHUB_WORKSPACE/artifacts
+          cp ../*.deb $GITHUB_WORKSPACE/artifacts/
+
+          DEB_FILENAME=$(basename $(ls $GITHUB_WORKSPACE/artifacts/*.deb))
+          echo "DEB_FILENAME=$DEB_FILENAME" >> $GITHUB_ENV
+          
+          download_url="https://coscene-download.oss-cn-hangzhou.aliyuncs.com/coscene-apt-source/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/ros-${{ matrix.ros_distribution }}-cobridge_latest_${{ matrix.arch }}.deb"
+
+          matrix_key="${{ matrix.ros_distribution }}_${{ matrix.arch }}"
+          echo "matrix_result_${matrix_key}=${{ matrix.arch }},${{ matrix.ros_distribution }},${{ matrix.distro }},$download_url" >> $GITHUB_OUTPUT
+          echo "download url: $download_url"
+
+      - name: Update APT Source
+        uses: coscene-io/update-apt-source@main
+        with:
+          ubuntu_distro: ${{ matrix.distro }}
+          deb_paths: ${{ github.workspace }}/artifacts/${{ env.DEB_FILENAME }}
+          architectures: ${{ matrix.arch }}
+          access_key_id: ${{ secrets.OSS_ARTIFACTS_ACCESS_KEY }}
+          access_key_secret: ${{ secrets.OSS_ARTIFACTS_ACCESS_SECRET }}
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+
+  Download-list:
+    needs: build-deb-package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create workflow summary
+        run: |
+          echo "## All Download URLs" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | ROS Distro | Ubuntu Distro | URL |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- | --- | --- |" >> $GITHUB_STEP_SUMMARY
+          
+          URLS=""
+          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_noetic_amd64 }};"
+          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_noetic_arm64 }};"
+          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_melodic_amd64 }};"
+          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_melodic_arm64 }};"
+          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_foxy_amd64 }};"
+          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_foxy_arm64 }};"
+          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_humble_amd64 }};"
+          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_humble_arm64 }};"
+          
+          IFS=';' read -ra URL_ARRAY <<< "$URLS"
+          for url_item in "${URL_ARRAY[@]}"; do
+            if [ -n "$url_item" ]; then
+              IFS=',' read -ra ITEM <<< "$url_item"
+              echo "| ${ITEM[0]} | ${ITEM[1]} | ${ITEM[2]} | [${ITEM[3]}](${ITEM[3]}) |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
