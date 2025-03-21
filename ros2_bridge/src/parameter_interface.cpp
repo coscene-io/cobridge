@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "parameter_interface.hpp"
-#include <nlohmann/json.hpp>
+#include <json.hpp>
 #include <regex_utils.hpp>
 #include <utils.hpp>
 
