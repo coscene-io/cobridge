@@ -19,7 +19,7 @@
 #include <std_srvs/srv/set_bool.hpp>
 #include <websocketpp/config/asio_client.hpp>
 
-#include <nlohmann/json.hpp>
+#include <json.hpp>
 #include <test/test_client.hpp>
 #include <websocket_client.hpp>
 

@@ -18,7 +18,7 @@
 #include <optional>
 #include <shared_mutex>
 
-#include <nlohmann/json.hpp>
+#include <json.hpp>
 #include <websocketpp/client.hpp>
 #include <websocketpp/common/memory.hpp>
 #include <websocketpp/common/thread.hpp>
