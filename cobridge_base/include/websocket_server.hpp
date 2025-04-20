@@ -689,16 +689,19 @@ inline void Server<ServerConfiguration>::send_message(ConnHandle client_handle,
 
   if (buffer_size > 1) {
     int32_t skip_frame_interval = 1;
-    if (buffer_size < 30) {
+    if (buffer_size < 300) {
       skip_frame_interval = 5; // 1 frame in each 5 messages
-    } else if (buffer_size < 50) {
+    } else if (buffer_size < 500) {
       skip_frame_interval = 3; // 1 frame in each 3 messages
-    } else if (buffer_size < 100) {
+    } else if (buffer_size < 1000) {
       skip_frame_interval = 2; // 1 frame in each 2 messages
-    }
-    if (buffer_size != 0) {
       _server.get_alog().write(
-          APP, "current buffer size: " + std::to_string(buffer_size) +
+          APP, "[WS] current buffer size: " + std::to_string(buffer_size) +
+                   " KiB, skip 1 frame in each " +
+                   std::to_string(skip_frame_interval) + " frames");
+    } else {
+      _server.get_alog().write(
+          APP, "[WS] current buffer size: " + std::to_string(buffer_size) +
                    " KiB, skip 1 frame in each " +
                    std::to_string(skip_frame_interval) + " frames");
     }
