@@ -309,6 +309,7 @@ private:
   uint32_t _message_loop_index = 0;
 
   uint64_t _last_log_timestamp = 0;
+  uint64_t _skiped_msg_count = 0;
   uint32_t _next_channel_id = 0;
   std::map<ConnHandle, ClientInfo, std::owner_less<>> _clients;
   std::unordered_map<ChannelId, Channel> _channels;
@@ -702,14 +703,14 @@ inline void Server<ServerConfiguration>::send_message(ConnHandle client_handle,
       _server.get_alog().write(
           APP, "current buffer size: " + std::to_string(buffer_size) +
                    " KiB, skip_frame_interval:  " +
-                   std::to_string(skip_frame_interval));
+                   std::to_string(skip_frame_interval) + ", messages skiped count: " +
+                   std::to_string(_skiped_msg_count));
       _last_log_timestamp = timestamp;
     }
     _message_loop_index++;
     if (_message_loop_index % skip_frame_interval == 0) {
       _message_loop_index = 0;
-      _server.get_alog().write(
-          APP, "skip strategy triggered, skip message in channel:  " + std::to_string(chan_id));
+      _skiped_msg_count += 1;
       return;
     }
   }
