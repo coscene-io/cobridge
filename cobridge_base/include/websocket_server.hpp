@@ -307,6 +307,8 @@ private:
   std::queue<Message> _message_queue;
 
   uint32_t _message_loop_index = 0;
+
+  uint64_t _last_log_timestamp = 0;
   uint32_t _next_channel_id = 0;
   std::map<ConnHandle, ClientInfo, std::owner_less<>> _clients;
   std::unordered_map<ChannelId, Channel> _channels;
@@ -695,19 +697,19 @@ inline void Server<ServerConfiguration>::send_message(ConnHandle client_handle,
       skip_frame_interval = 3; // 1 frame in each 3 messages
     } else if (buffer_size < 1000) {
       skip_frame_interval = 2; // 1 frame in each 2 messages
+    }
+    if (timestamp - _last_log_timestamp > 1000000000) {
       _server.get_alog().write(
-          APP, "[WS] current buffer size: " + std::to_string(buffer_size) +
-                   " KiB, skip 1 frame in each " +
-                   std::to_string(skip_frame_interval) + " frames");
-    } else {
-      _server.get_alog().write(
-          APP, "[WS] current buffer size: " + std::to_string(buffer_size) +
-                   " KiB, skip 1 frame in each " +
-                   std::to_string(skip_frame_interval) + " frames");
+          APP, "current buffer size: " + std::to_string(buffer_size) +
+                   " KiB, skip_frame_interval:  " +
+                   std::to_string(skip_frame_interval));
+      _last_log_timestamp = timestamp;
     }
     _message_loop_index++;
     if (_message_loop_index % skip_frame_interval == 0) {
       _message_loop_index = 0;
+      _server.get_alog().write(
+          APP, "skip strategy triggered, skip message in channel:  " + std::to_string(chan_id));
       return;
     }
   }
