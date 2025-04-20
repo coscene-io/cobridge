@@ -700,8 +700,7 @@ inline void Server<ServerConfiguration>::send_message(ConnHandle client_handle,
       _server.get_alog().write(
           APP, "current buffer size: " + std::to_string(buffer_size) +
                    " KiB, skip 1 frame in each " +
-                   std::to_string(skip_frame_interval)) +
-          " frames";
+                   std::to_string(skip_frame_interval) + " frames");
     }
     _message_loop_index++;
     if (_message_loop_index % skip_frame_interval == 0) {
