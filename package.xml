@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
     <name>cobridge</name>
-    <version>1.0.7</version>
+    <version>1.0.8</version>
     <description>
         A ROS node that also functions as a WebSocket server, enabling seamless
         data interaction between ROS and cloud-based services.
@@ -34,7 +34,6 @@
 
     <build_depend>asio</build_depend>
     <build_depend>libssl-dev</build_depend>
-    <build_depend>libwebsocketpp-dev</build_depend>
     <build_depend>ros_environment</build_depend>
     <build_depend>zlib</build_depend>
     <exec_depend>openssl</exec_depend>

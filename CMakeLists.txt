@@ -27,20 +27,17 @@ macro(enable_strict_compiler_warnings target)
     endif()
 endmacro()
 
-# 注释掉或移除原来的WebSocket++查找
 # find_package(websocketpp REQUIRED)
 
-# 添加私有版本的WebSocket++
 set(PRIVATE_WEBSOCKETPP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/websocketpp)
 if(NOT EXISTS ${PRIVATE_WEBSOCKETPP_DIR})
-    message(FATAL_ERROR "私有WebSocket++目录不存在: ${PRIVATE_WEBSOCKETPP_DIR}")
+    message(FATAL_ERROR "Private WebSocket++ directory not exists: ${PRIVATE_WEBSOCKETPP_DIR}")
 endif()
 
-# 确保私有版本的头文件优先被包含
 include_directories(BEFORE ${PRIVATE_WEBSOCKETPP_DIR})
+
 add_compile_options(-Wno-error=old-style-cast)
 
-# WebSocket++依赖的库仍然需要
 find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)

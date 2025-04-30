@@ -2178,13 +2178,11 @@ void connection<config>::write_push(typename config::message_type::ptr msg)
         return;
     }
 
-    // 获取当前时间戳（毫秒）
     uint64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
     
     m_send_buffer_size += msg->get_payload().size();
-    
-    // 创建时间戳和消息的pair并推入队列
+
     m_send_queue.push(std::make_pair(now, msg));
 
     if (m_alog->static_test(log::alevel::devel)) {
@@ -2215,10 +2213,11 @@ typename config::message_type::ptr connection<config>::write_pop()
 
         uint64_t message_time = message_pair.first;
         uint64_t time_diff_ms = now - message_time;
-        m_send_buffer_size -= msg->get_payload().size();
+        uint64_t msg_size = msg->get_payload().size();
+        m_send_buffer_size -= msg_size;
         m_send_queue.pop();
 
-        if (time_diff_ms < 100) {
+        if (time_diff_ms < 100 || msg_size < 4096) {
             // if (m_alog->static_test(log::alevel::devel)) {
             if (dropped_msg_count != 0) {
                 std::stringstream s;
@@ -2228,11 +2227,10 @@ typename config::message_type::ptr connection<config>::write_pop()
                   << ", dropped bytes: " << (dropped_bytes >> 10) << " KiB";
                 m_alog->write(log::alevel::app,s.str());
             }
-            // std::cout << "send message: " << std::to_string(message_time) << std::endl;
             return msg;
         } else {
             dropped_msg_count += 1;
-            dropped_bytes += m_send_buffer_size;
+            dropped_bytes += msg_size;
             // if (m_alog->static_test(log::alevel::devel)) {
                 // std::stringstream s;
                 // s << "Dropping message due to timeout, age: " << time_diff_ms
