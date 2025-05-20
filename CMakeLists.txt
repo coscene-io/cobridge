@@ -20,10 +20,10 @@ macro(enable_strict_compiler_warnings target)
     if(MSVC)
         target_compile_options(${target} PRIVATE /WX /W4)
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror -Wfloat-equal
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror -Wfloat-equal -Wold-style-cast
                 -Wmost -Wunused-exception-parameter)
     else()
-        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror -Wfloat-equal)
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror -Wfloat-equal -Wold-style-cast)
     endif()
 endmacro()
 

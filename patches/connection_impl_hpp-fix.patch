@@ -1,5 +1,5 @@
 diff --git vendor/websocketpp/0.8.2/websocketpp/impl/connection_impl.hpp vendor/websocketpp/0.8.2/websocketpp/impl/connection_impl.hpp
-index bf88c95..7c5ba64 100644
+index bf88c95..54c7697 100644
 --- vendor/websocketpp/0.8.2/websocketpp/impl/connection_impl.hpp
 +++ vendor/websocketpp/0.8.2/websocketpp/impl/connection_impl.hpp
 @@ -80,28 +80,28 @@ session::state::value connection<config>::get_state() const {
@@ -103,7 +103,7 @@ index bf88c95..7c5ba64 100644
          if (m_current_msgs.empty()) {
              // there was nothing to send
              return;
-@@ -1835,50 +1842,9 @@ void connection<config>::write_frame() {
+@@ -1835,50 +1842,6 @@ void connection<config>::write_frame() {
          m_send_buffer.push_back(transport::buffer(header.c_str(),header.size()));
          m_send_buffer.push_back(transport::buffer(payload.c_str(),payload.size()));   
      }
@@ -151,13 +151,10 @@ index bf88c95..7c5ba64 100644
 -    }
 -    }
 -
-+    std::stringstream s;
-+    s << "write_frame, buffer size: " << total_size << ", message count: " << m_current_msgs.size();
-+    m_alog->write(log::alevel::devel, s.str());
      transport_con_type::async_write(
          m_send_buffer,
          m_write_frame_handler
-@@ -2143,7 +2109,7 @@ lib::error_code connection<config>::send_close_frame(close::status::value code,
+@@ -2143,7 +2106,7 @@ lib::error_code connection<config>::send_close_frame(close::status::value code,
      bool needs_writing = false;
      {
          scoped_lock_type lock(m_write_lock);
@@ -166,7 +163,7 @@ index bf88c95..7c5ba64 100644
          needs_writing = !m_write_flag && !m_send_queue.empty();
      }
  
-@@ -2207,19 +2173,24 @@ connection<config>::get_processor(int version) const {
+@@ -2207,19 +2170,24 @@ connection<config>::get_processor(int version) const {
  }
  
  template <typename config>
@@ -194,7 +191,7 @@ index bf88c95..7c5ba64 100644
          m_alog->write(log::alevel::devel,s.str());
      }
  }
-@@ -2233,17 +2204,38 @@ typename config::message_type::ptr connection<config>::write_pop()
+@@ -2233,16 +2201,24 @@ typename config::message_type::ptr connection<config>::write_pop()
          return msg;
      }
  
@@ -204,7 +201,6 @@ index bf88c95..7c5ba64 100644
  
 -    m_send_buffer_size -= msg->get_payload().size();
 -    m_send_queue.pop();
-+    uint32_t dropped_msg_count = 0, dropped_bytes = 0;
 +    while (!m_send_queue.empty()) {
 +        auto message_tuple = m_send_queue.front();
  
@@ -222,22 +218,9 @@ index bf88c95..7c5ba64 100644
 +        m_send_buffer_size -= msg_size;
 +        m_send_queue.pop();
 +
-+        if (time_diff_ms < 500 || is_must_send) {
-+            if (dropped_msg_count != 0) {
-+                std::stringstream s;
-+                s << "write_pop: message queue size: " << m_send_queue.size()
-+                  << ", buffer size: " << m_send_buffer_size
-+                  << ". during this pop, dropped " << dropped_msg_count << " messages"
-+                  << ", dropped bytes: " << (dropped_bytes >> 10) << " KiB";
-+                m_alog->write(log::alevel::app,s.str());
-+            }
++        if (time_diff_ms < 100 || is_must_send) {
 +            return msg;
-+        } else {
-+            dropped_msg_count += 1;
-+            dropped_bytes += msg_size;
 +        }
      }
-+
      return msg;
  }
- 
