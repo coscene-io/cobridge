@@ -9,11 +9,11 @@ export ROS_WS
 ROS_BIN_PATH := /opt/ros/$(ROS_DISTRO)/bin
 
 lint:
-	/ros_entrypoint.sh $(ROS_BIN_PATH)/ament_cpplint --filter=-build/include_order .
-	/ros_entrypoint.sh $(ROS_BIN_PATH)/ament_uncrustify .
-	/ros_entrypoint.sh $(ROS_BIN_PATH)/ament_copyright .
-	/ros_entrypoint.sh $(ROS_BIN_PATH)/ament_cppcheck .
-	/ros_entrypoint.sh $(ROS_BIN_PATH)/ament_xmllint .
+	/ros_entrypoint.sh $(ROS_BIN_PATH)/ament_cpplint --filter=-build/include_order cobridge_base ros1_bridge ros2_bridge
+	/ros_entrypoint.sh $(ROS_BIN_PATH)/ament_uncrustify cobridge_base ros1_bridge ros2_bridge
+	/ros_entrypoint.sh $(ROS_BIN_PATH)/ament_copyright cobridge_base ros1_bridge ros2_bridge
+	/ros_entrypoint.sh $(ROS_BIN_PATH)/ament_cppcheck cobridge_base ros1_bridge ros2_bridge
+	/ros_entrypoint.sh $(ROS_BIN_PATH)/ament_xmllint cobridge_base ros1_bridge ros2_bridge
 	/ros_entrypoint.sh $(ROS_BIN_PATH)/ament_lint_cmake .
 
 test:
