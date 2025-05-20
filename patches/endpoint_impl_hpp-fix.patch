@@ -1,0 +1,22 @@
+diff --git vendor/websocketpp/0.8.2/websocketpp/impl/endpoint_impl.hpp vendor/websocketpp/0.8.2/websocketpp/impl/endpoint_impl.hpp
+index 2aac1d9..7a6104a 100644
+--- vendor/websocketpp/0.8.2/websocketpp/impl/endpoint_impl.hpp
++++ vendor/websocketpp/0.8.2/websocketpp/impl/endpoint_impl.hpp
+@@ -183,7 +183,7 @@ void endpoint<connection,config>::send(connection_hdl hdl, void const * payload,
+ {
+     connection_ptr con = get_con_from_hdl(hdl,ec);
+     if (ec) {return;}
+-    ec = con->send(payload,len,op);
++    ec = con->send(payload, len, true, op);
+ }
+ 
+ template <typename connection, typename config>
+@@ -201,7 +201,7 @@ void endpoint<connection,config>::send(connection_hdl hdl, message_ptr msg,
+ {
+     connection_ptr con = get_con_from_hdl(hdl,ec);
+     if (ec) {return;}
+-    ec = con->send(msg);
++    ec = con->send(msg,true);
+ }
+ 
+ template <typename connection, typename config>

@@ -1,0 +1,7 @@
+md5_hpp-fix.patch
+connection_hpp-fix.patch
+enabled_hpp-fix.patch
+connection_impl_hpp-fix.patch
+endpoint_impl_hpp-fix.patch
+sha1_hpp-fix.patch
+tls_hpp-fix.patch

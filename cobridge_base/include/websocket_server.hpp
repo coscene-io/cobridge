@@ -217,11 +217,12 @@ private:
 
   void handle_binary_message(ConnHandle hdl, MessagePtr msg);
 
-  void send_json(ConnHandle hdl, Json && payload);
+  void send_json(ConnHandle hdl, Json && payload, bool must_send = true);
 
-  void send_raw_json(ConnHandle hdl, const std::string & payload);
+  void send_raw_json(ConnHandle hdl, const std::string & payload, bool must_send = true);
 
-  void send_binary(ConnHandle hdl, const uint8_t * payload, size_t payload_size);
+  void send_binary(
+    ConnHandle hdl, const uint8_t * payload, size_t payload_size, bool must_send = true);
 
   void send_status_and_log_msg(
     ConnHandle client_handle, const StatusLevel level,
@@ -305,11 +306,8 @@ private:
   ServerOptions _options;
   ServerType _server;
   std::unique_ptr<std::thread> _server_thread;
-  std::unique_ptr<std::thread> _message_sender;
   std::unique_ptr<CallbackQueue> _handler_callback_queue;
-  std::queue<Message> _message_queue;
 
-  uint32_t _message_loop_index = 0;
   uint32_t _next_channel_id = 0;
   std::map<ConnHandle, ClientInfo, std::owner_less<>> _clients;
   std::unordered_map<ChannelId, Channel> _channels;
@@ -356,10 +354,10 @@ inline Server<ServerConfiguration>::Server(
   _server.set_access_channels(APP);
   _server.set_tcp_pre_init_handler(std::bind(&Server::socket_init, this, std::placeholders::_1));
   this->setup_tls_handler();
-  _server
-  .set_validate_handler(std::bind(&Server::validate_connection, this, std::placeholders::_1));
-  _server
-  .set_open_handler(std::bind(&Server::handle_connection_opened, this, std::placeholders::_1));
+  _server.set_validate_handler(
+    std::bind(&Server::validate_connection, this, std::placeholders::_1));
+  _server.set_open_handler(
+    std::bind(&Server::handle_connection_opened, this, std::placeholders::_1));
   _server.set_close_handler(
     [this](ConnHandle hdl)
     {
@@ -698,23 +696,6 @@ inline void Server<ServerConfiguration>::send_message(
     return;
   }
 
-  const auto buffer_size = con->get_buffered_amount();
-  if (buffer_size > KIB) {
-    int32_t skip_frame_interval = 1;
-    if (buffer_size < 30 * KIB) {
-      skip_frame_interval = 5;  // 1 frame in each 5 messages
-    } else if (buffer_size < 50 * KIB) {
-      skip_frame_interval = 3;  // 1 frame in each 3 messages
-    } else if (buffer_size < 100 * KIB) {
-      skip_frame_interval = 2;  // 1 frame in each 2 messages
-    }
-    _message_loop_index++;
-    if (_message_loop_index % skip_frame_interval == 0) {
-      _message_loop_index = 0;
-      return;
-    }
-  }
-
   SubscriptionId sub_id;
   {
     std::shared_lock<std::shared_mutex> lock(_clients_mutex);
@@ -742,7 +723,7 @@ inline void Server<ServerConfiguration>::send_message(
 
   message->set_payload(msg_header.data(), msg_header.size());
   message->append_payload(payload, payload_size);
-  con->send(message);
+  con->send(message, false);
 }
 
 template<typename ServerConfiguration>
@@ -902,7 +883,7 @@ inline void Server<ServerConfiguration>::send_fetch_asset_response(
   message->append_payload(response.error_message.data(), err_msg_size);
 
   message->append_payload(response.data.data(), data_size);
-  con->send(message);
+  con->send(message, true);
 }
 
 template<typename ServerConfiguration>
@@ -984,7 +965,7 @@ void Server<ServerConfiguration>::handle_login(const Json & payload, ConnHandle 
             {"userId", user_id},
             {"username", user_name}
           })
-          .dump());
+          .dump(), true);
         it->second.login = false;
 
         _server.get_alog().write(
@@ -1005,7 +986,7 @@ void Server<ServerConfiguration>::handle_login(const Json & payload, ConnHandle 
       {"metadata", _options.metadata},
       {"sessionId", _options.session_id},
     })
-    .dump());
+    .dump(), true);
 
   std::vector<Channel> channels;
   {
@@ -1238,9 +1219,7 @@ inline bool Server<ServerConfiguration>::has_capability(const std::string & capa
 }
 
 template<typename ServerConfiguration>
-inline bool Server<ServerConfiguration>::has_handler(
-  uint32_t
-  op) const
+inline bool Server<ServerConfiguration>::has_handler(uint32_t op) const
 {
   switch (op) {
     case LOGIN:
@@ -1454,8 +1433,7 @@ void Server<ServerConfiguration>::handle_set_parameters(
 
 template<typename ServerConfiguration>
 void Server<ServerConfiguration>::handle_subscribe_parameter_updates(
-  const Json & payload,
-  ConnHandle hdl)
+  const Json & payload, ConnHandle hdl)
 {
   const auto param_names = payload.at("parameterNames").get<std::unordered_set<std::string>>();
   std::vector<std::string> params_to_subscribe;
@@ -1483,8 +1461,7 @@ void Server<ServerConfiguration>::handle_subscribe_parameter_updates(
 
 template<typename ServerConfiguration>
 void Server<ServerConfiguration>::handle_unsubscribe_parameter_updates(
-  const Json & payload,
-  ConnHandle hdl)
+  const Json & payload, ConnHandle hdl)
 {
   const auto param_names = payload.at("parameterNames").get<std::unordered_set<std::string>>();
   {
@@ -1521,18 +1498,15 @@ void Server<ServerConfiguration>::handle_subscribe_connection_graph(ConnHandle h
     std::shared_lock<std::shared_mutex> lock(_connection_graph_mutex);
     for (const auto & [name, ids] : _connection_graph.published_topics) {
       published_topics_json.push_back(
-        Json{{"name", name},
-          {"publisherIds", ids}});
+        Json{{"name", name}, {"publisherIds", ids}});
     }
-    for (const auto & [name, ids] : _connection_graph.subscribed_topics) {
+    for (const auto &[name, ids] : _connection_graph.subscribed_topics) {
       subscribed_topics_json.push_back(
-        Json{{"name", name},
-          {"subscriberIds", ids}});
+        Json{{"name", name}, {"subscriberIds", ids}});
     }
-    for (const auto & [name, ids] : _connection_graph.advertised_services) {
+    for (const auto &[name, ids] : _connection_graph.advertised_services) {
       advertised_services_json.push_back(
-        Json{{"name", name},
-          {"providerIds", ids}});
+        Json{{"name", name}, {"providerIds", ids}});
     }
   }
 
@@ -1779,7 +1753,6 @@ inline void Server<ServerConfiguration>::handle_binary_message(ConnHandle hdl, M
   }
 }
 
-
 template<typename ServerConfiguration>
 inline void Server<ServerConfiguration>::send_status_and_log_msg(
   ConnHandle client_handle,
@@ -1801,20 +1774,24 @@ inline void Server<ServerConfiguration>::send_status_and_log_msg(
 }
 
 template<typename ServerConfiguration>
-inline void Server<ServerConfiguration>::send_json(ConnHandle hdl, Json && payload)
+inline void Server<ServerConfiguration>::send_json(ConnHandle hdl, Json && payload, bool must_send)
 {
   try {
-    _server.send(hdl, std::move(payload).dump(), OpCode::TEXT);
+    const auto con = _server.get_con_from_hdl(hdl);
+    con->send(std::move(payload).dump(), must_send, OpCode::text);
   } catch (std::exception const & e) {
     _server.get_elog().write(RECOVERABLE, e.what());
   }
 }
 
 template<typename ServerConfiguration>
-inline void Server<ServerConfiguration>::send_raw_json(ConnHandle hdl, const std::string & payload)
+inline void Server<ServerConfiguration>::send_raw_json(
+  ConnHandle hdl, const std::string & payload,
+  bool must_send)
 {
   try {
-    _server.send(hdl, payload, OpCode::TEXT);
+    const auto con = _server.get_con_from_hdl(hdl);
+    con->send(payload, must_send, OpCode::TEXT);
   } catch (std::exception const & e) {
     _server.get_elog().write(RECOVERABLE, e.what());
   }
@@ -1823,10 +1800,11 @@ inline void Server<ServerConfiguration>::send_raw_json(ConnHandle hdl, const std
 template<typename ServerConfiguration>
 inline void Server<ServerConfiguration>::send_binary(
   ConnHandle hdl, const uint8_t * payload,
-  size_t payload_size)
+  size_t payload_size, bool must_send)
 {
   try {
-    _server.send(hdl, payload, payload_size, OpCode::BINARY);
+    const auto con = _server.get_con_from_hdl(hdl);
+    con->send(payload, payload_size, must_send, OpCode::BINARY);
   } catch (std::exception const & e) {
     _server.get_elog().write(RECOVERABLE, e.what());
   }

@@ -1,0 +1,17 @@
+diff --git vendor/websocketpp/0.8.2/websocketpp/transport/asio/security/tls.hpp vendor/websocketpp/0.8.2/websocketpp/transport/asio/security/tls.hpp
+index 04ac379..4b00b9d 100644
+--- vendor/websocketpp/0.8.2/websocketpp/transport/asio/security/tls.hpp
++++ vendor/websocketpp/0.8.2/websocketpp/transport/asio/security/tls.hpp
+@@ -240,8 +240,12 @@ protected:
+             // For clients on systems with a suitable OpenSSL version, set the
+             // TLS SNI hostname header so connecting to TLS servers using SNI
+             // will work.
++
++#pragma GCC diagnostic push
++#pragma GCC diagnostic ignored "-Wold-style-cast"
+             long res = SSL_set_tlsext_host_name(
+                 get_socket().native_handle(), m_uri->get_host().c_str());
++#pragma GCC diagnostic pop
+             if (!(1 == res)) {
+                 callback(socket::make_error_code(socket::error::tls_failed_sni_hostname));
+             }

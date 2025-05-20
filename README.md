@@ -10,13 +10,13 @@ After cobridge establishes a link with the cloud, it can subscribe to ros topic 
 * Import public key
   
   ``` bash
-  curl -fsSL https://download.coscene.cn/coscene-apt-source/coscene.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/coscene.gpg
+  curl -fsSL https://apt.coscene.cn/coscene.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/coscene.gpg
   ```
   
 * Add source
 
   ``` bash
-  echo "deb [signed-by=/etc/apt/trusted.gpg.d/coscene.gpg] https://download.coscene.cn/coscene-apt-source $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/coscene.list
+  echo "deb [signed-by=/etc/apt/trusted.gpg.d/coscene.gpg] https://apt.coscene.cn $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/coscene.list
   ```
   
 * Update and install
@@ -48,7 +48,6 @@ After cobridge establishes a link with the cloud, it can subscribe to ros topic 
   # for ROS 1 distribution
   sudo apt install -y \
     libasio-dev \
-    libwebsocketpp-dev \
     ros-${ROS_DISTRO}-cv-bridge \
     ros-${ROS_DISTRO}-resource-retriever \
     ros-${ROS_DISTRO}-ros-babel-fish
@@ -56,7 +55,6 @@ After cobridge establishes a link with the cloud, it can subscribe to ros topic 
   # for ROS 2 distribution
   sudo apt install -y \
       libasio-dev \
-      libwebsocketpp-dev \
       ros-${ROS_DISTRO}-cv-bridge \
       ros-${ROS_DISTRO}-resource-retriever
   ```

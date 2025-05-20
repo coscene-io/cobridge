@@ -1,0 +1,70 @@
+diff --git vendor/websocketpp/0.8.2/websocketpp/common/md5.hpp vendor/websocketpp/0.8.2/websocketpp/common/md5.hpp
+index 279725f..34c737c 100644
+--- vendor/websocketpp/0.8.2/websocketpp/common/md5.hpp
++++ vendor/websocketpp/0.8.2/websocketpp/common/md5.hpp
+@@ -101,7 +101,7 @@ inline void md5_finish(md5_state_t *pms, md5_byte_t digest[16]);
+ #  define ZSW_MD5_BYTE_ORDER 0
+ #endif
+ 
+-#define ZSW_MD5_T_MASK ((md5_word_t)~0)
++#define ZSW_MD5_T_MASK (static_cast<md5_word_t>(~0))
+ #define ZSW_MD5_T1 /* 0xd76aa478 */ (ZSW_MD5_T_MASK ^ 0x28955b87)
+ #define ZSW_MD5_T2 /* 0xe8c7b756 */ (ZSW_MD5_T_MASK ^ 0x173848a9)
+ #define ZSW_MD5_T3    0x242070db
+@@ -190,7 +190,7 @@ static void md5_process(md5_state_t *pms, md5_byte_t const * data /*[64]*/) {
+      */
+     static int const w = 1;
+ 
+-    if (*((md5_byte_t const *)&w)) /* dynamic little-endian */
++    if (*reinterpret_cast<md5_byte_t const *>(&w)) /* dynamic little-endian */
+ #endif
+ #if ZSW_MD5_BYTE_ORDER <= 0     /* little-endian */
+     {
+@@ -198,9 +198,9 @@ static void md5_process(md5_state_t *pms, md5_byte_t const * data /*[64]*/) {
+          * On little-endian machines, we can process properly aligned
+          * data without copying it.
+          */
+-        if (!((data - (md5_byte_t const *)0) & 3)) {
++        if (!((data - static_cast<md5_byte_t const *>(0)) & 3)) {
+         /* data are properly aligned */
+-        X = (md5_word_t const *)data;
++        X = reinterpret_cast<md5_word_t const *>(data);
+         } else {
+         /* not aligned */
+         std::memcpy(xbuf, data, 64);
+@@ -358,7 +358,7 @@ void md5_append(md5_state_t *pms, md5_byte_t const * data, size_t nbytes) {
+     md5_byte_t const * p = data;
+     size_t left = nbytes;
+     int offset = (pms->count[0] >> 3) & 63;
+-    md5_word_t nbits = (md5_word_t)(nbytes << 3);
++    auto nbits = static_cast<md5_word_t>(nbytes << 3);
+ 
+     if (nbytes <= 0)
+     return;
+@@ -402,13 +402,13 @@ void md5_finish(md5_state_t *pms, md5_byte_t digest[16]) {
+ 
+     /* Save the length before padding. */
+     for (i = 0; i < 8; ++i)
+-    data[i] = (md5_byte_t)(pms->count[i >> 2] >> ((i & 3) << 3));
++    data[i] = static_cast<md5_byte_t>(pms->count[i >> 2] >> ((i & 3) << 3));
+     /* Pad to 56 bytes mod 64. */
+     md5_append(pms, pad, ((55 - (pms->count[0] >> 3)) & 63) + 1);
+     /* Append the length. */
+     md5_append(pms, data, 8);
+     for (i = 0; i < 16; ++i)
+-    digest[i] = (md5_byte_t)(pms->abcd[i >> 2] >> ((i & 3) << 3));
++    digest[i] = static_cast<md5_byte_t>(pms->abcd[i >> 2] >> ((i & 3) << 3));
+ }
+ 
+ // some convenience c++ functions
+@@ -418,8 +418,8 @@ inline std::string md5_hash_string(std::string const & s) {
+     md5_state_t state;
+ 
+     md5_init(&state);
+-    md5_append(&state, (md5_byte_t const *)s.c_str(), s.size());
+-    md5_finish(&state, (md5_byte_t *)digest);
++    md5_append(&state, reinterpret_cast<md5_byte_t const *>(s.c_str()), s.size());
++    md5_finish(&state, reinterpret_cast<md5_byte_t *>(digest));
+ 
+     std::string ret;
+     ret.resize(16);

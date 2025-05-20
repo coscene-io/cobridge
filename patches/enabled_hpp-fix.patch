@@ -1,0 +1,28 @@
+diff --git vendor/websocketpp/0.8.2/websocketpp/extensions/permessage_deflate/enabled.hpp vendor/websocketpp/0.8.2/websocketpp/extensions/permessage_deflate/enabled.hpp
+index d05403a..1890dde 100644
+--- vendor/websocketpp/0.8.2/websocketpp/extensions/permessage_deflate/enabled.hpp
++++ vendor/websocketpp/0.8.2/websocketpp/extensions/permessage_deflate/enabled.hpp
+@@ -554,12 +554,12 @@ public:
+ 
+         if (in.empty()) {
+             uint8_t buf[6] = {0x02, 0x00, 0x00, 0x00, 0xff, 0xff};
+-            out.append((char *)(buf),6);
++            out.append(reinterpret_cast<char *>(buf),6);
+             return lib::error_code();
+         }
+ 
+         m_dstate.avail_in = in.size();
+-        m_dstate.next_in = (unsigned char *)(const_cast<char *>(in.data()));
++        m_dstate.next_in = reinterpret_cast<unsigned char *>(const_cast<char *>(in.data()));
+ 
+         do {
+             // Output to local buffer
+@@ -570,7 +570,7 @@ public:
+ 
+             output = m_compress_buffer_size - m_dstate.avail_out;
+ 
+-            out.append((char *)(m_compress_buffer.get()),output);
++            out.append(reinterpret_cast<char *>(m_compress_buffer.get()),output);
+         } while (m_dstate.avail_out == 0);
+ 
+         return lib::error_code();

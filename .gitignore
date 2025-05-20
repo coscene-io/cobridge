@@ -112,3 +112,6 @@ $RECYCLE.BIN/
 *.ccache
 # 忽略任何其他特定于环境的文件或目录
 *.env
+.clang-format
+patch_src
+patch_dst
