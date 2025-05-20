@@ -1,0 +1,59 @@
+diff --git vendor/websocketpp/0.8.2/websocketpp/connection.hpp vendor/websocketpp/0.8.2/websocketpp/connection.hpp
+index d019fce..9353e25 100644
+--- vendor/websocketpp/0.8.2/websocketpp/connection.hpp
++++ vendor/websocketpp/0.8.2/websocketpp/connection.hpp
+@@ -651,9 +651,10 @@ public:
+      *
+      * @param op The opcode to generated the message with. Default is
+      * frame::opcode::text
++     * @param must_send message can not be skipped
+      */
+-    lib::error_code send(std::string const & payload, frame::opcode::value op =
+-        frame::opcode::text);
++    lib::error_code send(std::string const & payload, bool must_send,
++        frame::opcode::value op = frame::opcode::text);
+ 
+     /// Send a message (raw array overload)
+     /**
+@@ -668,9 +669,10 @@ public:
+      *
+      * @param op The opcode to generated the message with. Default is
+      * frame::opcode::binary
++     * @param must_send message can not be skipped
+      */
+-    lib::error_code send(void const * payload, size_t len, frame::opcode::value
+-        op = frame::opcode::binary);
++    lib::error_code send(void const * payload, size_t len, bool must_send,
++        frame::opcode::value op = frame::opcode::binary);
+ 
+     /// Add a message to the outgoing send queue
+     /**
+@@ -685,7 +687,7 @@ public:
+      *
+      * @param msg A message_ptr to the message to send.
+      */
+-    lib::error_code send(message_ptr msg);
++    lib::error_code send(message_ptr msg, bool must_send);
+ 
+     /// Asyncronously invoke handler::on_inturrupt
+     /**
+@@ -1439,8 +1441,9 @@ private:
+      * @todo unit tests
+      *
+      * @param msg The message to push
++     * @param must_send message can not be skipped
+      */
+-    void write_push(message_ptr msg);
++    void write_push(message_ptr msg, bool must_send);
+ 
+     /// Pop a message from the write queue
+     /**
+@@ -1565,7 +1568,7 @@ private:
+     /**
+      * Lock: m_write_lock
+      */
+-    std::queue<message_ptr> m_send_queue;
++    std::queue<std::tuple<uint64_t, message_ptr, bool>> m_send_queue;
+ 
+     /// Size in bytes of the outstanding payloads in the write queue
+     /**

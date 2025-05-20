@@ -9,13 +9,13 @@ cobridge 会以 ros node 的方式运行在机器人端，并通过 websocket �
 * 导入公钥
 
   ``` bash
-  wget https://coscene-download.oss-cn-hangzhou.aliyuncs.com/cobridge/coscene.gpg && sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/coscene.gpg coscene.gpg
+  curl -fsSL https://apt.coscene.cn/coscene.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/coscene.gpg
   ```
 
 * 添加源
 
   ``` bash
-  echo "deb [signed-by=/etc/apt/trusted.gpg.d/coscene.gpg] https://coscene-download.oss-cn-hangzhou.aliyuncs.com/cobridge $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/cobridge.list
+  echo "deb [signed-by=/etc/apt/trusted.gpg.d/coscene.gpg] https://apt.coscene.cn $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/coscene.list
   ```
 
 * 更新apt并安装
@@ -47,14 +47,12 @@ cobridge 会以 ros node 的方式运行在机器人端，并通过 websocket �
   # for ROS 1 distribution
   sudo apt install -y \
     libasio-dev \
-    libwebsocketpp-dev \
     ros-${ROS_DISTRO}-resource-retriever \
     ros-${ROS_DISTRO}-ros-babel-fish
   
   # for ROS 2 distribution
   sudo apt install -y \
       libasio-dev \
-      libwebsocketpp-dev \
       ros-${ROS_DISTRO}-resource-retriever
   ```
 

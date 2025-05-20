@@ -86,7 +86,10 @@ jobs:
             # 对于其他事件，使用 github.sha
             git checkout ${{ github.sha }}
           fi
-          
+
+      - name: Apply patches
+        run: |
+          ./patch_apply.sh  
 
       - name: Update package version
         if: github.event_name == 'release'
@@ -94,7 +97,7 @@ jobs:
           VERSION=$(echo $GITHUB_REF | sed 's#refs/tags/v##')
           echo "Version: $VERSION"
           echo "GITHUB_REF: $GITHUB_REF"
-          sed -i "s#<version>.*</version>#<version>$VERSION</version>#" ./src/cobridge/package.xml
+          sed -i "s#<version>.*</version>#<version>$VERSION</version>#" ./package.xml
 
       - name: Generate debian/ directory and build .deb package
         id: build_deb
@@ -115,12 +118,16 @@ jobs:
           echo "matrix_result_${matrix_key}=${{ matrix.arch }},${{ matrix.ros_distribution }},${{ matrix.distro }},$download_url" >> $GITHUB_OUTPUT
           echo "download url: $download_url"
 
-      - name: Update APT Source
+      - name: Update APT Source ( OSS )
         uses: coscene-io/update-apt-source@main
         with:
           ubuntu_distro: ${{ matrix.distro }}
           deb_paths: ${{ github.workspace }}/artifacts/${{ env.DEB_FILENAME }}
           architectures: ${{ matrix.arch }}
+          storage_type: oss
+          endpoint: https://oss-cn-hangzhou.aliyuncs.com
+          region: cn-hangzhou
+          bucket_name: coscene-apt
           access_key_id: ${{ secrets.OSS_ARTIFACTS_ACCESS_KEY }}
           access_key_secret: ${{ secrets.OSS_ARTIFACTS_ACCESS_SECRET }}
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
