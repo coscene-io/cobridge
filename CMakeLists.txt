@@ -20,16 +20,19 @@ macro(enable_strict_compiler_warnings target)
     if(MSVC)
         target_compile_options(${target} PRIVATE /WX /W4)
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror -Wold-style-cast -Wfloat-equal
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror -Wfloat-equal
                 -Wmost -Wunused-exception-parameter)
     else()
-        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror -Wold-style-cast -Wfloat-equal)
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror -Wfloat-equal)
     endif()
 endmacro()
 
+set(PRIVATE_WEBSOCKETPP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/websocketpp)
+set(PRIVATE_NLOHMANN_JSON_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/nlohmann_json)
+include_directories(BEFORE ${PRIVATE_WEBSOCKETPP_DIR} ${PRIVATE_NLOHMANN_JSON_DIR})
+
 find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)
-find_package(websocketpp REQUIRED)
 find_package(ZLIB REQUIRED)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -165,7 +168,7 @@ elseif("$ENV{ROS_VERSION}" STREQUAL "2")
                 $<INSTALL_INTERFACE:include>
         )
 
-        ament_target_dependencies(cobridge_component rclcpp rclcpp_components resource_retriever rosgraph_msgs)
+        ament_target_dependencies(cobridge_component rclcpp rclcpp_components resource_retriever rosgraph_msgs ament_index_cpp)
         target_link_libraries(cobridge_component cobridge_base)
         rclcpp_components_register_nodes(cobridge_component "cobridge::CoBridge")
         enable_strict_compiler_warnings(cobridge_component)
