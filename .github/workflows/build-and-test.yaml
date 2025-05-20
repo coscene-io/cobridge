@@ -24,6 +24,11 @@ jobs:
         with:
           path: src/cobridge
 
+      - name: Apply patches
+        run: |
+          cd src/cobridge
+          ./patch_apply.sh
+
       - name: Build
         run: |
           make -f ./src/cobridge/Makefile build

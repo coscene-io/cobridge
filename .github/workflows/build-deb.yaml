@@ -86,7 +86,10 @@ jobs:
             # 对于其他事件，使用 github.sha
             git checkout ${{ github.sha }}
           fi
-          
+
+      - name: Apply patches
+        run: |
+          ./patch_apply.sh  
 
       - name: Update package version
         if: github.event_name == 'release'
@@ -94,7 +97,7 @@ jobs:
           VERSION=$(echo $GITHUB_REF | sed 's#refs/tags/v##')
           echo "Version: $VERSION"
           echo "GITHUB_REF: $GITHUB_REF"
-          sed -i "s#<version>.*</version>#<version>$VERSION</version>#" ./src/cobridge/package.xml
+          sed -i "s#<version>.*</version>#<version>$VERSION</version>#" ./package.xml
 
       - name: Generate debian/ directory and build .deb package
         id: build_deb
