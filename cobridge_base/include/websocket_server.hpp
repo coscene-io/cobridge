@@ -216,12 +216,12 @@ private:
 
   void handle_binary_message(ConnHandle hdl, MessagePtr msg);
 
-  void send_json(ConnHandle hdl, Json && payload, bool must_send = true);
+  void send_json(ConnHandle hdl, Json && payload, bool reliable = true);
 
-  void send_raw_json(ConnHandle hdl, const std::string & payload, bool must_send = true);
+  void send_raw_json(ConnHandle hdl, const std::string & payload, bool reliable = true);
 
   void send_binary(
-    ConnHandle hdl, const uint8_t * payload, size_t payload_size, bool must_send = true);
+    ConnHandle hdl, const uint8_t * payload, size_t payload_size, bool reliable = true);
 
   void send_status_and_log_msg(
     ConnHandle client_handle, const StatusLevel level,
@@ -1744,11 +1744,11 @@ inline void Server<ServerConfiguration>::send_status_and_log_msg(
 }
 
 template<typename ServerConfiguration>
-inline void Server<ServerConfiguration>::send_json(ConnHandle hdl, Json && payload, bool must_send)
+inline void Server<ServerConfiguration>::send_json(ConnHandle hdl, Json && payload, bool reliable)
 {
   try {
     const auto con = _server.get_con_from_hdl(hdl);
-    con->send(std::move(payload).dump(), must_send, OpCode::text);
+    con->send(std::move(payload).dump(), reliable, OpCode::text);
   } catch (std::exception const & e) {
     _server.get_elog().write(RECOVERABLE, e.what());
   }
@@ -1757,11 +1757,11 @@ inline void Server<ServerConfiguration>::send_json(ConnHandle hdl, Json && paylo
 template<typename ServerConfiguration>
 inline void Server<ServerConfiguration>::send_raw_json(
   ConnHandle hdl, const std::string & payload,
-  bool must_send)
+  bool reliable)
 {
   try {
     const auto con = _server.get_con_from_hdl(hdl);
-    con->send(payload, must_send, OpCode::TEXT);
+    con->send(payload, reliable, OpCode::TEXT);
   } catch (std::exception const & e) {
     _server.get_elog().write(RECOVERABLE, e.what());
   }
@@ -1770,11 +1770,11 @@ inline void Server<ServerConfiguration>::send_raw_json(
 template<typename ServerConfiguration>
 inline void Server<ServerConfiguration>::send_binary(
   ConnHandle hdl, const uint8_t * payload,
-  size_t payload_size, bool must_send)
+  size_t payload_size, bool reliable)
 {
   try {
     const auto con = _server.get_con_from_hdl(hdl);
-    con->send(payload, payload_size, must_send, OpCode::BINARY);
+    con->send(payload, payload_size, reliable, OpCode::BINARY);
   } catch (std::exception const & e) {
     _server.get_elog().write(RECOVERABLE, e.what());
   }

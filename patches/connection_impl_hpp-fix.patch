@@ -7,7 +7,7 @@ index bf88c95..54c7697 100644
  
  template <typename config>
 -lib::error_code connection<config>::send(std::string const & payload,
-+lib::error_code connection<config>::send(std::string const & payload, bool must_send,
++lib::error_code connection<config>::send(std::string const & payload, bool reliable,
      frame::opcode::value op)
  {
      message_ptr msg = m_msg_manager->get_message(op,payload.size());
@@ -15,24 +15,24 @@ index bf88c95..54c7697 100644
      msg->set_compressed(true);
  
 -    return send(msg);
-+    return send(msg, must_send);
++    return send(msg, reliable);
  }
  
  template <typename config>
 -lib::error_code connection<config>::send(void const * payload, size_t len,
-+lib::error_code connection<config>::send(void const * payload, size_t len, bool must_send,
++lib::error_code connection<config>::send(void const * payload, size_t len, bool reliable,
      frame::opcode::value op)
  {
      message_ptr msg = m_msg_manager->get_message(op,len);
      msg->append_payload(payload,len);
  
 -    return send(msg);
-+    return send(msg, must_send);
++    return send(msg, reliable);
  }
  
  template <typename config>
 -lib::error_code connection<config>::send(typename config::message_type::ptr msg)
-+lib::error_code connection<config>::send(typename config::message_type::ptr msg, bool must_send)
++lib::error_code connection<config>::send(typename config::message_type::ptr msg, bool reliable)
  {
      if (m_alog->static_test(log::alevel::devel)) {
          m_alog->write(log::alevel::devel,"connection send");
@@ -41,7 +41,7 @@ index bf88c95..54c7697 100644
  
          scoped_lock_type lock(m_write_lock);
 -        write_push(outgoing_msg);
-+        write_push(outgoing_msg, must_send);
++        write_push(outgoing_msg, reliable);
          needs_writing = !m_write_flag && !m_send_queue.empty();
      } else {
          outgoing_msg = m_msg_manager->get_message();
@@ -50,7 +50,7 @@ index bf88c95..54c7697 100644
          }
  
 -        write_push(outgoing_msg);
-+        write_push(outgoing_msg, must_send);
++        write_push(outgoing_msg, reliable);
          needs_writing = !m_write_flag && !m_send_queue.empty();
      }
  
@@ -168,7 +168,7 @@ index bf88c95..54c7697 100644
  
  template <typename config>
 -void connection<config>::write_push(typename config::message_type::ptr msg)
-+void connection<config>::write_push(typename config::message_type::ptr msg, bool must_send)
++void connection<config>::write_push(typename config::message_type::ptr msg, bool reliable)
  {
      if (!msg) {
          return;
@@ -180,7 +180,7 @@ index bf88c95..54c7697 100644
      m_send_buffer_size += msg->get_payload().size();
 -    m_send_queue.push(msg);
 +
-+    m_send_queue.push(std::make_tuple(now, msg, must_send));
++    m_send_queue.push(std::make_tuple(now, msg, reliable));
  
      if (m_alog->static_test(log::alevel::devel)) {
          std::stringstream s;
@@ -211,14 +211,14 @@ index bf88c95..54c7697 100644
 -        m_alog->write(log::alevel::devel,s.str());
 +        uint64_t message_time = std::get<0>(message_tuple);
 +        msg = std::get<1>(message_tuple);
-+        bool is_must_send = std::get<2>(message_tuple);
++        bool is_reliable = std::get<2>(message_tuple);
 +
 +        uint64_t time_diff_ms = now - message_time;
 +        uint64_t msg_size = msg->get_payload().size();
 +        m_send_buffer_size -= msg_size;
 +        m_send_queue.pop();
 +
-+        if (time_diff_ms < 100 || is_must_send) {
++        if (time_diff_ms < 100 || is_reliable) {
 +            return msg;
 +        }
      }
