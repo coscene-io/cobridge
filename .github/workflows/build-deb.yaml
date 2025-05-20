@@ -1,6 +1,5 @@
 name: build deb
 on:
-  pull_request:
   workflow_dispatch:
   release:
 
