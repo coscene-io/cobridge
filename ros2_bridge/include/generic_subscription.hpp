@@ -15,6 +15,7 @@
 #ifndef GENERIC_SUBSCRIPTION_HPP_
 #define GENERIC_SUBSCRIPTION_HPP_
 
+#ifdef ROS2_VERSION_FOXY
 #include <memory>
 #include <string>
 
@@ -69,12 +70,6 @@ public:
   void handle_loaned_message(
     void * loaned_message, const rclcpp::MessageInfo & message_info) override;
 
-#ifdef ROS2_VERSION_HUMBLE
-  void handle_serialized_message(
-    const std::shared_ptr<rclcpp::SerializedMessage> & serialized_message,
-    const rclcpp::MessageInfo & message_info) override;
-#endif
-
   // Same as return_serialized_message() as the subscription is to serialized_messages only
   void return_message(std::shared_ptr<void> & message) override;
 
@@ -95,5 +90,6 @@ private:
   bool _use_down_sample{};
 };
 }  // namespace cobridge
+#endif
 
 #endif  // GENERIC_SUBSCRIPTION_HPP_
