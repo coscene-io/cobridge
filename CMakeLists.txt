@@ -27,8 +27,8 @@ macro(enable_strict_compiler_warnings target)
     endif()
 endmacro()
 
-set(PRIVATE_WEBSOCKETPP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/websocketpp)
-set(PRIVATE_NLOHMANN_JSON_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/nlohmann_json)
+set(PRIVATE_WEBSOCKETPP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/websocketpp/0.8.2)
+set(PRIVATE_NLOHMANN_JSON_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/nlohmann_json/3.11.3)
 include_directories(BEFORE ${PRIVATE_WEBSOCKETPP_DIR} ${PRIVATE_NLOHMANN_JSON_DIR})
 
 find_package(OpenSSL REQUIRED)
