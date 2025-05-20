@@ -154,7 +154,7 @@ jobs:
           storage_type: oss
           endpoint: https://oss-cn-hangzhou.aliyuncs.com
           region: cn-hangzhou
-          bucket_name: coscene-download/coscene-apt-source
+          bucket_name: coscene-download
           access_key_id: ${{ secrets.OSS_ARTIFACTS_ACCESS_KEY }}
           access_key_secret: ${{ secrets.OSS_ARTIFACTS_ACCESS_SECRET }}
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
