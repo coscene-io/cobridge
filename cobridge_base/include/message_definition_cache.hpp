@@ -33,6 +33,8 @@ enum struct MessageDefinitionFormat
 {
   IDL,
   MSG,
+  SRV_REQ,
+  SRV_RESP,
 };
 
 struct MessageSpec
@@ -84,8 +86,11 @@ public:
    * Throws DefinitionNotFoundError if one or more definition files are missing for the given
    * package resource name.
    */
-  std::pair<MessageDefinitionFormat, std::string> get_full_text(
+  std::pair<MessageDefinitionFormat, std::string> get_full_msg_text(
     const std::string & package_resource_name);
+
+  std::unordered_map<std::string, std::pair<MessageDefinitionFormat, std::string>>
+  get_full_srv_text(const std::string & service_name);
 
 private:
   struct DefinitionIdentifierHash
@@ -103,6 +108,8 @@ private:
    * msg_specs_by_datatype
    */
   const MessageSpec & load_message_spec(const DefinitionIdentifier & definition_identifier);
+
+  const MessageSpec & load_service_spec(const DefinitionIdentifier & definition_identifier);
 
   std::unordered_map<DefinitionIdentifier, MessageSpec, DefinitionIdentifierHash>
   msg_specs_by_definition_identifier_;

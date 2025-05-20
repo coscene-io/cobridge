@@ -11,23 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+#ifdef ROS2_VERSION_FOXY
 #include "generic_subscription.hpp"
 
 #include <memory>
 #include <string>
 #include <utility>
-// #include <sensor_msgs/msg/image.hpp>
-// #include <sensor_msgs/msg/camera_info.hpp>
-// #include <cv_bridge/cv_bridge.h>
-// #include <opencv2/imgproc/imgproc.hpp>
-
 #include "rclcpp/any_subscription_callback.hpp"
 #include "rclcpp/subscription.hpp"
 
-// #define FRAME_LIMIT 1
-// #define OUTPUT_WIDTH 320
-// #define OUTPUT_HEIGHT 240
 
 namespace
 {
@@ -71,75 +63,10 @@ std::shared_ptr<rclcpp::SerializedMessage> GenericSubscription::create_serialize
 void GenericSubscription::handle_message(
   std::shared_ptr<void> & message, const rclcpp::MessageInfo & message_info)
 {
-//  // TODO(fei): in ZhiYuan data, there is no received timestamp and source timestamp,
-//  //       so, down sample can not work as expected. code below will be back in future
-//  if (_use_down_sample) {
-//    int64_t cur_timestamp = message_info.get_rmw_message_info().received_timestamp;
-//    if (cur_timestamp - _last_frame_timestamp < 1000000000 / FRAME_LIMIT) {
-//      return;
-//    }
-//    _last_frame_timestamp = cur_timestamp;
-//
-//    if (_message_type == "sensor_msgs/msg/Image") {
-//      sensor_msgs::msg::Image received_image;
-//      auto deserializer = rclcpp::Serialization<sensor_msgs::msg::Image>();
-//      deserializer.deserialize_message(
-//        std::static_pointer_cast<rclcpp::SerializedMessage>(message).get(), &received_image);
-//      // received_image.header.stamp. - last_frame_timestamp_
-//      if (received_image.width * received_image.height < OUTPUT_HEIGHT * OUTPUT_HEIGHT) {
-//        auto typed_message = std::static_pointer_cast<rclcpp::SerializedMessage>(message);
-//        _callback(
-//          typed_message, static_cast<uint64_t>(message_info.get_rmw_message_info()
-//          .source_timestamp));
-//      }
-//
-//      cv_bridge::CvImagePtr srcImage =
-//          cv_bridge::toCvCopy(received_image, received_image.encoding);
-//      cv_bridge::CvImagePtr dstImage = std::make_shared<cv_bridge::CvImage>();
-//
-//      cv::resize(
-//        srcImage->image, dstImage->image, cv::Size(OUTPUT_WIDTH, OUTPUT_HEIGHT),
-//        0, 0, cv::INTER_LINEAR);
-//
-//      auto outputImg = dstImage->toImageMsg().get();
-//      outputImg->encoding = received_image.encoding;
-//      outputImg->header = received_image.header;
-//
-//      rclcpp::SerializedMessage outputMsg;
-//      deserializer.serialize_message(outputImg, &outputMsg);
-//      _callback(
-//        std::make_shared<rclcpp::SerializedMessage>(outputMsg), static_cast<uint64_t>
-//        (cur_timestamp));
-//    } else {
-//      sensor_msgs::msg::CameraInfo cameraInfo;
-//      auto deserializer = rclcpp::Serialization<sensor_msgs::msg::CameraInfo>();
-//      deserializer.deserialize_message(
-//        std::static_pointer_cast<rclcpp::SerializedMessage>(message).get(), &cameraInfo);
-//
-//      float scale_x = static_cast<float>(OUTPUT_WIDTH) / static_cast<float>(cameraInfo.width);
-//      float scale_y = static_cast<float>(OUTPUT_HEIGHT) / static_cast<float>(cameraInfo.height);
-//
-//      cameraInfo.k[0] *= scale_x;
-//      cameraInfo.k[2] *= scale_x;
-//
-//      cameraInfo.k[4] *= scale_y;
-//      cameraInfo.k[5] *= scale_y;
-//
-//      cameraInfo.width = OUTPUT_WIDTH;
-//      cameraInfo.height = OUTPUT_HEIGHT;
-//
-//      rclcpp::SerializedMessage outputMsg;
-//      deserializer.serialize_message(&cameraInfo, &outputMsg);
-//      _callback(
-//        std::make_shared<rclcpp::SerializedMessage>(outputMsg), static_cast<uint64_t>
-//        (cur_timestamp));
-//    }
-//  } else {
   auto typed_message = std::static_pointer_cast<rclcpp::SerializedMessage>(message);
   _callback(
     typed_message,
     static_cast<uint64_t>(message_info.get_rmw_message_info().source_timestamp));
-//  }
 }
 
 void GenericSubscription::handle_loaned_message(
@@ -148,17 +75,6 @@ void GenericSubscription::handle_loaned_message(
   (void) message;
   (void) message_info;
 }
-
-#ifdef ROS2_VERSION_HUMBLE
-void GenericSubscription::handle_serialized_message(
-  const std::shared_ptr<rclcpp::SerializedMessage> & serialized_message,
-  const rclcpp::MessageInfo & message_info)
-{
-  _callback(
-    serialized_message,
-    static_cast<uint64_t>(message_info.get_rmw_message_info().source_timestamp));
-}
-#endif
 
 void GenericSubscription::return_message(std::shared_ptr<void> & message)
 {
@@ -184,3 +100,4 @@ GenericSubscription::borrow_serialized_message(size_t capacity)
 }
 
 }  // namespace cobridge
+#endif

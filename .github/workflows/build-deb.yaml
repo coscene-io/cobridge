@@ -13,55 +13,67 @@ jobs:
             arch: amd64
             distro: focal
             label: ubuntu-latest
-            container: coscene/ros:noetic-amd64
+#            container: coscene/ros:noetic-amd64
           - ros_distribution: noetic
             arch: arm64
             distro: focal
             label: [ linux-arm-64-8c-32g-300gb ]
-            container: coscene/ros:noetic-arm64
-          - ros_distribution: foxy
-            arch: amd64
-            distro: focal
-            label: ubuntu-latest
-            container: coscene/ros:foxy-amd64
-          - ros_distribution: foxy
-            arch: arm64
-            distro: focal
-            label: [ linux-arm-64-8c-32g-300gb ]
-            container: coscene/ros:foxy-arm64
-          - ros_distribution: humble
-            arch: amd64
-            distro: jammy
-            label: ubuntu-latest
-            container: coscene/ros:humble-amd64
-          - ros_distribution: humble
-            arch: arm64
-            distro: jammy
-            label: [ linux-arm-64-8c-32g-300gb ]
-            container: coscene/ros:humble-arm64
+#            container: coscene/ros:noetic-arm64
           - ros_distribution: melodic
             arch: amd64
             distro: bionic
             label: ubuntu-latest
-            container: coscene/ros:melodic-amd64
+          #            container: coscene/ros:melodic-amd64
           - ros_distribution: melodic
             arch: arm64
             distro: bionic
             label: [ linux-arm-64-8c-32g-300gb ]
-            container: coscene/ros:melodic-arm64
+          #            container: coscene/ros:melodic-arm64
+          - ros_distribution: foxy
+            arch: amd64
+            distro: focal
+            label: ubuntu-latest
+#            container: coscene/ros:foxy-amd64
+          - ros_distribution: foxy
+            arch: arm64
+            distro: focal
+            label: [ linux-arm-64-8c-32g-300gb ]
+#            container: coscene/ros:foxy-arm64
+          - ros_distribution: humble
+            arch: amd64
+            distro: jammy
+            label: ubuntu-latest
+#            container: coscene/ros:humble-amd64
+          - ros_distribution: humble
+            arch: arm64
+            distro: jammy
+            label: [ linux-arm-64-8c-32g-300gb ]
+#            container: coscene/ros:humble-arm64
+          - ros_distribution: jazzy
+            arch: amd64
+            distro: noble
+            label: ubuntu-latest
+#            container: coscene/ros:humble-arm64
+          - ros_distribution: jazzy
+            arch: arm64
+            distro: noble
+            label: [ linux-arm-64-8c-32g-300gb ]
+#            container: coscene/ros:humble-arm64
 
     name: Build deb (ROS ${{ matrix.ros_distribution }} - ${{ matrix.arch }})
     runs-on: ${{ matrix.label }}
-    container: ${{ matrix.container }}
+    container: cobridge/ros-${{ matrix.ros_distribution }}:latest
     outputs:
       matrix_result_noetic_amd64: ${{ steps.build_deb.outputs.matrix_result_noetic_amd64 }}
       matrix_result_noetic_arm64: ${{ steps.build_deb.outputs.matrix_result_noetic_arm64 }}
+      matrix_result_melodic_amd64: ${{ steps.build_deb.outputs.matrix_result_melodic_amd64 }}
+      matrix_result_melodic_arm64: ${{ steps.build_deb.outputs.matrix_result_melodic_arm64 }}
       matrix_result_foxy_amd64: ${{ steps.build_deb.outputs.matrix_result_foxy_amd64 }}
       matrix_result_foxy_arm64: ${{ steps.build_deb.outputs.matrix_result_foxy_arm64 }}
       matrix_result_humble_amd64: ${{ steps.build_deb.outputs.matrix_result_humble_amd64 }}
       matrix_result_humble_arm64: ${{ steps.build_deb.outputs.matrix_result_humble_arm64 }}
-      matrix_result_melodic_amd64: ${{ steps.build_deb.outputs.matrix_result_melodic_amd64 }}
-      matrix_result_melodic_arm64: ${{ steps.build_deb.outputs.matrix_result_melodic_arm64 }}
+      matrix_result_jazzy_amd64: ${{ steps.build_deb.outputs.matrix_result_jazzy_amd64 }}
+      matrix_result_jazzy_arm64: ${{ steps.build_deb.outputs.matrix_result_jazzy_arm64 }}
 
     steps:
       - name: Checkout code
@@ -83,7 +95,6 @@ jobs:
             git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-branch
             git checkout pr-branch
           else
-            # 对于其他事件，使用 github.sha
             git checkout ${{ github.sha }}
           fi
 
@@ -112,13 +123,14 @@ jobs:
           DEB_FILENAME=$(basename $(ls $GITHUB_WORKSPACE/artifacts/*.deb))
           echo "DEB_FILENAME=$DEB_FILENAME" >> $GITHUB_ENV
           
-          download_url="https://coscene-download.oss-cn-hangzhou.aliyuncs.com/coscene-apt-source/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/ros-${{ matrix.ros_distribution }}-cobridge_latest_${{ matrix.arch }}.deb"
+          download_url="https://apt.coscene.cn/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/ros-${{ matrix.ros_distribution }}-cobridge_latest_${{ matrix.arch }}.deb"
 
           matrix_key="${{ matrix.ros_distribution }}_${{ matrix.arch }}"
           echo "matrix_result_${matrix_key}=${{ matrix.arch }},${{ matrix.ros_distribution }},${{ matrix.distro }},$download_url" >> $GITHUB_OUTPUT
           echo "download url: $download_url"
 
       - name: Update APT Source ( OSS )
+        if: github.event_name == 'release'
         uses: coscene-io/update-apt-source@main
         with:
           ubuntu_distro: ${{ matrix.distro }}
@@ -128,6 +140,21 @@ jobs:
           endpoint: https://oss-cn-hangzhou.aliyuncs.com
           region: cn-hangzhou
           bucket_name: coscene-apt
+          access_key_id: ${{ secrets.OSS_ARTIFACTS_ACCESS_KEY }}
+          access_key_secret: ${{ secrets.OSS_ARTIFACTS_ACCESS_SECRET }}
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+
+      - name: Update APT Source ( OSS, TEST ONLY )
+        if: github.event_name != 'release'
+        uses: coscene-io/update-apt-source@main
+        with:
+          ubuntu_distro: ${{ matrix.distro }}
+          deb_paths: ${{ github.workspace }}/artifacts/${{ env.DEB_FILENAME }}
+          architectures: ${{ matrix.arch }}
+          storage_type: oss
+          endpoint: https://oss-cn-hangzhou.aliyuncs.com
+          region: cn-hangzhou
+          bucket_name: coscene-download
           access_key_id: ${{ secrets.OSS_ARTIFACTS_ACCESS_KEY }}
           access_key_secret: ${{ secrets.OSS_ARTIFACTS_ACCESS_SECRET }}
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
@@ -143,14 +170,16 @@ jobs:
           echo "| --- | --- | --- | --- |" >> $GITHUB_STEP_SUMMARY
           
           URLS=""
-          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_noetic_amd64 }};"
-          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_noetic_arm64 }};"
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_melodic_amd64 }};"
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_melodic_arm64 }};"
+          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_noetic_amd64 }};"
+          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_noetic_arm64 }};"
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_foxy_amd64 }};"
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_foxy_arm64 }};"
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_humble_amd64 }};"
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_humble_arm64 }};"
+          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_jazzy_amd64 }};"
+          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_jazzy_arm64 }};"
           
           IFS=';' read -ra URL_ARRAY <<< "$URLS"
           for url_item in "${URL_ARRAY[@]}"; do

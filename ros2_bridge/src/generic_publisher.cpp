@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+#ifdef ROS2_VERSION_FOXY
 #include "generic_publisher.hpp"
 
 #include <memory>
@@ -47,3 +47,4 @@ void GenericPublisher::publish(const std::shared_ptr<rcl_serialized_message_t> &
 }
 
 }  // namespace cobridge
+#endif

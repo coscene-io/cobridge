@@ -5,7 +5,7 @@ After cobridge establishes a link with the cloud, it can subscribe to ros topic 
 
 ## Install
   
-**CAUTION: only support `noetic`, `foxy`, `humble` now**
+**CAUTION: only support `noetic`, `foxy`, `humble`, `jazzy` now**
 
 * Import public key
   
@@ -23,7 +23,7 @@ After cobridge establishes a link with the cloud, it can subscribe to ros topic 
 
   ``` bash
   sudo apt update
-  # CAUTION: ${ROS_DISTRO} need to be replaced by 'noetic', 'foxy' or 'humble', if ROS_DISTRO not in your env
+  # CAUTION: ${ROS_DISTRO} need to be replaced by 'noetic', 'foxy', 'humble' or 'jazzy', if ROS_DISTRO not in your env
   sudo apt install ros-${ROS_DISTRO}-cobridge -y
   ```
 
@@ -70,6 +70,11 @@ After cobridge establishes a link with the cloud, it can subscribe to ros topic 
  
   # Enter into your ros workspace 
   cd {your_ros_ws}
+  
+  # apply patches
+  ./patch_apply.sh  
+  
+  # Compile
   catkin_make install
   ```
 
@@ -82,6 +87,12 @@ After cobridge establishes a link with the cloud, it can subscribe to ros topic 
    
   # Copy this repo into your workspace
   cp -r {this_repo} {your_ros_ws}/src/. 
+  
+  # Enter into your ros workspace 
+  cd {your_ros_ws}
+  
+  # apply patches
+  ./patch_apply.sh
   
   # Build
   colcon build --packages-select cobridge

@@ -6,11 +6,11 @@ index d019fce..9353e25 100644
       *
       * @param op The opcode to generated the message with. Default is
       * frame::opcode::text
-+     * @param must_send message can not be skipped
++     * @param reliable message can not be skipped
       */
 -    lib::error_code send(std::string const & payload, frame::opcode::value op =
 -        frame::opcode::text);
-+    lib::error_code send(std::string const & payload, bool must_send,
++    lib::error_code send(std::string const & payload, bool reliable,
 +        frame::opcode::value op = frame::opcode::text);
  
      /// Send a message (raw array overload)
@@ -19,11 +19,11 @@ index d019fce..9353e25 100644
       *
       * @param op The opcode to generated the message with. Default is
       * frame::opcode::binary
-+     * @param must_send message can not be skipped
++     * @param reliable message can not be skipped
       */
 -    lib::error_code send(void const * payload, size_t len, frame::opcode::value
 -        op = frame::opcode::binary);
-+    lib::error_code send(void const * payload, size_t len, bool must_send,
++    lib::error_code send(void const * payload, size_t len, bool reliable,
 +        frame::opcode::value op = frame::opcode::binary);
  
      /// Add a message to the outgoing send queue
@@ -33,7 +33,7 @@ index d019fce..9353e25 100644
       * @param msg A message_ptr to the message to send.
       */
 -    lib::error_code send(message_ptr msg);
-+    lib::error_code send(message_ptr msg, bool must_send);
++    lib::error_code send(message_ptr msg, bool reliable);
  
      /// Asyncronously invoke handler::on_inturrupt
      /**
@@ -41,10 +41,10 @@ index d019fce..9353e25 100644
       * @todo unit tests
       *
       * @param msg The message to push
-+     * @param must_send message can not be skipped
++     * @param reliable message can not be skipped
       */
 -    void write_push(message_ptr msg);
-+    void write_push(message_ptr msg, bool must_send);
++    void write_push(message_ptr msg, bool reliable);
  
      /// Pop a message from the write queue
      /**

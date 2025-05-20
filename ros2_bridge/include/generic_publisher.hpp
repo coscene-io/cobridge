@@ -15,6 +15,7 @@
 #ifndef GENERIC_PUBLISHER_HPP_
 #define GENERIC_PUBLISHER_HPP_
 
+#ifdef ROS2_VERSION_FOXY
 #include <memory>
 #include <string>
 
@@ -41,5 +42,6 @@ public:
 };
 
 }  // namespace cobridge
+#endif
 
 #endif  // GENERIC_PUBLISHER_HPP_

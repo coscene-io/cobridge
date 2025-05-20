@@ -4,7 +4,7 @@ cobridge 会以 ros node 的方式运行在机器人端，并通过 websocket �
 
 ## 安装
 
-**注意: 当前仅支持 `noetic`, `foxy`, `humble`版本**
+**注意: 当前仅支持 `noetic`, `foxy`, `humble`, `jazzy` 版本**
 
 * 导入公钥
 
@@ -22,7 +22,7 @@ cobridge 会以 ros node 的方式运行在机器人端，并通过 websocket �
 
   ``` bash
   sudo apt update
-  # 注意: 如果 ROS_DISTRO 没有在你的环境变量里面，${ROS_DISTRO} 需要被 'noetic', 'foxy' or 'humble' 替换
+  # 注意: 如果 ROS_DISTRO 没有在你的环境变量里面，${ROS_DISTRO} 需要被 'noetic', 'foxy', 'humble' or 'jazzy'替换
   sudo apt install ros-${ROS_DISTRO}-cobridge -y
   ```
 
@@ -62,9 +62,11 @@ cobridge 会以 ros node 的方式运行在机器人端，并通过 websocket �
   # 将工程复制到 {your_ros_ws}/src/ 文件夹内
   cp -r {this_repo} {your_ros_ws}/src/
   
-  cd {your_ros2_ws} 
-  
   source /opt/ros/{ros_distro}/setup.bash 
+  
+  cd {your_ros2_ws}
+  
+  ./patch_apply.sh
   
   catkin_make install
   ```
@@ -79,6 +81,8 @@ cobridge 会以 ros node 的方式运行在机器人端，并通过 websocket �
    source /opt/ros/{ros_distro}/setup.bash
   
    cd {your_ros2_ws} 
+  
+  ./patch_apply.sh
   
    colcon build --packages-select cobridge
   ```

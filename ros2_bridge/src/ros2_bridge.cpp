@@ -14,12 +14,10 @@
 
 #include <unordered_set>
 
-#ifdef ROS2_VERSION_HUMBLE
-#include <resource_retriever/retriever.hpp>
-#endif
-
 #ifdef ROS2_VERSION_FOXY
 #include <resource_retriever/retriever.h>
+#else
+#include <resource_retriever/retriever.hpp>
 #endif
 
 #include <rmw/types.h>
@@ -289,9 +287,12 @@ void CoBridge::update_advertised_topics(
     new_channel.schema_name = topic_and_datatype.second;
 
     try {
-      auto [format, schema] = _message_definition_cache.get_full_text(topic_and_datatype.second);
+      auto [format, schema] =
+        _message_definition_cache.get_full_msg_text(topic_and_datatype.second);
       switch (format) {
         case cobridge_base::MessageDefinitionFormat::MSG:
+        case cobridge_base::MessageDefinitionFormat::SRV_REQ:
+        case cobridge_base::MessageDefinitionFormat::SRV_RESP:
           new_channel.encoding = "cdr";
           new_channel.schema = schema;
           new_channel.schema_encoding = "ros2msg";
@@ -393,30 +394,22 @@ void CoBridge::update_advertised_services()
     service.type = datatypes.front();
 
     try {
-      const auto request_type_name = service.type + cobridge_base::SERVICE_REQUEST_MESSAGE_SUFFIX;
-      const auto response_type_name = service.type + cobridge_base::SERVICE_RESPONSE_MESSAGE_SUFFIX;
-      const auto [format, req_schema] = _message_definition_cache.get_full_text(request_type_name);
-      const auto res_schema = _message_definition_cache.get_full_text(response_type_name).second;
-      switch (format) {
-        case cobridge_base::MessageDefinitionFormat::MSG:
-          service.request_schema = req_schema;
-          service.response_schema = res_schema;
-          break;
-        case cobridge_base::MessageDefinitionFormat::IDL:
-          RCLCPP_WARN(
-            this->get_logger(),
-            "IDL message definition format cannot be communicated over ws-protocol. "
-            "Service \"%s\" (%s) may not decode correctly in clients",
-            service.name.c_str(), service.type.c_str());
-          service.request_schema = req_schema;
-          service.response_schema = res_schema;
-          break;
-      }
+      RCLCPP_DEBUG(
+        this->get_logger(), "service name: %s, service type: %s",
+        service.name.c_str(), service.type.c_str());
+      auto service_definition = _message_definition_cache.get_full_srv_text(service.type);
+      service.request_schema = service_definition["request"].second;
+      service.response_schema = service_definition["response"].second;
+      RCLCPP_DEBUG(
+        this->get_logger(), "service request schema: %s",
+        service.request_schema.c_str());
+      RCLCPP_DEBUG(
+        this->get_logger(), "service response schema: %s",
+        service.response_schema.c_str());
     } catch (const cobridge_base::DefinitionNotFoundError & err) {
       RCLCPP_WARN(
         this->get_logger(), "Could not find definition for type %s: %s",
         service.type.c_str(), err.what());
-      // We still advertise the service, but with an emtpy schema
       service.request_schema = "";
       service.response_schema = "";
     } catch (const std::exception & err) {
@@ -603,9 +596,7 @@ void CoBridge::subscribe(cobridge_base::ChannelId channel_id, ConnectionHandle c
       this->get_node_topics_interface(),
       topic, datatype, qos,
       std::bind(&CoBridge::ros_message_handler, this, channel_id, client_handle, _1, _2));
-#endif
-
-#ifdef ROS2_VERSION_HUMBLE
+#else
     auto subscriber = this->create_generic_subscription(
       topic, datatype, qos,
       [this, channel_id, client_handle](std::shared_ptr<rclcpp::SerializedMessage> msg) {
@@ -613,6 +604,7 @@ void CoBridge::subscribe(cobridge_base::ChannelId channel_id, ConnectionHandle c
       },
       subscription_options);
 #endif
+
     subscriptions_by_client.emplace(client_handle, std::move(subscriber));
   } catch (const std::exception & ex) {
     throw cobridge_base::ChannelError(
@@ -715,12 +707,11 @@ void CoBridge::client_advertise(
 #ifdef ROS2_VERSION_FOXY
     auto publisher = cobridge::create_generic_publisher(
       this->get_node_topics_interface(), topic_name, topic_type, qos);
-#endif
-
-#ifdef ROS2_VERSION_HUMBLE
+#else
     auto publisher = rclcpp::create_generic_publisher(
       this->get_node_topics_interface(), topic_name, topic_type, qos);
 #endif
+
     RCLCPP_INFO(
       this->get_logger(), "Client %s is advertising \"%s\" (%s) on channel %d",
       _server->remote_endpoint_string(hdl).c_str(), topic_name.c_str(), topic_type.c_str(),
@@ -782,10 +773,11 @@ void CoBridge::client_message(const cobridge_base::ClientMessage & message, Conn
 {
 #ifdef ROS2_VERSION_FOXY
   cobridge::GenericPublisher::SharedPtr publisher;
-#endif
-#ifdef ROS2_VERSION_HUMBLE
+#else
   rclcpp::GenericPublisher::SharedPtr publisher;
 #endif
+
+
   {
     const auto channel_id = message.advertisement.channel_id;
     std::lock_guard<std::mutex> lock(_client_advertisements_mutex);
@@ -821,9 +813,7 @@ void CoBridge::client_message(const cobridge_base::ClientMessage & message, Conn
     std::make_shared<rcl_serialized_message_t>(
       serialized_message.
       get_rcl_serialized_message()));
-#endif
-
-#ifdef ROS2_VERSION_HUMBLE
+#else
   publisher->publish(serialized_message);
 #endif
 }
