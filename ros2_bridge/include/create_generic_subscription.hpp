@@ -15,6 +15,7 @@
 #ifndef CREATE_GENERIC_SUBSCRIPTION_HPP_
 #define CREATE_GENERIC_SUBSCRIPTION_HPP_
 
+#ifdef ROS2_VERSION_FOXY
 #include <functional>
 #include <memory>
 #include <string>
@@ -61,5 +62,6 @@ std::shared_ptr<GenericSubscription> create_generic_subscription(
   return subscription;
 }
 }  // namespace cobridge
+#endif
 
 #endif  // CREATE_GENERIC_SUBSCRIPTION_HPP_

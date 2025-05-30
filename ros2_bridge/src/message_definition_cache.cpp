@@ -22,32 +22,36 @@
 #include <optional>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <map>
 #include <regex>
 #include <set>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
 namespace cobridge_base
 {
-
 // Match datatype names (foo_msgs/Bar or foo_msgs/msg/Bar or foo_msgs/srv/Bar)
 static const std::regex PACKAGE_TYPENAME_REGEX{
-  R"(^([a-zA-Z0-9_]+)/(?:(msg|srv|action)/)?([a-zA-Z0-9_]+)$)"};
+  R"(^([a-zA-Z0-9_]+)/(?:(msg|srv|action)/)?([a-zA-Z0-9_]+)$)"
+};
 
 // Match field types from .msg definitions ("foo_msgs/Bar" in "foo_msgs/Bar[] bar")
 static const std::regex MSG_FIELD_TYPE_REGEX{R"((?:^|\n)\s*([a-zA-Z0-9_/]+)(?:\[[^\]]*\])?\s+)"};
 
 // match field types from `.idl` definitions ("foo_msgs/msg/bar" in #include <foo_msgs/msg/Bar.idl>)
 static const std::regex IDL_FIELD_TYPE_REGEX{
-  R"((?:^|\n)#include\s+(?:"|<)([a-zA-Z0-9_/]+)\.idl(?:"|>))"};
+  R"((?:^|\n)#include\s+(?:"|<)([a-zA-Z0-9_/]+)\.idl(?:"|>))"
+};
 
 static const std::unordered_set<std::string> PRIMITIVE_TYPES{
   "bool", "byte", "char", "float32", "float64", "int8", "uint8",
-  "int16", "uint16", "int32", "uint32", "int64", "uint64", "string"};
+  "int16", "uint16", "int32", "uint32", "int64", "uint64", "string"
+};
 
 static std::set<std::string> parse_msg_dependencies(
   const std::string & text,
@@ -89,6 +93,8 @@ std::set<std::string> parse_dependencies(
 {
   switch (format) {
     case MessageDefinitionFormat::MSG:
+    case MessageDefinitionFormat::SRV_RESP:
+    case MessageDefinitionFormat::SRV_REQ:
       return parse_msg_dependencies(text, package_context);
     case MessageDefinitionFormat::IDL:
       return parse_idl_dependencies(text);
@@ -101,6 +107,8 @@ static const char * extension_for_format(MessageDefinitionFormat format)
 {
   switch (format) {
     case MessageDefinitionFormat::MSG:
+    case MessageDefinitionFormat::SRV_RESP:
+    case MessageDefinitionFormat::SRV_REQ:
       return ".msg";
     case MessageDefinitionFormat::IDL:
       return ".idl";
@@ -115,6 +123,8 @@ static std::string delimiter(const DefinitionIdentifier & definition_identifier)
     "================================================================================\n";
   switch (definition_identifier.format) {
     case MessageDefinitionFormat::MSG:
+    case MessageDefinitionFormat::SRV_RESP:
+    case MessageDefinitionFormat::SRV_REQ:
       result += "MSG: ";
       break;
     case MessageDefinitionFormat::IDL:
@@ -163,6 +173,18 @@ static std::tuple<std::string, std::string, std::string> split_action_msg_defini
   return {definitions[0], definitions[1], definitions[2]};
 }
 
+static std::pair<std::string, std::string> split_service_definition(
+  const std::string & service_definition)
+{
+  constexpr char SEP[] = "\n---\n";
+
+  const auto definitions = split_string(service_definition, SEP);
+  if (definitions.size() != 2) {
+    throw std::invalid_argument("Invalid service definition:\n" + service_definition);
+  }
+  return {definitions[0], definitions[1]};
+}
+
 inline bool ends_with(const std::string & str, const std::string & suffix)
 {
   return str.size() >= suffix.size() &&
@@ -194,6 +216,85 @@ MessageSpec::MessageSpec(
 : dependencies(parse_dependencies(format, text, package_context)), text(std::move(text)), format(
     format)
 {}
+
+const MessageSpec & MessageDefinitionCache::load_service_spec(
+  const DefinitionIdentifier & definition_identifier)
+{
+  DefinitionIdentifier cache{
+    definition_identifier.format, definition_identifier.package_resource_name
+  };
+  if (auto it = msg_specs_by_definition_identifier_.find(cache);
+    it != msg_specs_by_definition_identifier_.end())
+  {
+    return it->second;
+  }
+
+  std::smatch match;
+  if (!std::regex_match(
+      definition_identifier.package_resource_name, match,
+      PACKAGE_TYPENAME_REGEX))
+  {
+    throw std::invalid_argument(
+            "Invalid package resource name: " + definition_identifier.package_resource_name);
+  }
+  const std::string package = match[1].str();
+  const std::string subfolder = match[2].str();
+  const std::string type_name = match[3].str();
+  if (subfolder != "srv" && !subfolder.empty()) {
+    throw std::invalid_argument("Invalid subfolder: " + subfolder);
+  }
+  bool is_service = subfolder == "srv";
+  const std::string filename = is_service ?
+    type_name + ".srv" :
+    type_name + extension_for_format(definition_identifier.format);
+  const std::string share_dir = ament_index_cpp::get_package_share_directory(package);
+
+  // Get the rosidl_interfaces index contents for this package
+  std::string index_contents;
+  if (!ament_index_cpp::get_resource("rosidl_interfaces", package, index_contents)) {
+    throw DefinitionNotFoundError(
+            "get resource of 'rosidl_interfaces' failed: " +
+            definition_identifier.package_resource_name);
+  }
+
+  const auto lines = split_string(index_contents);
+  const auto lines_iter = std::find_if(
+    lines.begin(), lines.end(), [&filename](const std::string & line)
+    {
+      std::filesystem::path filePath(line);
+      return filePath.filename() == filename;
+    });
+  if (lines_iter == lines.end()) {
+    throw DefinitionNotFoundError(
+            "find " + filename + " in index_contents failed: " + index_contents);
+  }
+
+  const std::string full_path = share_dir + std::filesystem::path::preferred_separator +
+    *lines_iter;
+  std::ifstream file{full_path};
+  if (!file.good()) {
+    throw DefinitionNotFoundError(
+            "file " + full_path + " not found:" + definition_identifier.package_resource_name);
+  }
+  const std::string contents{std::istreambuf_iterator(file), {}};
+
+  std::string return_val;
+  if (is_service) {
+    return_val = definition_identifier.format == MessageDefinitionFormat::SRV_REQ ?
+      split_service_definition(contents).first :
+      split_service_definition(contents).second;
+  } else {
+    return_val = contents;
+  }
+
+  const MessageSpec & spec =
+    msg_specs_by_definition_identifier_
+    .emplace(
+    definition_identifier,
+    MessageSpec(definition_identifier.format, return_val, package))
+    .first->second;
+  return spec;
+}
 
 const MessageSpec & MessageDefinitionCache::load_message_spec(
   const DefinitionIdentifier & definition_identifier)
@@ -263,14 +364,23 @@ const MessageSpec & MessageDefinitionCache::load_message_spec(
       // See also https://design.ros2.org/articles/actions.html
       const std::map<std::string, std::string> action_type_definitions = {
         {ACTION_FEEDBACK_MESSAGE_SUFFIX, "unique_identifier_msgs/UUID goal_id\n" + feedbackDef},
-        {std::string(ACTION_RESULT_SERVICE_SUFFIX) + SERVICE_REQUEST_MESSAGE_SUFFIX,
-          "unique_identifier_msgs/UUID goal_id\n"},
-        {std::string(ACTION_RESULT_SERVICE_SUFFIX) + SERVICE_RESPONSE_MESSAGE_SUFFIX,
-          "int8 status\n" + resultDef},
-        {std::string(ACTION_GOAL_SERVICE_SUFFIX) + SERVICE_REQUEST_MESSAGE_SUFFIX,
-          "unique_identifier_msgs/UUID goal_id\n" + goalDef},
-        {std::string(ACTION_GOAL_SERVICE_SUFFIX) + SERVICE_RESPONSE_MESSAGE_SUFFIX,
-          "bool accepted\nbuiltin_interfaces/msg/Time stamp"}};
+        {
+          std::string(ACTION_RESULT_SERVICE_SUFFIX) + SERVICE_REQUEST_MESSAGE_SUFFIX,
+          "unique_identifier_msgs/UUID goal_id\n"
+        },
+        {
+          std::string(ACTION_RESULT_SERVICE_SUFFIX) + SERVICE_RESPONSE_MESSAGE_SUFFIX,
+          "int8 status\n" + resultDef
+        },
+        {
+          std::string(ACTION_GOAL_SERVICE_SUFFIX) + SERVICE_REQUEST_MESSAGE_SUFFIX,
+          "unique_identifier_msgs/UUID goal_id\n" + goalDef
+        },
+        {
+          std::string(ACTION_GOAL_SERVICE_SUFFIX) + SERVICE_RESPONSE_MESSAGE_SUFFIX,
+          "bool accepted\nbuiltin_interfaces/msg/Time stamp"
+        }
+      };
 
       // Create a MessageSpec instance for every action subtype and add it to the cache.
       for (const auto & [action_suffix, definition] : action_type_definitions) {
@@ -308,7 +418,50 @@ const MessageSpec & MessageDefinitionCache::load_message_spec(
   }
 }
 
-std::pair<MessageDefinitionFormat, std::string> MessageDefinitionCache::get_full_text(
+std::unordered_map<std::string, std::pair<MessageDefinitionFormat, std::string>>
+MessageDefinitionCache::get_full_srv_text(const std::string & service_name)
+{
+  std::unordered_set<DefinitionIdentifier, DefinitionIdentifierHash> seen_deps;
+
+  std::function<std::string(const DefinitionIdentifier &)> append_recursive =
+    [&](const DefinitionIdentifier & def_identifier)
+    {
+      const MessageSpec & spec = load_service_spec(def_identifier);
+      std::string result = spec.text;
+      for (const auto & dep_name : spec.dependencies) {
+        DefinitionIdentifier dep{def_identifier.format, dep_name};
+        bool inserted = seen_deps.insert(dep).second;
+        if (inserted) {
+          result += "\n";
+          result += delimiter(dep);
+          result += append_recursive(dep);
+        }
+      }
+      return result;
+    };
+  std::string request, response;
+  try {
+    request = append_recursive(
+      DefinitionIdentifier{
+        MessageDefinitionFormat::SRV_REQ, service_name
+      });
+    response = append_recursive(
+      DefinitionIdentifier{
+        MessageDefinitionFormat::SRV_RESP, service_name
+      });
+  } catch (const DefinitionNotFoundError & err) {
+    RCUTILS_LOG_WARN_NAMED(
+      "cobridge", "no .msg definition for %s, falling back to IDL",
+      err.what());
+  }
+
+  return std::unordered_map<std::string, std::pair<MessageDefinitionFormat, std::string>>{
+    {"request", std::make_pair(MessageDefinitionFormat::SRV_REQ, request)},
+    {"response", std::make_pair(MessageDefinitionFormat::SRV_RESP, response)}
+  };
+}
+
+std::pair<MessageDefinitionFormat, std::string> MessageDefinitionCache::get_full_msg_text(
   const std::string & root_package_resource_name)
 {
   std::unordered_set<DefinitionIdentifier, DefinitionIdentifierHash> seen_deps;
@@ -345,5 +498,4 @@ std::pair<MessageDefinitionFormat, std::string> MessageDefinitionCache::get_full
   }
   return std::make_pair(format, result);
 }
-
 }  // namespace cobridge_base

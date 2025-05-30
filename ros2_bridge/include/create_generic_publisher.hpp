@@ -15,6 +15,7 @@
 #ifndef CREATE_GENERIC_PUBLISHER_HPP_
 #define CREATE_GENERIC_PUBLISHER_HPP_
 
+#ifdef ROS2_VERSION_FOXY
 #include <memory>
 #include <string>
 #include <utility>
@@ -40,5 +41,6 @@ std::shared_ptr<GenericPublisher> create_generic_publisher(
     topics_interface->get_node_base_interface(), *type_support, topic, qos);
 }
 }  // namespace cobridge
+#endif
 
 #endif  // CREATE_GENERIC_PUBLISHER_HPP_
