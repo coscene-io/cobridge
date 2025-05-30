@@ -30,7 +30,7 @@
 #include <vector>
 #include <memory>
 
-constexpr char URI[] = "ws://localhost:8765";
+constexpr char URI[] = "ws://localhost:21274";
 
 // Binary representation of std_msgs/msg/String for "hello world"
 constexpr uint8_t HELLO_WORLD_BINARY[] = {0, 1, 0, 0, 12, 0, 0, 0, 104, 101,

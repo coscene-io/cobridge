@@ -15,14 +15,14 @@
 #ifndef BASE64_HPP_
 #define BASE64_HPP_
 
-#include <string_view>
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "standard.hpp"
 
 namespace cobridge_base
 {
-std::string base64_encode(const std::string_view & input);
+std::string base64_encode(const string_view & input);
 
 std::vector<unsigned char> base64_decode(const std::string & input);
 }

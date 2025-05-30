@@ -15,13 +15,13 @@
 #ifndef COMMON_HPP_
 #define COMMON_HPP_
 
-#include <optional>
 #include <array>
 #include <cstring>
 #include <cstdint>
 #include <string>
 #include <vector>
 #include <utility>
+#include "standard.hpp"
 
 namespace cobridge_base
 {
@@ -82,7 +82,7 @@ struct ChannelWithoutId
   std::string encoding;
   std::string schema_name;
   std::string schema;
-  std::optional<std::string> schema_encoding;
+  optional<std::string> schema_encoding;
 
   bool operator==(const ChannelWithoutId & other) const
   {
@@ -206,4 +206,17 @@ struct FetchAssetResponse
   std::vector<uint8_t> data;
 };
 }  // namespace cobridge_base
+
+namespace std
+{
+template<>
+struct hash<cobridge_base::ClientBinaryOpcode>
+{
+  std::size_t operator()(const cobridge_base::ClientBinaryOpcode& opcode) const
+  {
+    return std::hash<uint8_t>()(static_cast<uint8_t>(opcode));
+  }
+};
+}  // namespace std
+
 #endif  // COMMON_HPP_

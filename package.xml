@@ -13,9 +13,9 @@
     <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
 
     <depend condition="$ROS_VERSION == 1">nodelet</depend>
-    <depend condition="$ROS_VERSION == 1">ros_babel_fish</depend>
     <depend condition="$ROS_VERSION == 1">roscpp</depend>
     <depend condition="$ROS_VERSION == 1">roslib</depend>
+    <depend condition="$ROS_VERSION == 1">xmlrpcpp</depend>
 
     <depend condition="$ROS_VERSION == 2">ament_index_cpp</depend>
     <depend condition="$ROS_VERSION == 2">rclcpp</depend>
@@ -33,7 +33,7 @@
 
     <build_depend>asio</build_depend>
     <build_depend>libssl-dev</build_depend>
-    <build_depend>ros_environment</build_depend>
+    <build_depend condition="$ROS_DISTRO != indigo">ros_environment</build_depend>
     <build_depend>zlib</build_depend>
     <exec_depend>openssl</exec_depend>
     <exec_depend>zlib</exec_depend>

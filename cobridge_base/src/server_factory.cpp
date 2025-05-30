@@ -30,9 +30,11 @@ std::unique_ptr<ServerInterface<websocketpp::connection_hdl>> ServerFactory::cre
   const ServerOptions & options)
 {
   if (options.use_tls) {
-    return std::make_unique<Server<WebSocketTls>>(name, log_handler, options);
+    return std::unique_ptr<Server<WebSocketTls>>(
+      new Server<WebSocketTls>(name, log_handler, options));
   } else {
-    return std::make_unique<Server<WebSocketNoTls>>(name, log_handler, options);
+    return std::unique_ptr<Server<WebSocketNoTls>>(
+      new Server<WebSocketNoTls>(name, log_handler, options));
   }
 }
 

@@ -19,7 +19,7 @@
 #include <ament_index_cpp/get_resources.hpp>
 #include <rcutils/logging_macros.h>
 
-#include <optional>
+//#include <optional>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -176,7 +176,7 @@ static std::tuple<std::string, std::string, std::string> split_action_msg_defini
 static std::pair<std::string, std::string> split_service_definition(
   const std::string & service_definition)
 {
-  constexpr char SEP[] = "\n---\n";
+  constexpr char SEP[] = "---\n";
 
   const auto definitions = split_string(service_definition, SEP);
   if (definitions.size() != 2) {

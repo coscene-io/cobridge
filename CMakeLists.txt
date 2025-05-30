@@ -1,4 +1,8 @@
-cmake_minimum_required(VERSION 3.10.2)
+if ("$ENV{ROS_DISTRO}" STREQUAL "indigo")
+    cmake_minimum_required(VERSION 2.8.12)
+else ()
+    cmake_minimum_required(VERSION 3.10.2)
+endif ()
 
 if(POLICY CMP0048)
     cmake_policy(SET CMP0048 NEW)
@@ -9,34 +13,44 @@ if(POLICY CMP0024)
     set(CMAKE_POLICY_DEFAULT_CMP0024 NEW)
 endif()
 
-project(cobridge LANGUAGES CXX VERSION 0.0.1)
+# project(cobridge LANGUAGES CXX VERSION 0.0.1)
+project(cobridge)
 
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+if(CMAKE_VERSION VERSION_LESS "3.1")
+    if(CMAKE_COMPILER_IS_GNUCXX)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    endif()
+else()
+    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
+
 set(AMENT_LINT_FILTERS "-build/include_order")
 
 macro(enable_strict_compiler_warnings target)
     if(MSVC)
         target_compile_options(${target} PRIVATE /WX /W4)
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror -Wfloat-equal -Wold-style-cast
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror -Wfloat-equal
                 -Wmost -Wunused-exception-parameter)
     else()
-        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror -Wfloat-equal -Wold-style-cast)
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror -Wfloat-equal)
     endif()
 endmacro()
 
 set(PRIVATE_WEBSOCKETPP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/websocketpp/0.8.2)
 set(PRIVATE_NLOHMANN_JSON_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/nlohmann_json/3.11.3)
-include_directories(BEFORE ${PRIVATE_WEBSOCKETPP_DIR} ${PRIVATE_NLOHMANN_JSON_DIR})
+set(PRIVATE_ROS_BABEL_FISH_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/ros_babel_fish/0.9.3)
+include_directories(BEFORE ${PRIVATE_WEBSOCKETPP_DIR} ${PRIVATE_NLOHMANN_JSON_DIR} ${PRIVATE_ROS_BABEL_FISH_DIR})
 
 find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
 
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE RelWithDebInfo)
+#    set(CMAKE_BUILD_TYPE RelWithDebInfo)
+    set(CMAKE_BUILD_TYPE Debug)
 endif()
 
 option(USE_ASIO_STANDALONE "Build with standalone ASIO" ON)
@@ -82,9 +96,8 @@ target_include_directories(cobridge_base
         $<INSTALL_INTERFACE:include>
 )
 target_link_libraries(cobridge_base
-        OpenSSL::Crypto
-        OpenSSL::SSL
-        ZLIB::ZLIB
+        ${OPENSSL_LIBRARIES}
+        ${ZLIB_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT}
 )
 
@@ -96,18 +109,72 @@ find_package(ament_cmake QUIET)
 message(STATUS "ROS_VERSION: " $ENV{ROS_VERSION})
 message(STATUS "ROS_DISTRO: " $ENV{ROS_DISTRO})
 message(STATUS "ROS_ROOT: " $ENV{ROS_ROOT})
-if("$ENV{ROS_VERSION}" STREQUAL "1")
+
+set(ROS1_DISTROS "indigo" "melodic" "noetic")
+set(ROS2_DISTROS "foxy" "humble" "jazzy")
+
+if ("$ENV{ROS_DISTRO}" STREQUAL "indigo")
+    add_definitions(-DROS1_VERSION_INDIGO)
+    set(ROS_DISTRIBUTION "indigo")
+elseif ("$ENV{ROS_DISTRO}" STREQUAL "melodic")
+    add_definitions(-DROS1_VERSION_MELODIC)
+    set(ROS_DISTRIBUTION "melodic")
+elseif ("$ENV{ROS_DISTRO}" STREQUAL "noetic")
+    add_definitions(-DROS1_VERSION_NOETIC)
+    set(ROS_DISTRIBUTION "noetic")
+elseif ("$ENV{ROS_DISTRO}" STREQUAL "foxy")
+    add_definitions(-DROS2_VERSION_FOXY)
+    set(ROS_DISTRIBUTION "foxy")
+elseif ("$ENV{ROS_DISTRO}" STREQUAL "humble")
+    add_definitions(-DROS2_VERSION_HUMBLE)
+    set(ROS_DISTRIBUTION "humble")
+elseif ("$ENV{ROS_DISTRO}" STREQUAL "jazzy")
+    add_definitions(-DROS2_VERSION_JAZZY)
+    set(ROS_DISTRIBUTION "jazzy")
+endif()
+
+
+list(FIND ROS1_DISTROS ${ROS_DISTRIBUTION} ROS1_FOUND)
+list(FIND ROS2_DISTROS ${ROS_DISTRIBUTION} ROS2_FOUND)
+
+message(STATUS "ROS1_FOUND: " ${ROS1_FOUND})
+message(STATUS "ROS2_FOUND: " ${ROS2_FOUND})
+
+if(NOT ROS1_FOUND EQUAL -1)
     if(catkin_FOUND)
         message(STATUS "Building with catkin")
         set(ROS_BUILD_TYPE "catkin")
 
-        find_package(catkin REQUIRED COMPONENTS nodelet resource_retriever ros_babel_fish rosgraph_msgs roslib roscpp)
+        find_package(catkin REQUIRED COMPONENTS nodelet resource_retriever rosgraph_msgs roslib roscpp xmlrpcpp)
         find_package(Boost REQUIRED)
+
+        add_library(ros_babel_fish
+                ${PRIVATE_ROS_BABEL_FISH_DIR}/ros_babel_fish/generation/providers/integrated_description_provider.cpp
+                ${PRIVATE_ROS_BABEL_FISH_DIR}/ros_babel_fish/generation/description_provider.cpp
+                ${PRIVATE_ROS_BABEL_FISH_DIR}/ros_babel_fish/generation/message_creation.cpp
+                ${PRIVATE_ROS_BABEL_FISH_DIR}/ros_babel_fish/messages/array_message.cpp
+                ${PRIVATE_ROS_BABEL_FISH_DIR}/ros_babel_fish/messages/compound_message.cpp
+                ${PRIVATE_ROS_BABEL_FISH_DIR}/ros_babel_fish/messages/value_message.cpp
+                ${PRIVATE_ROS_BABEL_FISH_DIR}/ros_babel_fish/babel_fish.cpp
+                ${PRIVATE_ROS_BABEL_FISH_DIR}/ros_babel_fish/babel_fish_message.cpp
+                ${PRIVATE_ROS_BABEL_FISH_DIR}/ros_babel_fish/message.cpp
+                ${PRIVATE_ROS_BABEL_FISH_DIR}/ros_babel_fish/message_extractor.cpp
+        )
+        
+        target_include_directories(ros_babel_fish
+                PUBLIC
+                ${PRIVATE_ROS_BABEL_FISH_DIR}
+                SYSTEM PRIVATE
+                ${catkin_INCLUDE_DIRS}
+        )
+        target_link_libraries(ros_babel_fish
+                ${OPENSSL_LIBRARIES}
+                ${catkin_LIBRARIES})
 
         catkin_package(
                 INCLUDE_DIRS cobridge_base/include
                 LIBRARIES cobridge_base cobridge_nodelet
-                CATKIN_DEPENDS nodelet resource_retriever ros_babel_fish rosgraph_msgs roslib roscpp
+                CATKIN_DEPENDS nodelet resource_retriever rosgraph_msgs roslib roscpp xmlrpcpp
                 DEPENDS Boost
         )
 
@@ -124,7 +191,7 @@ if("$ENV{ROS_VERSION}" STREQUAL "1")
                 $<INSTALL_INTERFACE:include>
                 ${catkin_INCLUDE_DIRS}
         )
-        target_link_libraries(cobridge_nodelet cobridge_base ${catkin_LIBRARIES})
+        target_link_libraries(cobridge_nodelet cobridge_base ros_babel_fish ${catkin_LIBRARIES})
         enable_strict_compiler_warnings(cobridge_nodelet)
 
         add_executable(cobridge ros1_bridge/src/ros1_bridge_node.cpp)
@@ -134,15 +201,7 @@ if("$ENV{ROS_VERSION}" STREQUAL "1")
     else()
         message(FATAL_ERROR "Could not find catkin")
     endif()
-elseif("$ENV{ROS_VERSION}" STREQUAL "2")
-    if("$ENV{ROS_DISTRO}" STREQUAL "foxy")
-        add_compile_definitions(ROS2_VERSION_FOXY)
-    elseif("$ENV{ROS_DISTRO}" STREQUAL "humble")
-        add_compile_definitions(ROS2_VERSION_HUMBLE)
-    elseif("$ENV{ROS_DISTRO}" STREQUAL "jazzy")
-        add_compile_definitions(ROS2_VERSION_JAZZY)
-    endif()
-
+elseif(NOT ROS2_FOUND EQUAL -1)
     if(ament_cmake_FOUND)
         message(STATUS "Building with ament_cmake")
         set(ROS_BUILD_TYPE "ament_cmake")
@@ -192,7 +251,7 @@ if(ROS_BUILD_TYPE STREQUAL "catkin")
         message(STATUS "Building tests with catkin")
 
         find_package(catkin REQUIRED COMPONENTS roscpp std_msgs std_srvs)
-        if(NOT "$ENV{ROS_DISTRO}" STREQUAL "melodic")
+        if(NOT "$ENV{ROS_DISTRO}" STREQUAL "melodic" AND NOT "$ENV{ROS_DISTRO}" STREQUAL "indigo")
             find_package(GTest REQUIRED)
         endif()
         find_package(rostest REQUIRED)

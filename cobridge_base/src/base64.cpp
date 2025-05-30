@@ -20,7 +20,7 @@
 namespace cobridge_base
 {
 
-std::string base64_encode(const std::string_view & input)
+std::string base64_encode(const string_view & input)
 {
   constexpr const char ALPHABET[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -34,20 +34,20 @@ std::string base64_encode(const std::string_view & input)
   size_t i = 0;
   for (; i + 2 < input.size(); i += 3) {
     result.push_back(ALPHABET[data[i] >> 2]);
-    result.push_back(ALPHABET[((data[i] & 0b11) << 4) | (data[i + 1] >> 4)]);
-    result.push_back(ALPHABET[((data[i + 1] & 0b1111) << 2) | (data[i + 2] >> 6)]);
-    result.push_back(ALPHABET[data[i + 2] & 0b111111]);
+    result.push_back(ALPHABET[((data[i] & 0x03) << 4) | (data[i + 1] >> 4)]);
+    result.push_back(ALPHABET[((data[i + 1] & 0x0F) << 2) | (data[i + 2] >> 6)]);
+    result.push_back(ALPHABET[data[i + 2] & 0x3F]);
   }
   switch (input.size() - i) {
     case 2:
       result.push_back(ALPHABET[data[i] >> 2]);
-      result.push_back(ALPHABET[((data[i] & 0b11) << 4) | (data[i + 1] >> 4)]);
-      result.push_back(ALPHABET[(data[i + 1] & 0b1111) << 2]);
+      result.push_back(ALPHABET[((data[i] & 0x03) << 4) | (data[i + 1] >> 4)]);
+      result.push_back(ALPHABET[(data[i + 1] & 0x0F) << 2]);
       result.push_back('=');
       break;
     case 1:
       result.push_back(ALPHABET[data[i] >> 2]);
-      result.push_back(ALPHABET[(data[i] & 0b11) << 4]);
+      result.push_back(ALPHABET[(data[i] & 0x03) << 4]);
       result.push_back('=');
       result.push_back('=');
       break;

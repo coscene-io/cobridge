@@ -1,3 +1,6 @@
+description_provider_cpp-fix.patch
+message_template_h-fix.patch
+integrated_description_provider_cpp-fix.patch
 md5_hpp-fix.patch
 connection_hpp-fix.patch
 enabled_hpp-fix.patch

@@ -15,8 +15,8 @@
 #ifndef WEBSOCKET_CLIENT_HPP_
 #define WEBSOCKET_CLIENT_HPP_
 
-#include <optional>
-#include <shared_mutex>
+// #include <optional>
+// #include <shared_mutex>
 
 #include <json.hpp>
 #include <websocketpp/client.hpp>
@@ -79,11 +79,11 @@ public:
 
   virtual void get_parameters(
     const std::vector<std::string> & parameter_names,
-    const std::optional<std::string> & request_id) = 0;
+    const optional<std::string> & request_id) = 0;
 
   virtual void set_parameters(
     const std::vector<Parameter> & parameters,
-    const std::optional<std::string> & request_id) = 0;
+    const optional<std::string> & request_id) = 0;
 
   virtual void subscribe_parameter_updates(const std::vector<std::string> & parameter_names) = 0;
 
@@ -132,7 +132,7 @@ public:
     std::function<void(websocketpp::connection_hdl)> on_open_handler,
     std::function<void(websocketpp::connection_hdl)> on_close_handler = nullptr) override
   {
-    std::unique_lock<std::shared_mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
 
     websocketpp::lib::error_code ec;
     _con = _endpoint.get_connection(uri, ec);
@@ -158,9 +158,9 @@ public:
     auto future = promise->get_future();
 
     connect(
-      uri, [p = std::move(promise)](websocketpp::connection_hdl) mutable
+      uri, [promise](websocketpp::connection_hdl) mutable
       {
-        p->set_value();
+        promise->set_value();
       });
 
     return future;
@@ -168,7 +168,7 @@ public:
 
   void close() override
   {
-    std::unique_lock<std::shared_mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
     if (_con->get_state() != websocketpp::session::state::open) {
       return;  // Already disconnected
     }
@@ -182,14 +182,14 @@ public:
 
     switch (op) {
       case OpCode::TEXT: {
-          std::shared_lock<std::shared_mutex> lock(_mutex);
+          std::lock_guard<std::mutex> lock(_mutex);
           if (_text_message_handler) {
             _text_message_handler(msg->get_payload());
           }
         }
         break;
       case OpCode::BINARY: {
-          std::shared_lock<std::shared_mutex> lock(_mutex);
+          std::lock_guard<std::mutex> lock(_mutex);
           const auto & payload = msg->get_payload();
           if (_binary_message_handler) {
             _binary_message_handler(
@@ -214,10 +214,10 @@ public:
   void subscribe(const std::vector<std::pair<SubscriptionId, ChannelId>> & subscriptions) override
   {
     nlohmann::json sub_json;
-    for (const auto & [subId, channelId] : subscriptions) {
+    for (const auto & subscription : subscriptions) {
       sub_json.push_back(
-        {{"id", subId},
-          {"channelId", channelId}});
+        {{"id", subscription.first},
+          {"channelId", subscription.second}});
     }
 
     const std::string payload =
@@ -272,11 +272,11 @@ public:
 
   void get_parameters(
     const std::vector<std::string> & parameter_names,
-    const std::optional<std::string> & request_id = std::nullopt) override
+    const optional<std::string> & request_id = nullopt) override
   {
     nlohmann::json jsonPayload{{"op", "getParameters"},
       {"parameterNames", parameter_names}};
-    if (request_id) {
+    if (request_id.has_value()) {
       jsonPayload["id"] = request_id.value();
     }
     send_text(jsonPayload.dump());
@@ -284,11 +284,11 @@ public:
 
   void set_parameters(
     const std::vector<Parameter> & parameters,
-    const std::optional<std::string> & request_id = std::nullopt) override
+    const optional<std::string> & request_id = nullopt) override
   {
     nlohmann::json jsonPayload{{"op", "setParameters"},
       {"parameters", parameters}};
-    if (request_id) {
+    if (request_id.has_value()) {
       jsonPayload["id"] = request_id.value();
     }
     send_text(jsonPayload.dump());
@@ -318,25 +318,25 @@ public:
 
   void set_text_message_handler(TextMessageHandler handler) override
   {
-    std::unique_lock<std::shared_mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
     _text_message_handler = std::move(handler);
   }
 
   void set_binary_message_handler(BinaryMessageHandler handler) override
   {
-    std::unique_lock<std::shared_mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
     _binary_message_handler = std::move(handler);
   }
 
   void send_text(const std::string & payload)
   {
-    std::shared_lock<std::shared_mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
     _endpoint.send(_con, payload, OpCode::TEXT);
   }
 
   void send_binary(const uint8_t * data, size_t dataLength)
   {
-    std::shared_lock<std::shared_mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
     _endpoint.send(_con, data, dataLength, OpCode::BINARY);
   }
 
@@ -344,7 +344,7 @@ protected:
   ClientType _endpoint;
   websocketpp::lib::shared_ptr<websocketpp::lib::thread> _thread;
   ConnectionPtr _con;
-  std::shared_mutex _mutex;
+  std::mutex _mutex;
   TextMessageHandler _text_message_handler;
   BinaryMessageHandler _binary_message_handler;
 };
