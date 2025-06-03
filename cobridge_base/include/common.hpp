@@ -212,7 +212,7 @@ namespace std
 template<>
 struct hash<cobridge_base::ClientBinaryOpcode>
 {
-  std::size_t operator()(const cobridge_base::ClientBinaryOpcode& opcode) const
+  std::size_t operator()(const cobridge_base::ClientBinaryOpcode & opcode) const
   {
     return std::hash<uint8_t>()(static_cast<uint8_t>(opcode));
   }

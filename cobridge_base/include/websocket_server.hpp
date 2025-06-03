@@ -63,10 +63,10 @@ namespace cobridge_base
 {
 
 constexpr uint32_t
-string_hash_impl(const char* str, std::size_t len, std::size_t i, uint32_t result)
+string_hash_impl(const char * str, std::size_t len, std::size_t i, uint32_t result)
 {
-  return i >= len ? result : 
-    string_hash_impl(str, len, i + 1, (static_cast<uint32_t>(str[i]) ^ result) * 0x01000193);
+  return i >= len ? result :
+         string_hash_impl(str, len, i + 1, (static_cast<uint32_t>(str[i]) ^ result) * 0x01000193);
 }
 
 constexpr uint32_t
@@ -308,7 +308,8 @@ private:
   uint32_t _next_channel_id = 0;
   std::map<ConnHandle, ClientInfo, std::owner_less<ConnHandle>> _clients;
   std::unordered_map<ChannelId, Channel> _channels;
-  std::map<ConnHandle, std::unordered_map<ClientChannelId, ClientAdvertisement>, std::owner_less<ConnHandle>>
+  std::map<ConnHandle, std::unordered_map<ClientChannelId, ClientAdvertisement>,
+    std::owner_less<ConnHandle>>
   _client_channels;
   std::map<ConnHandle, std::unordered_set<std::string>, std::owner_less<ConnHandle>>
   _client_param_subscriptions;
@@ -374,7 +375,8 @@ inline Server<ServerConfiguration>::Server(
 
   // Callback queue for handling client requests and disconnections.
   // _handler_callback_queue = std::make_unique<CallbackQueue>(_logger, /*numThreads=*/ 1ul);
-  _handler_callback_queue = std::unique_ptr<CallbackQueue>(new CallbackQueue(_logger, /*numThreads=*/ 1ul));
+  _handler_callback_queue =
+    std::unique_ptr<CallbackQueue>(new CallbackQueue(_logger, /*numThreads=*/ 1ul));
 }
 
 template<typename ServerConfiguration>
@@ -402,11 +404,12 @@ inline void Server<ServerConfiguration>::start(const std::string & host, uint16_
   }
 
   _server_thread = std::unique_ptr<std::thread>(
-    new std::thread([this]() {
-      _server.get_alog().write(APP, "WebSocket server run loop started");
-      _server.run();
-      _server.get_alog().write(APP, "WebSocket server run loop stopped");
-    }));
+    new std::thread(
+      [this]() {
+        _server.get_alog().write(APP, "WebSocket server run loop started");
+        _server.run();
+        _server.get_alog().write(APP, "WebSocket server run loop stopped");
+      }));
 
   if (!_server.is_listening()) {
     throw std::runtime_error("WebSocket server failed to listen on port " + std::to_string(port));
@@ -560,8 +563,7 @@ inline void Server<ServerConfiguration>::remove_channels(const std::vector<Chann
   for (auto & client : _clients) {
     for (auto channel_id : channel_ids) {
       const auto it = client.second.subscriptions_by_channel.find(channel_id);
-      if (it != client.second.subscriptions_by_channel.end())
-      {
+      if (it != client.second.subscriptions_by_channel.end()) {
         client.second.subscriptions_by_channel.erase(it);
       }
     }
@@ -980,7 +982,7 @@ void Server<ServerConfiguration>::handle_login(const Json & payload, ConnHandle 
   std::vector<Channel> channels;
   {
     std::lock_guard<std::mutex> lock(_channels_mutex);
-    for (const auto & channel: _channels) {
+    for (const auto & channel : _channels) {
       channels.push_back(channel.second);
     }
   }
@@ -1088,7 +1090,7 @@ inline void Server<ServerConfiguration>::handle_connection_closed(ConnHandle hdl
 
   // Unsubscribe all channels this client subscribed to
   if (_handlers.unsubscribe_handler) {
-    for (const auto & subs: old_subscriptions_by_channel) {
+    for (const auto & subs : old_subscriptions_by_channel) {
       try {
         _handlers.unsubscribe_handler(subs.first, hdl);
       } catch (const std::exception & ex) {
@@ -1167,7 +1169,8 @@ inline bool Server<ServerConfiguration>::is_parameter_subscribed(
 {
   return std::find_if(
     _client_param_subscriptions.begin(), _client_param_subscriptions.end(),
-    [param_name](const std::pair<ConnHandle, std::unordered_set<std::string>> & param_subscriptions) {
+    [param_name](const std::pair<ConnHandle,
+    std::unordered_set<std::string>> & param_subscriptions) {
       return param_subscriptions.second.find(param_name) !=
       param_subscriptions.second.end();
     }) != _client_param_subscriptions.end();
@@ -1345,7 +1348,7 @@ void Server<ServerConfiguration>::handle_advertise(const Json & payload, ConnHan
       topic,
       chan.at("encoding").get<std::string>(),
       chan.at("schemaName").get<std::string>(),
-      std::vector<unsigned char>() 
+      std::vector<unsigned char>()
     };
 
     _handlers.client_advertise_handler(advertisement, hdl);
@@ -1468,15 +1471,15 @@ void Server<ServerConfiguration>::handle_subscribe_connection_graph(ConnHandle h
   Json::array_t published_topics_json, subscribed_topics_json, advertised_services_json;
   {
     std::lock_guard<std::mutex> lock(_connection_graph_mutex);
-    for (const auto &topic : _connection_graph.published_topics) {
+    for (const auto & topic : _connection_graph.published_topics) {
       published_topics_json.push_back(
         Json{{"name", topic.first}, {"publisherIds", topic.second}});
     }
-    for (const auto &topic : _connection_graph.subscribed_topics) {
+    for (const auto & topic : _connection_graph.subscribed_topics) {
       subscribed_topics_json.push_back(
         Json{{"name", topic.first}, {"subscriberIds", topic.second}});
     }
-    for (const auto &service : _connection_graph.advertised_services) {
+    for (const auto & service : _connection_graph.advertised_services) {
       advertised_services_json.push_back(
         Json{{"name", service.first}, {"providerIds", service.second}});
     }

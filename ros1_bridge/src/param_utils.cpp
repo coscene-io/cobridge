@@ -19,6 +19,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <utility>
 #include <ros/ros.h>
 
 namespace cobridge
@@ -29,48 +30,50 @@ cobridge_base::ParameterValue fromRosParam(const XmlRpc::XmlRpcValue & value)
   XmlRpc::XmlRpcValue non_const_value = value;
   switch (non_const_value.getType()) {
     case XmlRpc::XmlRpcValue::TypeBoolean:
-    {
-      return cobridge_base::ParameterValue(static_cast<bool>(non_const_value));
-    }
-    
+      {
+        return cobridge_base::ParameterValue(static_cast<bool>(non_const_value));
+      }
+
     case XmlRpc::XmlRpcValue::TypeInt:
-    {
-      return cobridge_base::ParameterValue(static_cast<int>(non_const_value));
-    }
-    
+      {
+        return cobridge_base::ParameterValue(static_cast<int>(non_const_value));
+      }
+
     case XmlRpc::XmlRpcValue::TypeDouble:
-    {
-      return cobridge_base::ParameterValue(static_cast<double>(non_const_value));
-    }
-    
+      {
+        return cobridge_base::ParameterValue(static_cast<double>(non_const_value));
+      }
+
     case XmlRpc::XmlRpcValue::TypeString:
-    {
-      return cobridge_base::ParameterValue(static_cast<std::string>(non_const_value));
-    }
-    
+      {
+        return cobridge_base::ParameterValue(static_cast<std::string>(non_const_value));
+      }
+
     case XmlRpc::XmlRpcValue::TypeStruct:
-    {
-      std::unordered_map<std::string, cobridge_base::ParameterValue> param_map;
-      for (const auto & element: non_const_value) {
-        param_map.insert(std::make_pair(element.first, fromRosParam(element.second)));
+      {
+        std::unordered_map<std::string, cobridge_base::ParameterValue> param_map;
+        for (const auto & element : non_const_value) {
+          param_map.insert(std::make_pair(element.first, fromRosParam(element.second)));
+        }
+        return cobridge_base::ParameterValue(param_map);
       }
-      return cobridge_base::ParameterValue(param_map);
-    }
-    
+
     case XmlRpc::XmlRpcValue::TypeArray:
-    {
-      std::vector<cobridge_base::ParameterValue> param_vec;
-      for (int i = 0; i < non_const_value.size(); ++i) {
-        param_vec.push_back(fromRosParam(non_const_value[i]));
+      {
+        std::vector<cobridge_base::ParameterValue> param_vec;
+        for (int i = 0; i < non_const_value.size(); ++i) {
+          param_vec.push_back(fromRosParam(non_const_value[i]));
+        }
+        return cobridge_base::ParameterValue(param_vec);
       }
-      return cobridge_base::ParameterValue(param_vec);
-    }
-    
+
     case XmlRpc::XmlRpcValue::TypeInvalid:
       throw std::runtime_error("Parameter not set");
-    
+
     default:
-      throw std::runtime_error("Unsupported parameter type: " + std::to_string(non_const_value.getType()));
+      throw std::runtime_error(
+              "Unsupported parameter type: " +
+              std::to_string(non_const_value.getType()));
   }
 }
 
@@ -116,27 +119,27 @@ std::vector<std::regex> parse_regex_patterns(const std::vector<std::string> & pa
 {
   std::vector<std::regex> result;
   result.reserve(patterns.size());
-  
+
   for (const auto & pattern : patterns) {
     try {
       result.emplace_back(
         pattern, std::regex_constants::ECMAScript | std::regex_constants::icase);
-    } catch (const std::regex_error& ex) {
+    } catch (const std::regex_error & ex) {
       ROS_ERROR("Failed to parse regex pattern '%s': %s", pattern.c_str(), ex.what());
-    } catch (const std::exception& ex) {
+    } catch (const std::exception & ex) {
       ROS_ERROR("Failed to parse regex pattern '%s': %s", pattern.c_str(), ex.what());
     }
   }
-  
+
   if (result.empty()) {
     ROS_WARN("No valid regex patterns found, using default '.*' pattern");
     try {
       result.emplace_back(".*", std::regex_constants::ECMAScript | std::regex_constants::icase);
-    } catch (const std::exception& ex) {
+    } catch (const std::exception & ex) {
       ROS_ERROR("Failed to create default regex pattern: %s", ex.what());
     }
   }
-  
+
   return result;
 }
 

@@ -74,9 +74,11 @@ constexpr int DEFAULT_SERVICE_TYPE_RETRIEVAL_TIMEOUT_MS = 250;
 
 using ConnectionHandle = websocketpp::connection_hdl;
 using TopicAndDatatype = std::pair<std::string, std::string>;
-using SubscriptionsByClient = std::map<ConnectionHandle, ros::Subscriber, std::owner_less<ConnectionHandle>>;
+using SubscriptionsByClient = std::map<ConnectionHandle, ros::Subscriber,
+    std::owner_less<ConnectionHandle>>;
 using ClientPublications = std::unordered_map<cobridge_base::ClientChannelId, ros::Publisher>;
-using PublicationsByClient = std::map<ConnectionHandle, ClientPublications, std::owner_less<ConnectionHandle>>;
+using PublicationsByClient = std::map<ConnectionHandle, ClientPublications,
+    std::owner_less<ConnectionHandle>>;
 using cobridge_base::is_whitelisted;
 
 class CoBridge : public nodelet::Nodelet
@@ -108,14 +110,15 @@ public:
     const auto topic_whitelist_patterns =
       nhp.param<std::vector<std::string>>("topic_whitelist", {".*"});
     ROS_INFO("Topic whitelist patterns:");
-    for (const auto& pattern : topic_whitelist_patterns) {
+    for (const auto & pattern : topic_whitelist_patterns) {
       ROS_INFO("  - %s", pattern.c_str());
     }
     topic_whitelist_patterns_ = parse_regex_patterns(topic_whitelist_patterns);
     if (topic_whitelist_patterns.size() != topic_whitelist_patterns_.size()) {
       ROS_ERROR("Failed to parse one or more topic whitelist patterns");
-      ROS_ERROR("Input patterns: %zu, Parsed patterns: %zu", 
-                topic_whitelist_patterns.size(), topic_whitelist_patterns_.size());
+      ROS_ERROR(
+        "Input patterns: %zu, Parsed patterns: %zu",
+        topic_whitelist_patterns.size(), topic_whitelist_patterns_.size());
     }
     ROS_INFO("Successfully parsed %zu topic whitelist patterns", topic_whitelist_patterns_.size());
     const auto param_whitelist = nhp.param<std::vector<std::string>>("param_whitelist", {".*"});
@@ -176,7 +179,7 @@ public:
       //   std::make_unique<cobridge_base::CallbackQueue>(log_handler, 1 /* num_threads */);
       fetch_asset_queue_ =
         std::unique_ptr<cobridge_base::CallbackQueue>(
-          new cobridge_base::CallbackQueue(log_handler, 1 /* num_threads */));
+        new cobridge_base::CallbackQueue(log_handler, 1 /* num_threads */));
 
       _server = cobridge_base::ServerFactory::create_server<ConnectionHandle>(
         "cobridge",
@@ -563,9 +566,10 @@ private:
 
   void update_advertised_topics()
   {
-    ROS_INFO("Starting update_advertised_topics with %zu whitelist patterns",
-              topic_whitelist_patterns_.size());
-    
+    ROS_INFO(
+      "Starting update_advertised_topics with %zu whitelist patterns",
+      topic_whitelist_patterns_.size());
+
     // Get the current list of visible topics and datatypes from the ROS graph
     std::vector<ros::master::TopicInfo> topic_names_and_types;
     if (!ros::master::getTopics(topic_names_and_types)) {
@@ -586,10 +590,10 @@ private:
         if (is_whitelisted(topic_name, topic_whitelist_patterns_)) {
           latest_topics.emplace(topic_name, datatype);
         }
-      } catch (const std::regex_error& ex) {
+      } catch (const std::regex_error & ex) {
         ROS_WARN("Regex error when checking topic '%s': %s", topic_name.c_str(), ex.what());
         continue;
-      } catch (const std::exception& ex) {
+      } catch (const std::exception & ex) {
         ROS_WARN("Error when checking topic '%s': %s", topic_name.c_str(), ex.what());
         continue;
       }
@@ -627,7 +631,8 @@ private:
     for (const auto & topic_and_datatype : latest_topics) {
       if (std::find_if(
           advertised_topics_.begin(), advertised_topics_.end(),
-          [topic_and_datatype](const std::pair<cobridge_base::ChannelId, cobridge_base::ChannelWithoutId> & channel_id_and_channel) {
+          [topic_and_datatype](const std::pair<cobridge_base::ChannelId,
+          cobridge_base::ChannelWithoutId> & channel_id_and_channel) {
             const auto & channel = channel_id_and_channel.second;
             return channel.topic == topic_and_datatype.first &&
             channel.schema_name == topic_and_datatype.second;
@@ -652,27 +657,27 @@ private:
             // We still advertise the channel, but with an empty schema
             new_channel.schema = "";
           }
-        } catch (const std::regex_error& ex) {
+        } catch (const std::regex_error & ex) {
           ROS_WARN(
-            "Regex error when getting message description for topic \"%s\" (%s): %s", 
+            "Regex error when getting message description for topic \"%s\" (%s): %s",
             topic_and_datatype.first.c_str(), topic_and_datatype.second.c_str(), ex.what());
           new_channel.schema = "";
         } catch (const std::exception & err) {
           ROS_WARN(
-            "Failed to get message description for topic \"%s\" (%s): %s", 
+            "Failed to get message description for topic \"%s\" (%s): %s",
             topic_and_datatype.first.c_str(), topic_and_datatype.second.c_str(), err.what());
           new_channel.schema = "";
         }
 
         channels_to_add.push_back(std::move(new_channel));
-      } catch (const std::regex_error& ex) {
+      } catch (const std::regex_error & ex) {
         ROS_WARN(
-          "Failed to add channel for topic \"%s\" (%s): regex_error - %s", 
+          "Failed to add channel for topic \"%s\" (%s): regex_error - %s",
           topic_and_datatype.first.c_str(), topic_and_datatype.second.c_str(), ex.what());
         continue;
       } catch (const std::exception & err) {
         ROS_WARN(
-          "Failed to add channel for topic \"%s\" (%s): %s", 
+          "Failed to add channel for topic \"%s\" (%s): %s",
           topic_and_datatype.first.c_str(), topic_and_datatype.second.c_str(), err.what());
         continue;
       }
@@ -715,7 +720,8 @@ private:
     for (const auto & service_name : service_names) {
       if (std::find_if(
           advertised_services_.begin(), advertised_services_.end(),
-          [&service_name](const std::pair<cobridge_base::ServiceId, cobridge_base::ServiceWithoutId> & id_with_service) {
+          [&service_name](const std::pair<cobridge_base::ServiceId,
+          cobridge_base::ServiceWithoutId> & id_with_service) {
             return id_with_service.second.name == service_name;
           }) != advertised_services_.end())
       {
