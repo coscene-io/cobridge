@@ -1,8 +1,8 @@
-if ("$ENV{ROS_DISTRO}" STREQUAL "indigo")
+if("$ENV{ROS_DISTRO}" STREQUAL "indigo")
     cmake_minimum_required(VERSION 2.8.12)
-else ()
+else()
     cmake_minimum_required(VERSION 3.10.2)
-endif ()
+endif()
 
 if(POLICY CMP0048)
     cmake_policy(SET CMP0048 NEW)
@@ -113,22 +113,22 @@ message(STATUS "ROS_ROOT: " $ENV{ROS_ROOT})
 set(ROS1_DISTROS "indigo" "melodic" "noetic")
 set(ROS2_DISTROS "foxy" "humble" "jazzy")
 
-if ("$ENV{ROS_DISTRO}" STREQUAL "indigo")
+if("$ENV{ROS_DISTRO}" STREQUAL "indigo")
     add_definitions(-DROS1_VERSION_INDIGO)
     set(ROS_DISTRIBUTION "indigo")
-elseif ("$ENV{ROS_DISTRO}" STREQUAL "melodic")
+elseif("$ENV{ROS_DISTRO}" STREQUAL "melodic")
     add_definitions(-DROS1_VERSION_MELODIC)
     set(ROS_DISTRIBUTION "melodic")
-elseif ("$ENV{ROS_DISTRO}" STREQUAL "noetic")
+elseif("$ENV{ROS_DISTRO}" STREQUAL "noetic")
     add_definitions(-DROS1_VERSION_NOETIC)
     set(ROS_DISTRIBUTION "noetic")
-elseif ("$ENV{ROS_DISTRO}" STREQUAL "foxy")
+elseif("$ENV{ROS_DISTRO}" STREQUAL "foxy")
     add_definitions(-DROS2_VERSION_FOXY)
     set(ROS_DISTRIBUTION "foxy")
-elseif ("$ENV{ROS_DISTRO}" STREQUAL "humble")
+elseif("$ENV{ROS_DISTRO}" STREQUAL "humble")
     add_definitions(-DROS2_VERSION_HUMBLE)
     set(ROS_DISTRIBUTION "humble")
-elseif ("$ENV{ROS_DISTRO}" STREQUAL "jazzy")
+elseif("$ENV{ROS_DISTRO}" STREQUAL "jazzy")
     add_definitions(-DROS2_VERSION_JAZZY)
     set(ROS_DISTRIBUTION "jazzy")
 endif()
@@ -160,7 +160,7 @@ if(NOT ROS1_FOUND EQUAL -1)
                 ${PRIVATE_ROS_BABEL_FISH_DIR}/ros_babel_fish/message.cpp
                 ${PRIVATE_ROS_BABEL_FISH_DIR}/ros_babel_fish/message_extractor.cpp
         )
-        
+
         target_include_directories(ros_babel_fish
                 PUBLIC
                 ${PRIVATE_ROS_BABEL_FISH_DIR}
