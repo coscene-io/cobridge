@@ -1,7 +1,10 @@
 FROM ros:humble
 
 ENV ROS_DISTRO=humble
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 4B63CF8FDE49746E98FA01DDAD19BAB3CBF125EA
+
+RUN apt-get update && apt-get install -y curl gnupg
+RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | apt-key add -
+    
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libasio-dev zip ros-${ROS_DISTRO}-resource-retriever \

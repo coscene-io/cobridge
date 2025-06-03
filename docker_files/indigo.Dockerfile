@@ -4,7 +4,7 @@ ENV ROS_DISTRO=indigo
 ENV ROS_VERSION=1
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends --allow-unauthenticated\
     libasio-dev zip build-essential ros-${ROS_DISTRO}-resource-retriever\
     python-bloom devscripts fakeroot debhelper apt-utils gnupg
 
