@@ -273,7 +273,6 @@ TEST(SmokeTest, testSubscription) {
     const cobridge_base::Channel channel = channel_future.get();
     const cobridge_base::SubscriptionId subscription_id = 1;
 
-
     // Subscribe to the channel and confirm that the promise resolves
     auto msg_future = cobridge_base::wait_for_channel_msg(client.get(), subscription_id);
     client->subscribe({{subscription_id, channel.id}});

@@ -73,6 +73,8 @@ protected:
 
     client_ = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
     ASSERT_EQ(std::future_status::ready, client_->connect(URI).wait_for(DEFAULT_TIMEOUT));
+
+    client_->login("test user", "test-user-id-0000");
   }
 
   ros::NodeHandle nh_;
@@ -131,7 +133,7 @@ TEST(SmokeTest, testMultiConnection) {
     "\"parametersSubscribe\",\"parameters\",\"services\",\"assets\"],"
     "\"metadata\":{\"ROS_DISTRO\":\"foxy\"},\"name\":\"cobridge\","
     "\"op\":\"serverInfo\",\"sessionId\":\"1727148359\","
-    "\"supportedEncodings\":[\"cdr\"]}", server_info_future.get());
+    "\"supportedEncodings\":[\"ros1\"]}", server_info_future.get());
 }
 
 TEST(SmokeTest, testSubscription) {
@@ -145,6 +147,7 @@ TEST(SmokeTest, testSubscription) {
   auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
   auto channel_future = cobridge_base::wait_for_channel(client, topic_name);
   ASSERT_EQ(std::future_status::ready, client->connect(URI).wait_for(THREE_SECOND));
+  client->login("test user", "test-user-id-0000");
   ASSERT_EQ(std::future_status::ready, channel_future.wait_for(DEFAULT_TIMEOUT));
   const cobridge_base::Channel channel = channel_future.get();
   const cobridge_base::SubscriptionId subscription_id = 1;
@@ -162,7 +165,8 @@ TEST(SmokeTest, testSubscription) {
 }
 
 TEST(SmokeTest, testPublishing) {
-  cobridge_base::Client<websocketpp::config::asio_client> client;
+  // cobridge_base::Client<websocketpp::config::asio_client> client;
+  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
 
   cobridge_base::ClientAdvertisement advertisement;
   advertisement.channel_id = 1;
@@ -180,16 +184,20 @@ TEST(SmokeTest, testPublishing) {
     });
 
   // Set up the client, advertise and publish the binary message
-  ASSERT_EQ(std::future_status::ready, client.connect(URI).wait_for(DEFAULT_TIMEOUT));
-  client.advertise({advertisement});
-  std::this_thread::sleep_for(THREE_SECOND);
-  client.publish(advertisement.channel_id, HELLO_WORLD_BINARY, sizeof(HELLO_WORLD_BINARY));
+  ASSERT_EQ(std::future_status::ready, client->connect(URI).wait_for(DEFAULT_TIMEOUT));
+  client->login("test user", "test-user-id-0000");
+  client->advertise({advertisement});
+
+  auto channelFuture = cobridge_base::wait_for_channel(client, advertisement.topic);
+  ASSERT_EQ(std::future_status::ready, channelFuture.wait_for(THREE_SECOND));
+
+  client->publish(advertisement.channel_id, HELLO_WORLD_BINARY, sizeof(HELLO_WORLD_BINARY));
 
   // Ensure that we have received the correct message via our ROS subscriber
   const auto msg_result = msg_future.wait_for(THREE_SECOND);
   ASSERT_EQ(std::future_status::ready, msg_result);
   EXPECT_EQ("hello world", msg_future.get());
-  client.unadvertise({advertisement.channel_id});
+  client->unadvertise({advertisement.channel_id});
 }
 
 TEST_F(ParameterTest, testGetAllParams) {
@@ -341,9 +349,11 @@ TEST_F(ServiceTest, testCallService) {
   auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
 
   ASSERT_EQ(std::future_status::ready, client->connect(URI).wait_for(THREE_SECOND));
-  auto serviceFuture = cobridge_base::wait_for_service(client, SERVICE_NAME);
-  ASSERT_EQ(std::future_status::ready, serviceFuture.wait_for(DEFAULT_TIMEOUT));
-  const cobridge_base::Service service = serviceFuture.get();
+
+  client->login("test user", "test-user-id-0000");
+  auto service_future = cobridge_base::wait_for_service(client, SERVICE_NAME);
+  ASSERT_EQ(std::future_status::ready, service_future.wait_for(DEFAULT_TIMEOUT));
+  const cobridge_base::Service service = service_future.get();
 
   cobridge_base::ServiceRequest request;
   request.service_id = service.id;
@@ -369,6 +379,8 @@ TEST_F(ServiceTest, testCallService) {
 TEST(FetchAssetTest, fetchExistingAsset) {
   auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
   EXPECT_EQ(std::future_status::ready, client->connect(URI).wait_for(DEFAULT_TIMEOUT));
+
+  client->login("test user", "test-user-id-0000");
 
   const auto millis_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(
     std::chrono::system_clock::now().time_since_epoch());
@@ -398,6 +410,8 @@ TEST(FetchAssetTest, fetchExistingAsset) {
 TEST(FetchAssetTest, fetchNonExistingAsset) {
   auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
   EXPECT_EQ(std::future_status::ready, client->connect(URI).wait_for(DEFAULT_TIMEOUT));
+
+  client->login("test user", "test-user-id-0000");
 
   const std::string asset_id = "file:///foo/bar";
   const uint32_t request_id = 456;
