@@ -93,16 +93,19 @@ protected:
   {
     _nh = ros::NodeHandle();
     _service = _nh.advertiseService<std_srvs::SetBool::Request, std_srvs::SetBool::Response>(
-      SERVICE_NAME, [&](std_srvs::SetBool::Request & req, std_srvs::SetBool::Response & res) {
-        res.message = "hello";
-        res.success = req.data;
-        return true;
-      });
+      SERVICE_NAME, &ServiceTest::serviceCallback);
   }
 
 private:
   ros::NodeHandle _nh;
   ros::ServiceServer _service;
+
+  static bool serviceCallback(std_srvs::SetBool::Request & req, std_srvs::SetBool::Response & res)
+  {
+    res.message = "hello";
+    res.success = req.data;
+    return true;
+  }
 };
 
 TEST(SmokeTest, testMultiConnection) {
