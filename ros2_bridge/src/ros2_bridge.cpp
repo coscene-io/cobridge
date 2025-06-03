@@ -820,12 +820,12 @@ void CoBridge::client_message(const cobridge_base::ClientMessage & message, Conn
 
 void CoBridge::set_parameters(
   const std::vector<cobridge_base::Parameter> & parameters,
-  const cobridge_base::optional<std::string> & request_id, cobridge::ConnectionHandle hdl)
+  const optional<std::string> & request_id, cobridge::ConnectionHandle hdl)
 {
   _param_interface->set_params(parameters, std::chrono::seconds(5));
 
   // If a request Id was given, send potentially updated parameters back to client
-  if (request_id) {
+  if (request_id.has_value()) {
     std::vector<std::string> parameter_names(parameters.size());
     for (size_t i = 0; i < parameters.size(); ++i) {
       parameter_names[i] = parameters[i].get_name();
@@ -836,7 +836,7 @@ void CoBridge::set_parameters(
 
 void CoBridge::get_parameters(
   const std::vector<std::string> & parameters,
-  const cobridge_base::optional<std::string> & request_id, cobridge::ConnectionHandle hdl)
+  const optional<std::string> & request_id, cobridge::ConnectionHandle hdl)
 {
   const auto params = _param_interface->get_params(parameters, std::chrono::seconds(5));
   _server->publish_parameter_values(hdl, params, request_id);

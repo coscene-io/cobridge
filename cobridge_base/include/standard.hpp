@@ -230,6 +230,12 @@ public:
     return *this;
   }
 
+  optional& operator=(const T& value) {
+    has_value_ = true;
+    value_ = value;
+    return *this;
+  }
+
   bool has_value() const { return has_value_; }
   const T& value() const { return value_; }
   T& value() { return value_; }
