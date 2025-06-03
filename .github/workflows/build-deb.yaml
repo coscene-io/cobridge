@@ -60,7 +60,7 @@ jobs:
             label: [ linux-arm-64-8c-32g-300gb ]
 #            container: coscene/ros:humble-arm64
           - ros_distribution: indigo
-            platform: armhf
+            arch: armhf
             distro: trusty
             label: [ linux-arm-64-8c-32g-300gb ]
 
