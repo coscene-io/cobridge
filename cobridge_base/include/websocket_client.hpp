@@ -272,7 +272,7 @@ public:
 
   void get_parameters(
     const std::vector<std::string> & parameter_names,
-    const optional<std::string> & request_id = nullopt) override
+    const optional<std::string> & request_id = optional<std::string>(nullopt)) override
   {
     nlohmann::json jsonPayload{{"op", "getParameters"},
       {"parameterNames", parameter_names}};
@@ -284,7 +284,7 @@ public:
 
   void set_parameters(
     const std::vector<Parameter> & parameters,
-    const optional<std::string> & request_id = nullopt) override
+    const optional<std::string> & request_id = optional<std::string>(nullopt)) override
   {
     nlohmann::json jsonPayload{{"op", "setParameters"},
       {"parameters", parameters}};
