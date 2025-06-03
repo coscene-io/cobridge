@@ -57,12 +57,12 @@ class ParameterTest : public ::testing::Test
 {
 public:
   using PARAM_1_TYPE = std::string;
-  inline static const std::string PARAM_1_NAME = "/node_1/string_param";
-  inline static const PARAM_1_TYPE PARAM_1_DEFAULT_VALUE = "hello";
+  static const std::string PARAM_1_NAME = "/node_1/string_param";
+  static const PARAM_1_TYPE PARAM_1_DEFAULT_VALUE = "hello";
 
   using PARAM_2_TYPE = std::vector<double>;
-  inline static const std::string PARAM_2_NAME = "/node_2/int_array_param";
-  inline static const PARAM_2_TYPE PARAM_2_DEFAULT_VALUE = {1.2, 2.1, 3.3};
+  static const std::string PARAM_2_NAME = "/node_2/int_array_param";
+  static const PARAM_2_TYPE PARAM_2_DEFAULT_VALUE = {1.2, 2.1, 3.3};
 
 protected:
   void SetUp() override
@@ -85,14 +85,14 @@ protected:
 class ServiceTest : public ::testing::Test
 {
 public:
-  inline static const std::string SERVICE_NAME = "/foo_service";
+  static const std::string SERVICE_NAME = "/foo_service";
 
 protected:
   void SetUp() override
   {
     _nh = ros::NodeHandle();
     _service = _nh.advertiseService<std_srvs::SetBool::Request, std_srvs::SetBool::Response>(
-      SERVICE_NAME, [&](auto & req, auto & res) {
+      SERVICE_NAME, [&](std_srvs::SetBool::Request & req, std_srvs::SetBool::Response & res) {
         res.message = "hello";
         res.success = req.data;
         return true;
@@ -231,11 +231,11 @@ TEST_F(ParameterTest, testGetParameters) {
 
   EXPECT_EQ(2UL, params.size());
   auto p1Iter = std::find_if(
-    params.begin(), params.end(), [](const auto & param) {
+    params.begin(), params.end(), [](const cobridge_base::Parameter & param) {
       return param.get_name() == PARAM_1_NAME;
     });
   auto p2Iter = std::find_if(
-    params.begin(), params.end(), [](const auto & param) {
+    params.begin(), params.end(), [](const cobridge_base::Parameter & param) {
       return param.get_name() == PARAM_2_NAME;
     });
   ASSERT_NE(p1Iter, params.end());
@@ -271,11 +271,11 @@ TEST_F(ParameterTest, testSetParameters) {
 
   EXPECT_EQ(2UL, params.size());
   auto p1Iter = std::find_if(
-    params.begin(), params.end(), [](const auto & param) {
+    params.begin(), params.end(), [](const cobridge_base::Parameter & param) {
       return param.get_name() == PARAM_1_NAME;
     });
   auto p2Iter = std::find_if(
-    params.begin(), params.end(), [](const auto & param) {
+    params.begin(), params.end(), [](const cobridge_base::Parameter & param) {
       return param.get_name() == PARAM_2_NAME;
     });
   ASSERT_NE(p1Iter, params.end());
