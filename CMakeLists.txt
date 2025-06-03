@@ -173,7 +173,7 @@ if(NOT ROS1_FOUND EQUAL -1)
 
         catkin_package(
                 INCLUDE_DIRS cobridge_base/include
-                LIBRARIES cobridge_base cobridge_nodelet
+                LIBRARIES cobridge_base cobridge_nodelet ros_babel_fish
                 CATKIN_DEPENDS nodelet resource_retriever rosgraph_msgs roslib roscpp xmlrpcpp
                 DEPENDS Boost
         )
@@ -295,7 +295,7 @@ if(ROS_BUILD_TYPE STREQUAL "catkin")
     install(TARGETS cobridge
             RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
-    install(TARGETS cobridge_base cobridge_nodelet
+    install(TARGETS cobridge_base cobridge_nodelet ros_babel_fish
             ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
             LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
             RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
