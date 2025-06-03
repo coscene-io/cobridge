@@ -20,14 +20,34 @@ jobs:
       image: cobridge/ros-${{ matrix.ros_distribution }}:latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        if: matrix.ros_distribution != 'indigo' && matrix.ros_distribution != 'melodic'
+        uses: actions/checkout@v4
         with:
           path: src/cobridge
 
+      - name: Checkout code (indigo/melodic)
+        if: matrix.ros_distribution == 'indigo' || matrix.ros_distribution == 'melodic'
+        shell: bash
+        run: |
+          mkdir -p src/cobridge
+          cd src/cobridge
+          echo "current sha: ${{ github.sha}}, current ref: ${{ github.ref }}"
+          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          git config --global --add safe.directory /__w/cobridge/cobridge
+          
+          git clone https://github.com/${{ github.repository }}.git .
+          
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "PR number: ${{ github.event.pull_request.number }}"
+            git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-branch
+            git checkout pr-branch
+          else
+            git checkout ${{ github.sha }}
+          fi
+
       - name: Apply patches
         run: |
-          cd src/cobridge
-          ./patch_apply.sh
+          ./patch_apply.sh  
 
       - name: Build
         run: |

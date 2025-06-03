@@ -276,7 +276,7 @@ TEST(SmokeTest, testSubscription) {
     // Subscribe to the channel and confirm that the promise resolves
     auto msg_future = cobridge_base::wait_for_channel_msg(client.get(), subscription_id);
     client->subscribe({{subscription_id, channel.id}});
-    ASSERT_EQ(std::future_status::ready, msg_future.wait_for(THREE_SECOND));
+    ASSERT_EQ(std::future_status::ready, msg_future.wait_for(DEFAULT_TIMEOUT));
     const auto msg_data = msg_future.get();
     ASSERT_EQ(sizeof(HELLO_WORLD_BINARY), msg_data.size());
     EXPECT_EQ(0, std::memcmp(HELLO_WORLD_BINARY, msg_data.data(), msg_data.size()));
