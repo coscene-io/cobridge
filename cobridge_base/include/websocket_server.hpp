@@ -610,7 +610,7 @@ inline void Server<ServerConfiguration>::update_parameter_values(
 
     if (!params_to_send_to_client.empty()) {
       publish_parameter_values(
-        client_param_subscriptions.first, params_to_send_to_client, nullopt);
+        client_param_subscriptions.first, params_to_send_to_client, optional<std::string>(nullopt));
     }
   }
 }
@@ -1393,7 +1393,7 @@ void Server<ServerConfiguration>::handle_get_parameters(const Json & payload, Co
 {
   const auto param_names = payload.at("parameterNames").get<std::vector<std::string>>();
   const auto request_id = payload.find("id") == payload.end() ?
-    nullopt : optional<std::string>(payload["id"].get<std::string>());
+    optional<std::string>(nullopt) : optional<std::string>(payload["id"].get<std::string>());
   _handlers.parameter_request_handler(param_names, request_id, std::move(hdl));
 }
 
@@ -1402,7 +1402,7 @@ void Server<ServerConfiguration>::handle_set_parameters(const Json & payload, Co
 {
   const auto parameters = payload.at("parameters").get<std::vector<Parameter>>();
   const auto request_id = payload.find("id") == payload.end() ?
-    nullopt : optional<std::string>(payload["id"].get<std::string>());
+    optional<std::string>(nullopt) : optional<std::string>(payload["id"].get<std::string>());
   _handlers.parameter_change_handler(parameters, request_id, std::move(hdl));
 }
 
@@ -1553,7 +1553,8 @@ inline void Server<ServerConfiguration>::handle_text_message(ConnHandle hdl, Mes
     return;
   }
 
-  if (!has_handler(string_hash(op))) {
+  auto op_string_view = string_view(op);
+  if (!has_handler(string_hash(op_string_view))) {
     send_status_and_log_msg(
       hdl, StatusLevel::Error,
       "Operation '" + op + "' not supported as server handler function is missing");
@@ -1561,7 +1562,7 @@ inline void Server<ServerConfiguration>::handle_text_message(ConnHandle hdl, Mes
   }
 
   try {
-    switch (string_hash(op)) {
+    switch (string_hash(op_string_view)) {
       case LOGIN:
         handle_login(payload, hdl);
         break;
