@@ -29,13 +29,20 @@
 #include <thread>
 #include <vector>
 
-constexpr char URI[] = "ws://localhost:9876";
+#define URI "ws://localhost:9876"
 
 constexpr uint8_t HELLO_WORLD_BINARY[] = {11, 0, 0, 0, 104, 101, 108, 108,
   111, 32, 119, 111, 114, 108, 100};
 
 constexpr auto THREE_SECOND = std::chrono::seconds(3);
 constexpr auto DEFAULT_TIMEOUT = std::chrono::seconds(8);
+
+#define PARAM_1_NAME "/node_1/string_param"
+#define PARAM_1_DEFAULT_VALUE "hello"
+#define PARAM_2_NAME "/node_2/int_array_param"
+#define SERVICE_NAME "/foo_service"
+
+#define PARAM_2_DEFAULT_VALUE_INIT {1.2, 2.1, 3.3}
 
 using json = nlohmann::json;
 
@@ -57,19 +64,16 @@ class ParameterTest : public ::testing::Test
 {
 public:
   using PARAM_1_TYPE = std::string;
-  static const std::string PARAM_1_NAME = "/node_1/string_param";
-  static const PARAM_1_TYPE PARAM_1_DEFAULT_VALUE = "hello";
-
   using PARAM_2_TYPE = std::vector<double>;
-  static const std::string PARAM_2_NAME = "/node_2/int_array_param";
-  static const PARAM_2_TYPE PARAM_2_DEFAULT_VALUE = {1.2, 2.1, 3.3};
 
 protected:
   void SetUp() override
   {
     nh_ = ros::NodeHandle();
-    nh_.setParam(PARAM_1_NAME, PARAM_1_DEFAULT_VALUE);
-    nh_.setParam(PARAM_2_NAME, PARAM_2_DEFAULT_VALUE);
+    nh_.setParam(PARAM_1_NAME, std::string(PARAM_1_DEFAULT_VALUE));
+
+    const std::vector<double> param2_default = PARAM_2_DEFAULT_VALUE_INIT;
+    nh_.setParam(PARAM_2_NAME, param2_default);
 
     client_ = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
     ASSERT_EQ(std::future_status::ready, client_->connect(URI).wait_for(DEFAULT_TIMEOUT));
@@ -84,9 +88,6 @@ protected:
 
 class ServiceTest : public ::testing::Test
 {
-public:
-  static const std::string SERVICE_NAME = "/foo_service";
-
 protected:
   void SetUp() override
   {
@@ -248,7 +249,8 @@ TEST_F(ParameterTest, testGetParameters) {
   for (const auto & paramValue : array_params) {
     double_array_val.push_back(paramValue.getValue<double>());
   }
-  EXPECT_EQ(double_array_val, PARAM_2_DEFAULT_VALUE);
+  const std::vector<double> expected_value = PARAM_2_DEFAULT_VALUE_INIT;
+  EXPECT_EQ(double_array_val, expected_value);
 }
 
 TEST_F(ParameterTest, testSetParameters) {
