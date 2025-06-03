@@ -46,7 +46,8 @@ jobs:
           fi
 
       - name: Apply patches
-        run: |
+        run: |          
+          cd src/cobridge
           ./patch_apply.sh  
 
       - name: Build
