@@ -380,7 +380,7 @@ TEST_F(ExistingPublisherTest, testPublishingWithExistingPublisher) {
 TEST_F(ParameterTest, testGetAllParams) {
   const std::string requestId = "req-testGetAllParams";
   auto future = cobridge_base::wait_for_parameters(_wsClient, requestId);
-  _wsClient->get_parameters({}, requestId);
+  _wsClient->get_parameters({}, optional<std::string>(requestId));
   ASSERT_EQ(std::future_status::ready, future.wait_for(DEFAULT_TIMEOUT));
   std::vector<cobridge_base::Parameter> params = future.get();
 
@@ -391,7 +391,8 @@ TEST_F(ParameterTest, testGetNonExistingParameters) {
   const std::string requestId = "req-testGetNonExistingParameters";
   auto future = cobridge_base::wait_for_parameters(_wsClient, requestId);
   _wsClient->get_parameters(
-    {"/foo_1.non_existing_parameter", "/foo_2.non_existing.nested_parameter"}, requestId);
+    {"/foo_1.non_existing_parameter", "/foo_2.non_existing.nested_parameter"},
+    optional<std::string>(requestId));
   ASSERT_EQ(std::future_status::ready, future.wait_for(DEFAULT_TIMEOUT));
   std::vector<cobridge_base::Parameter> params = future.get();
 
@@ -404,7 +405,7 @@ TEST_F(ParameterTest, testGetParameters) {
 
   const std::string requestId = "req-testGetParameters";
   auto future = cobridge_base::wait_for_parameters(_wsClient, requestId);
-  _wsClient->get_parameters({p1, p2}, requestId);
+  _wsClient->get_parameters({p1, p2}, optional<std::string>(requestId));
   ASSERT_EQ(std::future_status::ready, future.wait_for(DEFAULT_TIMEOUT));
   std::vector<cobridge_base::Parameter> params = future.get();
 
@@ -448,7 +449,7 @@ TEST_F(ParameterTest, testSetParameters) {
   _wsClient->set_parameters(parameters);
   const std::string requestId = "req-testSetParameters";
   auto future = cobridge_base::wait_for_parameters(_wsClient, requestId);
-  _wsClient->get_parameters({p1, p2}, requestId);
+  _wsClient->get_parameters({p1, p2}, optional<std::string>(requestId));
   ASSERT_EQ(std::future_status::ready, future.wait_for(DEFAULT_TIMEOUT));
   std::vector<cobridge_base::Parameter> params = future.get();
 
@@ -484,7 +485,7 @@ TEST_F(ParameterTest, testSetParametersWithReqId) {
 
   const std::string requestId = "req-testSetParameters";
   auto future = cobridge_base::wait_for_parameters(_wsClient, requestId);
-  _wsClient->set_parameters(parameters, requestId);
+  _wsClient->set_parameters(parameters, optional<std::string>(requestId));
   ASSERT_EQ(std::future_status::ready, future.wait_for(DEFAULT_TIMEOUT));
   std::vector<cobridge_base::Parameter> params = future.get();
 
@@ -547,7 +548,7 @@ TEST_F(ParameterTest, testUnsetParameter) {
 
   const std::string requestId = "req-testUnsetParameter";
   auto future = cobridge_base::wait_for_parameters(_wsClient, requestId);
-  _wsClient->set_parameters(parameters, requestId);
+  _wsClient->set_parameters(parameters, optional<std::string>(requestId));
   ASSERT_EQ(std::future_status::ready, future.wait_for(DEFAULT_TIMEOUT));
   std::vector<cobridge_base::Parameter> params = future.get();
 
