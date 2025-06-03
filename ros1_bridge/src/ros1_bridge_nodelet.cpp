@@ -109,10 +109,7 @@ public:
 
     const auto topic_whitelist_patterns =
       nhp.param<std::vector<std::string>>("topic_whitelist", {".*"});
-    ROS_INFO("Topic whitelist patterns:");
-    for (const auto & pattern : topic_whitelist_patterns) {
-      ROS_INFO("  - %s", pattern.c_str());
-    }
+
     topic_whitelist_patterns_ = parse_regex_patterns(topic_whitelist_patterns);
     if (topic_whitelist_patterns.size() != topic_whitelist_patterns_.size()) {
       ROS_ERROR("Failed to parse one or more topic whitelist patterns");
@@ -120,7 +117,7 @@ public:
         "Input patterns: %zu, Parsed patterns: %zu",
         topic_whitelist_patterns.size(), topic_whitelist_patterns_.size());
     }
-    ROS_INFO("Successfully parsed %zu topic whitelist patterns", topic_whitelist_patterns_.size());
+
     const auto param_whitelist = nhp.param<std::vector<std::string>>("param_whitelist", {".*"});
     param_whitelist_patterns = parse_regex_patterns(param_whitelist);
     if (param_whitelist.size() != param_whitelist_patterns.size()) {
@@ -566,19 +563,12 @@ private:
 
   void update_advertised_topics()
   {
-    ROS_INFO(
-      "Starting update_advertised_topics with %zu whitelist patterns",
-      topic_whitelist_patterns_.size());
-
     // Get the current list of visible topics and datatypes from the ROS graph
     std::vector<ros::master::TopicInfo> topic_names_and_types;
     if (!ros::master::getTopics(topic_names_and_types)) {
       ROS_WARN("Failed to retrieve published topics from ROS master.");
       return;
     }
-
-    ROS_INFO("Retrieved %zu topics from ROS master", topic_names_and_types.size());
-
     std::unordered_set<TopicAndDatatype, PairHash> latest_topics;
     latest_topics.reserve(topic_names_and_types.size());
     for (const auto & topic_name_and_type : topic_names_and_types) {

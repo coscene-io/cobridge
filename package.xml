@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
     <name>cobridge</name>
-    <version>0.0.0</version>
+    <version>1.1.0</version>
     <description>
         A ROS node that also functions as a WebSocket server, enabling seamless
         data interaction between ROS and cloud-based services.
