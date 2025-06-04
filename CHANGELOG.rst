@@ -1,6 +1,6 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Changelog for package cobridge
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-0.0.0
+1.0.1 (2025-01-08)
 ------------------
-only for test
+* add github action, to build deb file

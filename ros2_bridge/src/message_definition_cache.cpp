@@ -182,12 +182,12 @@ static std::pair<std::string, std::string> split_service_definition(
   if (definitions.size() != 2) {
     throw std::invalid_argument("Invalid service definition:\n" + service_definition);
   }
-  
+
   std::string request_def = definitions[0];
   if (!request_def.empty() && request_def.back() == '\n') {
     request_def.pop_back();
   }
-  
+
   return {request_def, definitions[1]};
 }
 
