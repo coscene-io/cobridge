@@ -9,7 +9,7 @@ RUN echo "deb [signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://pac
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libasio-dev zip ros-${ROS_DISTRO}-resource-retriever ros-${ROS_DISTRO}-ros-babel-fish \
+    libasio-dev zip ros-${ROS_DISTRO}-resource-retriever ros-${ROS_DISTRO}-ros-babel-fish ros-${ROS_DISTRO}-image-transport \
     libavformat-dev libswscale-dev libopencv-dev ros-${ROS_DISTRO}-foxglove-msgs \
     python-bloom devscripts fakeroot debhelper apt-utils gnupg
 RUN rm -rf /var/lib/apt/lists/*
