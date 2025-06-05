@@ -176,13 +176,28 @@ static std::tuple<std::string, std::string, std::string> split_action_msg_defini
 static std::pair<std::string, std::string> split_service_definition(
   const std::string & service_definition)
 {
-  constexpr char SEP[] = "\n---\n";
+  constexpr char SEP[] = "---";
 
   const auto definitions = split_string(service_definition, SEP);
   if (definitions.size() != 2) {
     throw std::invalid_argument("Invalid service definition:\n" + service_definition);
   }
-  return {definitions[0], definitions[1]};
+
+  std::string request = definitions[0];
+  while (!request.empty() && (request.back() == '\n' || request.back() == '\r')) {
+    request.pop_back();
+  }
+
+  std::string response = definitions[1];
+  size_t pos = 0;
+  while (pos < response.size() && (response[pos] == '\n' || response[pos] == '\r')) {
+    pos++;
+  }
+  if (pos > 0) {
+    response = response.substr(pos);
+  }
+
+  return {request, response};
 }
 
 inline bool ends_with(const std::string & str, const std::string & suffix)

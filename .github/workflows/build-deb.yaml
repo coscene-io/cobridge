@@ -13,52 +13,42 @@ jobs:
             arch: amd64
             distro: focal
             label: ubuntu-latest
-#            container: coscene/ros:noetic-amd64
           - ros_distribution: noetic
             arch: arm64
             distro: focal
             label: [ linux-arm-64-8c-32g-300gb ]
-#            container: coscene/ros:noetic-arm64
           - ros_distribution: melodic
             arch: amd64
             distro: bionic
             label: ubuntu-latest
-          #            container: coscene/ros:melodic-amd64
           - ros_distribution: melodic
             arch: arm64
             distro: bionic
             label: [ linux-arm-64-8c-32g-300gb ]
-          #            container: coscene/ros:melodic-arm64
           - ros_distribution: foxy
             arch: amd64
             distro: focal
             label: ubuntu-latest
-#            container: coscene/ros:foxy-amd64
           - ros_distribution: foxy
             arch: arm64
             distro: focal
             label: [ linux-arm-64-8c-32g-300gb ]
-#            container: coscene/ros:foxy-arm64
           - ros_distribution: humble
             arch: amd64
             distro: jammy
             label: ubuntu-latest
-#            container: coscene/ros:humble-amd64
           - ros_distribution: humble
             arch: arm64
             distro: jammy
             label: [ linux-arm-64-8c-32g-300gb ]
-#            container: coscene/ros:humble-arm64
           - ros_distribution: jazzy
             arch: amd64
             distro: noble
             label: ubuntu-latest
-#            container: coscene/ros:humble-arm64
           - ros_distribution: jazzy
             arch: arm64
             distro: noble
             label: [ linux-arm-64-8c-32g-300gb ]
-#            container: coscene/ros:humble-arm64
 
     name: Build deb (ROS ${{ matrix.ros_distribution }} - ${{ matrix.arch }})
     runs-on: ${{ matrix.label }}
