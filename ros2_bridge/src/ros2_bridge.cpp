@@ -147,8 +147,8 @@ CoBridge::CoBridge(const rclcpp::NodeOptions & options)
   server_options.cert_file = cert_file;
   server_options.key_file = keyfile;
   server_options.client_topic_whitelist_patterns = client_topic_whitelist_patterns;
-  server_options.mac_addresses = mac_addresses;
-  server_options.ip_addresses = ip_addresses;
+  server_options.mac_addr = mac_addresses;
+  server_options.ip_addrs = ip_addresses;
 
   _server = cobridge_base::ServerFactory::create_server<ConnectionHandle>(
     "cobridge", log_handler,

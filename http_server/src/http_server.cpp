@@ -322,4 +322,4 @@ void HttpServer::run_server()
   log(LogLevel::Info, "HTTP server socket closed");
 }
 
-}  // namespace http_server 
+}  // namespace http_server

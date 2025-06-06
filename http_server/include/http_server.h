@@ -65,4 +65,4 @@ bool get_dev_mac_addr(std::string& mac_addresses);
 bool get_dev_ip_addrs(std::vector<std::string>& ip_addresses, std::string& colink_ip);
 
 }  // namespace http_server
-#endif  // HTTP_SERVER_HPP_ 
+#endif  // HTTP_SERVER_HPP_
