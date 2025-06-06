@@ -150,8 +150,12 @@ public:
       "Starting cobridge (%s, %s@%s) with %s", ros_distro,
       cobridge_base::COBRIDGE_VERSION, cobridge_base::COBRIDGE_GIT_HASH,
       cobridge_base::websocket_user_agent());
-    all_mac_addresses_ = http_server::get_all_mac_addresses();
-    all_ip_addresses_ = http_server::get_all_ip_addresses();
+
+    std::string mac_addresses;
+    std::vector<std::string> ip_addresses;
+    std::string colink_ip;
+    http_server::get_dev_mac_addr(mac_addresses);
+    http_server::get_dev_ip_addrs(ip_addresses, colink_ip);
 
     auto http_log_handler = [this](http_server::LogLevel level, const char * msg) {
         switch (level) {
@@ -174,8 +178,7 @@ public:
       };
 
     http_server_ = std::make_unique<http_server::HttpServer>(
-      21275, all_mac_addresses_,
-      all_ip_addresses_, http_log_handler);
+      21275, mac_addresses, ip_addresses, http_log_handler);
     http_server_->start();
 
     try {
@@ -185,7 +188,7 @@ public:
         server_options.capabilities.emplace_back(cobridge_base::CAPABILITY_TIME);
       }
       server_options.supported_encodings = {ROS1_CHANNEL_ENCODING};
-      server_options.metadata = {{"ROS_DISTRO", ros_distro}};
+      server_options.metadata = {{"ROS_DISTRO", ros_distro}, {"COLINK", colink_ip}};
       server_options.send_buffer_limit_bytes = send_buffer_limit;
       server_options.session_id = session_id;
       server_options.use_tls = use_tls;
@@ -193,8 +196,8 @@ public:
       server_options.key_file = keyfile;
       server_options.use_compression = use_compression;
       server_options.client_topic_whitelist_patterns = client_topic_whitelist_patterns;
-      server_options.mac_addresses = all_mac_addresses_;
-      server_options.ip_addresses = all_ip_addresses_;
+      server_options.mac_addresses = mac_addresses;
+      server_options.ip_addresses = ip_addresses;
 
       const auto log_handler =
         std::bind(&CoBridge::log_handler, this, std::placeholders::_1, std::placeholders::_2);
@@ -1061,8 +1064,6 @@ private:
   std::unique_ptr<cobridge_base::CallbackQueue> fetch_asset_queue_;
 
   std::unique_ptr<http_server::HttpServer> http_server_;
-  std::string all_mac_addresses_;
-  std::vector<std::string> all_ip_addresses_;
 };
 
 }  // namespace cobridge

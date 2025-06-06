@@ -30,13 +30,14 @@
 namespace http_server
 {
 
-std::string get_all_mac_addresses()
+bool get_dev_mac_addr(std::string& mac_addresses)
 {
+  mac_addresses.clear();
   std::vector<std::string> mac_addresses_vec;
   ifaddrs* ifaddr;
   
   if (getifaddrs(&ifaddr) == -1) {
-    return "unknown";
+    return false;
   }
   
   for (const ifaddrs* ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
@@ -87,7 +88,6 @@ std::string get_all_mac_addresses()
     std::unique(mac_addresses_vec.begin(), mac_addresses_vec.end()),
     mac_addresses_vec.end());
   
-  std::string mac_addresses;
   for (size_t i = 0; i < mac_addresses_vec.size(); i++) {
     if (i > 0) {
       mac_addresses += ",";
@@ -95,16 +95,18 @@ std::string get_all_mac_addresses()
     mac_addresses += mac_addresses_vec[i];
   }
   
-  return mac_addresses;
+  return !mac_addresses.empty();
 }
 
-std::vector<std::string> get_all_ip_addresses() 
+bool get_dev_ip_addrs(std::vector<std::string>& ip_addresses, std::string& colink_ip)
 {
-  std::vector<std::string> ip_addresses;
+  ip_addresses.clear();
+  colink_ip.clear();
+  
   ifaddrs* ifaddr;
   
   if (getifaddrs(&ifaddr) == -1) {
-    return ip_addresses;
+    return false;
   }
   
   for (const ifaddrs* ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
@@ -116,9 +118,18 @@ std::vector<std::string> get_all_ip_addresses()
       const sockaddr_in* addr = reinterpret_cast<sockaddr_in*>(ifa->ifa_addr);
       char ip[INET_ADDRSTRLEN];
       inet_ntop(AF_INET, &(addr->sin_addr), ip, INET_ADDRSTRLEN);
+      std::string ip_str(ip);
       
-      if (std::string(ip) != "127.0.0.1") {
-        ip_addresses.push_back(ip);
+      if (ip_str != "127.0.0.1") {
+        if (std::string(ifa->ifa_name) == "colink") {
+          // 特殊处理colink的IP - 将最后一个八位字节改为1
+          size_t last_dot = ip_str.find_last_of('.');
+          if (last_dot != std::string::npos) {
+            colink_ip = ip_str.substr(0, last_dot + 1) + "1";
+          }
+        } else {
+          ip_addresses.push_back(ip_str);
+        }
       }
     }
   }
@@ -131,7 +142,7 @@ std::vector<std::string> get_all_ip_addresses()
     std::unique(ip_addresses.begin(), ip_addresses.end()),
     ip_addresses.end());
   
-  return ip_addresses;
+  return !ip_addresses.empty();
 }
 
 HttpServer::HttpServer(int port, 

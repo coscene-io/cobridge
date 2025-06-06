@@ -132,8 +132,6 @@ private:
   std::unique_ptr<cobridge_base::CallbackQueue> _fetch_asset_queue;
 
   std::unique_ptr<http_server::HttpServer> http_server_;
-  std::string all_mac_addresses_;
-  std::vector<std::string> all_ip_addresses_;
 
   void subscribe_connection_graph(bool subscribe);
 

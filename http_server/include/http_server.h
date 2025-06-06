@@ -33,7 +33,6 @@ enum class LogLevel
   Critical
 };
 
-// 日志处理函数类型
 using LogHandler = std::function<void(LogLevel, const char*)>;
 
 class HttpServer
@@ -61,9 +60,9 @@ private:
   LogHandler _log_handler;
 };
 
-std::string get_all_mac_addresses();
+bool get_dev_mac_addr(std::string& mac_addresses);
 
-std::vector<std::string> get_all_ip_addresses();
+bool get_dev_ip_addrs(std::vector<std::string>& ip_addresses, std::string& colink_ip);
 
 }  // namespace http_server
 #endif  // HTTP_SERVER_HPP_ 

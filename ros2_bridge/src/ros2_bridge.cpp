@@ -103,8 +103,11 @@ CoBridge::CoBridge(const rclcpp::NodeOptions & options)
   _fetch_asset_queue =
     std::make_unique<cobridge_base::CallbackQueue>(log_handler, 1 /* num_threads */);
 
-  all_mac_addresses_ = http_server::get_all_mac_addresses();
-  all_ip_addresses_ = http_server::get_all_ip_addresses();
+  std::string mac_addresses;
+  std::vector<std::string> ip_addresses;
+  std::string colink_ip;
+  http_server::get_dev_mac_addr(mac_addresses);
+  http_server::get_dev_ip_addrs(ip_addresses, colink_ip);
 
   auto http_log_handler = [this](http_server::LogLevel level, const char * msg) {
       switch (level) {
@@ -127,8 +130,7 @@ CoBridge::CoBridge(const rclcpp::NodeOptions & options)
     };
 
   http_server_ = std::make_unique<http_server::HttpServer>(
-    21275, all_mac_addresses_,
-    all_ip_addresses_, http_log_handler);
+    21275, mac_addresses, ip_addresses, http_log_handler);
   http_server_->start();
 
   cobridge_base::ServerOptions server_options;
@@ -137,7 +139,7 @@ CoBridge::CoBridge(const rclcpp::NodeOptions & options)
     server_options.capabilities.push_back(cobridge_base::CAPABILITY_TIME);
   }
   server_options.supported_encodings = {"cdr"};
-  server_options.metadata = {{"ROS_DISTRO", ros_distro}};
+  server_options.metadata = {{"ROS_DISTRO", ros_distro}, {"COLINK", colink_ip}};
   server_options.send_buffer_limit_bytes = send_buffer_limit;
   server_options.session_id = std::to_string(std::time(nullptr));
   server_options.use_compression = use_compression;
@@ -145,8 +147,8 @@ CoBridge::CoBridge(const rclcpp::NodeOptions & options)
   server_options.cert_file = cert_file;
   server_options.key_file = keyfile;
   server_options.client_topic_whitelist_patterns = client_topic_whitelist_patterns;
-  server_options.mac_addresses = all_mac_addresses_;
-  server_options.ip_addresses = all_ip_addresses_;
+  server_options.mac_addresses = mac_addresses;
+  server_options.ip_addresses = ip_addresses;
 
   _server = cobridge_base::ServerFactory::create_server<ConnectionHandle>(
     "cobridge", log_handler,
