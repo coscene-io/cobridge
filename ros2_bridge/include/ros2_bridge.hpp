@@ -47,7 +47,6 @@
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 
-// 前向声明
 namespace http_server
 {
 class HttpServer;
