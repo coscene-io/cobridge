@@ -222,7 +222,7 @@ TEST(SmokeTest, testMultiConnection) {
   CompareJsonExceptSessionId(
     "{\"op\":\"login\",\"userId\":\"\",\"username\":\"\"}",
     client0_login_future.get(),
-    {"infoPort", "lanCandidates", "macAddr"}
+    {"infoPort", "lanCandidates", "macAddr", "linkType"}
   );
   client_0->login("user_0", "test-user-id-0000");
 
@@ -233,7 +233,7 @@ TEST(SmokeTest, testMultiConnection) {
   CompareJsonExceptSessionId(
     "{\"op\":\"login\",\"userId\":\"test-user-id-0000\","
     "\"username\":\"user_0\"}", client1_login_future.get(),
-    {"infoPort", "lanCandidates", "macAddr"});
+    {"infoPort", "lanCandidates", "macAddr", "linkType"});
 
   auto client0_kicked_future = cobridge_base::wait_for_kicked(client_0);
   auto server_info_future = cobridge_base::wait_for_login(client_1, "serverInfo");
