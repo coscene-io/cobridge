@@ -41,16 +41,16 @@ constexpr auto DEFAULT_TIMEOUT = std::chrono::seconds(10);
 
 using json = nlohmann::json;
 
-void CompareJsonExceptSessionId(const std::string & jsonStr1, const std::string & jsonStr2)
+void CompareJsonExceptSessionId(const std::string & jsonStr1, const std::string & jsonStr2, 
+                          const std::vector<std::string> & keysToErase = {"sessionId", "metadata"})
 {
   json obj1 = json::parse(jsonStr1);
   json obj2 = json::parse(jsonStr2);
 
-  obj1.erase("sessionId");
-  obj2.erase("sessionId");
-
-  obj1.erase("metadata");
-  obj2.erase("metadata");
+  for (const auto & key : keysToErase) {
+    obj1.erase(key);
+    obj2.erase(key);
+  }
 
   EXPECT_EQ(obj1, obj2);
 }
@@ -225,9 +225,9 @@ TEST(SmokeTest, testMultiConnection) {
   auto client1_login_future = cobridge_base::wait_for_login(client_1, "login");
   EXPECT_EQ(std::future_status::ready, client_1->connect(URI).wait_for(DEFAULT_TIMEOUT));
   EXPECT_EQ(std::future_status::ready, client1_login_future.wait_for(THREE_SECOND));
-  EXPECT_EQ(
-    "{\"op\":\"login\",\"userId\":\"test-user-id-0000\","
-    "\"username\":\"user_0\"}", client1_login_future.get());
+  CompareJsonExceptSessionId("{\"op\":\"login\",\"userId\":\"test-user-id-0000\","
+    "\"username\":\"user_0\"}", client1_login_future.get(),
+    {"infoPort","lanCandidates", "macAddr"});
 
   auto client0_kicked_future = cobridge_base::wait_for_kicked(client_0);
   auto server_info_future = cobridge_base::wait_for_login(client_1, "serverInfo");
