@@ -106,27 +106,29 @@ CoBridge::CoBridge(const rclcpp::NodeOptions & options)
   all_mac_addresses_ = http_server::get_all_mac_addresses();
   all_ip_addresses_ = http_server::get_all_ip_addresses();
 
-  auto http_log_handler = [this](http_server::LogLevel level, const char* msg) {
-    switch (level) {
-      case http_server::LogLevel::Debug:
-        RCLCPP_DEBUG(this->get_logger(), "[HTTP_SERVER] %s", msg);
-        break;
-      case http_server::LogLevel::Info:
-        RCLCPP_INFO(this->get_logger(), "[HTTP_SERVER] %s", msg);
-        break;
-      case http_server::LogLevel::Warn:
-        RCLCPP_WARN(this->get_logger(), "[HTTP_SERVER] %s", msg);
-        break;
-      case http_server::LogLevel::Error:
-        RCLCPP_ERROR(this->get_logger(), "[HTTP_SERVER] %s", msg);
-        break;
-      case http_server::LogLevel::Critical:
-        RCLCPP_FATAL(this->get_logger(), "[HTTP_SERVER] %s", msg);
-        break;
-    }
-  };
-  
-  http_server_ = std::make_unique<http_server::HttpServer>(21275, all_mac_addresses_, all_ip_addresses_, http_log_handler);
+  auto http_log_handler = [this](http_server::LogLevel level, const char * msg) {
+      switch (level) {
+        case http_server::LogLevel::Debug:
+          RCLCPP_DEBUG(this->get_logger(), "[HTTP_SERVER] %s", msg);
+          break;
+        case http_server::LogLevel::Info:
+          RCLCPP_INFO(this->get_logger(), "[HTTP_SERVER] %s", msg);
+          break;
+        case http_server::LogLevel::Warn:
+          RCLCPP_WARN(this->get_logger(), "[HTTP_SERVER] %s", msg);
+          break;
+        case http_server::LogLevel::Error:
+          RCLCPP_ERROR(this->get_logger(), "[HTTP_SERVER] %s", msg);
+          break;
+        case http_server::LogLevel::Critical:
+          RCLCPP_FATAL(this->get_logger(), "[HTTP_SERVER] %s", msg);
+          break;
+      }
+    };
+
+  http_server_ = std::make_unique<http_server::HttpServer>(
+    21275, all_mac_addresses_,
+    all_ip_addresses_, http_log_handler);
   http_server_->start();
 
   cobridge_base::ServerOptions server_options;
@@ -226,7 +228,7 @@ CoBridge::~CoBridge()
   if (http_server_) {
     http_server_->stop();
   }
-  
+
   _server->stop();
   RCLCPP_INFO(this->get_logger(), "Shutdown complete");
 }

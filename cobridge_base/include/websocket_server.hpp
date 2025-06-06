@@ -1035,7 +1035,9 @@ inline void Server<ServerConfiguration>::handle_connection_opened(cobridge_base:
         {"lanCandidates", _options.ip_addresses},
       });
   } else {
-    send_json(hdl, {{"op", "login"}, {"userId", ""}, {"username", ""}, {"infoPort", "21275"}, {"macAddr", _options.mac_addresses}, {"lanCandidates", _options.ip_addresses}});
+    send_json(
+      hdl, {{"op", "login"}, {"userId", ""}, {"username", ""}, {"infoPort", "21275"},
+        {"macAddr", _options.mac_addresses}, {"lanCandidates", _options.ip_addresses}});
   }
 }
 
