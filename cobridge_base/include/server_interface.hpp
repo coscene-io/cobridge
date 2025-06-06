@@ -77,6 +77,8 @@ struct ServerOptions
   std::string session_id;
   bool use_compression = false;
   std::vector<std::regex> client_topic_whitelist_patterns;
+  std::string mac_addresses;
+  std::vector<std::string> ip_addresses;
 };
 
 template<typename ConnectionHandle>

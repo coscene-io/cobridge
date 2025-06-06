@@ -22,6 +22,7 @@
 
 #include <rmw/types.h>
 #include <ros2_bridge.hpp>
+#include <http_server.h>
 
 #include <algorithm>
 #include <string>
@@ -29,6 +30,19 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <json.hpp>
+
+// Include for HTTP server
+#include <websocketpp/config/asio_no_tls.hpp>
+#include <websocketpp/server.hpp>
+#include <ifaddrs.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <sstream>
 
 namespace cobridge
 {
@@ -41,6 +55,7 @@ inline bool is_hidden_topic_or_service(const std::string & name)
   }
   return name.front() == '_' || name.find("/_") != std::string::npos;
 }
+
 }      // namespace
 
 using namespace std::chrono_literals;
@@ -88,6 +103,32 @@ CoBridge::CoBridge(const rclcpp::NodeOptions & options)
   _fetch_asset_queue =
     std::make_unique<cobridge_base::CallbackQueue>(log_handler, 1 /* num_threads */);
 
+  all_mac_addresses_ = http_server::get_all_mac_addresses();
+  all_ip_addresses_ = http_server::get_all_ip_addresses();
+
+  auto http_log_handler = [this](http_server::LogLevel level, const char* msg) {
+    switch (level) {
+      case http_server::LogLevel::Debug:
+        RCLCPP_DEBUG(this->get_logger(), "[HTTP_SERVER] %s", msg);
+        break;
+      case http_server::LogLevel::Info:
+        RCLCPP_INFO(this->get_logger(), "[HTTP_SERVER] %s", msg);
+        break;
+      case http_server::LogLevel::Warn:
+        RCLCPP_WARN(this->get_logger(), "[HTTP_SERVER] %s", msg);
+        break;
+      case http_server::LogLevel::Error:
+        RCLCPP_ERROR(this->get_logger(), "[HTTP_SERVER] %s", msg);
+        break;
+      case http_server::LogLevel::Critical:
+        RCLCPP_FATAL(this->get_logger(), "[HTTP_SERVER] %s", msg);
+        break;
+    }
+  };
+  
+  http_server_ = std::make_unique<http_server::HttpServer>(21275, all_mac_addresses_, all_ip_addresses_, http_log_handler);
+  http_server_->start();
+
   cobridge_base::ServerOptions server_options;
   server_options.capabilities = _capabilities;
   if (_use_sim_time) {
@@ -102,6 +143,8 @@ CoBridge::CoBridge(const rclcpp::NodeOptions & options)
   server_options.cert_file = cert_file;
   server_options.key_file = keyfile;
   server_options.client_topic_whitelist_patterns = client_topic_whitelist_patterns;
+  server_options.mac_addresses = all_mac_addresses_;
+  server_options.ip_addresses = all_ip_addresses_;
 
   _server = cobridge_base::ServerFactory::create_server<ConnectionHandle>(
     "cobridge", log_handler,
@@ -179,6 +222,11 @@ CoBridge::~CoBridge()
   if (_rosgraph_poll_thread) {
     _rosgraph_poll_thread->join();
   }
+
+  if (http_server_) {
+    http_server_->stop();
+  }
+  
   _server->stop();
   RCLCPP_INFO(this->get_logger(), "Shutdown complete");
 }

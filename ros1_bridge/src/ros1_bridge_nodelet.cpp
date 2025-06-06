@@ -14,6 +14,7 @@
 
 #include <shared_mutex>
 #include <nodelet/nodelet.h>
+#include <http_server.h>
 
 #include <pluginlib/class_list_macros.h>
 #include <resource_retriever/retriever.h>
@@ -45,6 +46,12 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
+namespace http_server
+{
+class HttpServer;
+}
+
 namespace
 {
 
@@ -143,6 +150,31 @@ public:
       "Starting cobridge (%s, %s@%s) with %s", ros_distro,
       cobridge_base::COBRIDGE_VERSION, cobridge_base::COBRIDGE_GIT_HASH,
       cobridge_base::websocket_user_agent());
+    all_mac_addresses_ = http_server::get_all_mac_addresses();
+    all_ip_addresses_ = http_server::get_all_ip_addresses();
+
+    auto http_log_handler = [this](http_server::LogLevel level, const char* msg) {
+      switch (level) {
+        case http_server::LogLevel::Debug:
+          ROS_INFO("[HTTP_SERVER] %s", msg);
+        break;
+        case http_server::LogLevel::Info:
+          ROS_INFO("[HTTP_SERVER] %s", msg);
+        break;
+        case http_server::LogLevel::Warn:
+          ROS_INFO("[HTTP_SERVER] %s", msg);
+        break;
+        case http_server::LogLevel::Error:
+          ROS_INFO("[HTTP_SERVER] %s", msg);
+        break;
+        case http_server::LogLevel::Critical:
+          ROS_INFO("[HTTP_SERVER] %s", msg);
+        break;
+      }
+    };
+
+    http_server_ = std::make_unique<http_server::HttpServer>(21275, all_mac_addresses_, all_ip_addresses_, http_log_handler);
+    http_server_->start();
 
     try {
       cobridge_base::ServerOptions server_options;
@@ -159,6 +191,8 @@ public:
       server_options.key_file = keyfile;
       server_options.use_compression = use_compression;
       server_options.client_topic_whitelist_patterns = client_topic_whitelist_patterns;
+      server_options.mac_addresses = all_mac_addresses_;
+      server_options.ip_addresses = all_ip_addresses_;
 
       const auto log_handler =
         std::bind(&CoBridge::log_handler, this, std::placeholders::_1, std::placeholders::_2);
@@ -233,6 +267,10 @@ public:
     xmlrpc_server_.shutdown();
     if (_server) {
       _server->stop();
+    }
+
+    if (http_server_) {
+      http_server_->stop();
     }
   }
 
@@ -1019,6 +1057,10 @@ private:
   int service_retrieval_timeout_ms_ = DEFAULT_SERVICE_TYPE_RETRIEVAL_TIMEOUT_MS;
   std::atomic<bool> subscribe_graph_updates_ = false;
   std::unique_ptr<cobridge_base::CallbackQueue> fetch_asset_queue_;
+
+  std::unique_ptr<http_server::HttpServer> http_server_;
+  std::string all_mac_addresses_;
+  std::vector<std::string> all_ip_addresses_;
 };
 
 }  // namespace cobridge

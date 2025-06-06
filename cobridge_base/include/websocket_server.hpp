@@ -376,6 +376,22 @@ inline Server<ServerConfiguration>::Server(
 
   // Callback queue for handling client requests and disconnections.
   _handler_callback_queue = std::make_unique<CallbackQueue>(_logger, /*numThreads=*/ 1ul);
+
+  const auto msg =
+    Json{{"op", "serverInfo"},
+    {"name", _name},
+    {"capabilities", _options.capabilities},
+    {"supportedEncodings", _options.supported_encodings},
+    {"metadata", _options.metadata},
+    {"sessionId", _options.session_id},
+    {"mac_addresses", _options.mac_addresses},
+    {"ip_addresses", _options.ip_addresses},
+    }.dump();
+  std::shared_lock<std::shared_mutex> clients_lock(_clients_mutex);
+  for (const auto & [hdl, client_info] : _clients) {
+    (void) client_info;
+    send_raw_json(hdl, msg);
+  }
 }
 
 template<typename ServerConfiguration>
@@ -1030,9 +1046,12 @@ inline void Server<ServerConfiguration>::handle_connection_opened(cobridge_base:
         {"op", "login"},
         {"userId", login_user_id},
         {"username", login_user_name},
+        {"infoPort", "21275"},
+        {"macAddr", _options.mac_addresses},
+        {"lanCandidates", _options.ip_addresses},
       });
   } else {
-    send_json(hdl, {{"op", "login"}, {"userId", ""}, {"username", ""}});
+    send_json(hdl, {{"op", "login"}, {"userId", ""}, {"username", ""}, {"infoPort", "21275"}, {"macAddr", _options.mac_addresses}, {"lanCandidates", _options.ip_addresses}});
   }
 }
 
