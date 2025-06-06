@@ -219,7 +219,11 @@ TEST(SmokeTest, testMultiConnection) {
   auto client0_login_future = cobridge_base::wait_for_login(client_0, "login");
   EXPECT_EQ(std::future_status::ready, client_0->connect(URI).wait_for(DEFAULT_TIMEOUT));
   EXPECT_EQ(std::future_status::ready, client0_login_future.wait_for(THREE_SECOND));
-  EXPECT_EQ("{\"op\":\"login\",\"userId\":\"\",\"username\":\"\"}", client0_login_future.get());
+  CompareJsonExceptSessionId(
+    "{\"op\":\"login\",\"userId\":\"\",\"username\":\"\"}",
+    client0_login_future.get(),
+    {"infoPort", "lanCandidates", "macAddr"}
+  );
   client_0->login("user_0", "test-user-id-0000");
 
   auto client_1 = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
