@@ -113,7 +113,7 @@ jobs:
           DEB_FILENAME=$(basename $(ls $GITHUB_WORKSPACE/artifacts/*.deb))
           echo "DEB_FILENAME=$DEB_FILENAME" >> $GITHUB_ENV
           
-          download_url="https://apt.coscene.cn/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/ros-${{ matrix.ros_distribution }}-cobridge_latest_${{ matrix.arch }}.deb"
+          download_url="https://apt.coscene.cn/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/${DEB_FILENAME}"
 
           matrix_key="${{ matrix.ros_distribution }}_${{ matrix.arch }}"
           echo "matrix_result_${matrix_key}=${{ matrix.arch }},${{ matrix.ros_distribution }},${{ matrix.distro }},$download_url" >> $GITHUB_OUTPUT
