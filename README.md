@@ -5,7 +5,7 @@ After cobridge establishes a link with the cloud, it can subscribe to ros topic 
 
 ## Install
   
-**CAUTION: only support `noetic`, `foxy`, `humble`, `jazzy` now**
+**CAUTION: only support `melodic`, `noetic`, `foxy`, `humble`, `jazzy` now**
 
 * Import public key
   
@@ -23,7 +23,7 @@ After cobridge establishes a link with the cloud, it can subscribe to ros topic 
 
   ``` bash
   sudo apt update
-  # CAUTION: ${ROS_DISTRO} need to be replaced by 'noetic', 'foxy', 'humble' or 'jazzy', if ROS_DISTRO not in your env
+  # CAUTION: ${ROS_DISTRO} need to be replaced by `melodic`, 'noetic', 'foxy', 'humble' or 'jazzy', if ROS_DISTRO not in your env
   sudo apt install ros-${ROS_DISTRO}-cobridge -y
   ```
 
@@ -48,15 +48,12 @@ After cobridge establishes a link with the cloud, it can subscribe to ros topic 
   # for ROS 1 distribution
   sudo apt install -y \
     libasio-dev \
-    ros-${ROS_DISTRO}-cv-bridge \
-    ros-${ROS_DISTRO}-resource-retriever \
-    ros-${ROS_DISTRO}-ros-babel-fish
+    ros-${ROS_DISTRO}-resource-retriever
     
   # for ROS 2 distribution
   sudo apt install -y \
-      libasio-dev \
-      ros-${ROS_DISTRO}-cv-bridge \
-      ros-${ROS_DISTRO}-resource-retriever
+    libasio-dev \
+    ros-${ROS_DISTRO}-resource-retriever
   ```
 
 * ROS1
