@@ -44,6 +44,14 @@
 #include <utility>
 #include <vector>
 
+#include <websocketpp/config/asio_no_tls.hpp>
+#include <websocketpp/server.hpp>
+
+namespace http_server
+{
+class HttpServer;
+}
+
 namespace cobridge
 {
 
@@ -122,6 +130,8 @@ private:
   std::atomic<bool> _subscribe_graph_updates = false;
   bool _include_hidden = false;
   std::unique_ptr<cobridge_base::CallbackQueue> _fetch_asset_queue;
+
+  std::unique_ptr<http_server::HttpServer> http_server_;
 
   void subscribe_connection_graph(bool subscribe);
 
