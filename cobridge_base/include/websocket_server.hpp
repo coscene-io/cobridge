@@ -1016,8 +1016,15 @@ inline void Server<ServerConfiguration>::handle_connection_opened(cobridge_base:
   std::string link_type = "other";
   std::string colink_ip = _options.metadata["COLINK"];
 
-  if (colink_ip != "" && endpoint.find(colink_ip) != std::string::npos) {
-    link_type = "colink";
+  if (!colink_ip.empty()) {
+    std::string endpoint_ip = endpoint;
+    size_t colon_pos = endpoint_ip.find(":");
+    if (colon_pos != std::string::npos) {
+      endpoint_ip = endpoint_ip.substr(0, colon_pos);
+    }
+    if (endpoint_ip == colink_ip) {
+      link_type = "colink";
+    }
   }
 
   if (_clients.size() != 0) {
