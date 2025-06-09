@@ -123,7 +123,7 @@ CoBridge::CoBridge(const rclcpp::NodeOptions & options)
         case http_server::LogLevel::Error:
           RCLCPP_ERROR(this->get_logger(), "[HTTP_SERVER] %s", msg);
           break;
-        case http_server::LogLevel::Critical:
+        case http_server::LogLevel::Fatal:
           RCLCPP_FATAL(this->get_logger(), "[HTTP_SERVER] %s", msg);
           break;
       }

@@ -160,19 +160,19 @@ public:
     auto http_log_handler = [this](http_server::LogLevel level, const char * msg) {
         switch (level) {
           case http_server::LogLevel::Debug:
-            ROS_INFO("[HTTP_SERVER] %s", msg);
+            ROS_DEBUG("[HTTP_SERVER] %s", msg);
             break;
           case http_server::LogLevel::Info:
             ROS_INFO("[HTTP_SERVER] %s", msg);
             break;
           case http_server::LogLevel::Warn:
-            ROS_INFO("[HTTP_SERVER] %s", msg);
+            ROS_WARN("[HTTP_SERVER] %s", msg);
             break;
           case http_server::LogLevel::Error:
-            ROS_INFO("[HTTP_SERVER] %s", msg);
+            ROS_ERROR("[HTTP_SERVER] %s", msg);
             break;
-          case http_server::LogLevel::Critical:
-            ROS_INFO("[HTTP_SERVER] %s", msg);
+          case http_server::LogLevel::Fatal:
+            ROS_FATAL("[HTTP_SERVER] %s", msg);
             break;
         }
       };

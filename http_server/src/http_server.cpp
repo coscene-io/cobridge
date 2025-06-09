@@ -299,18 +299,30 @@ void HttpServer::run_server()
       
       if (valread > 0) {
         std::string request(buffer);
-        size_t path_start = request.find("GET ") + 4;
-        size_t path_end = request.find(" HTTP/", path_start);
-        std::string path = request.substr(path_start, path_end - path_start);
-        
-        log(LogLevel::Debug, "Received request for path: " + path);
-        
-        if (path == "/device-info") {
-          send(new_socket, http_response.c_str(), http_response.length(), 0);
-          log(LogLevel::Info, "Sent device info response: " + json_str);
+        size_t path_start = request.find("GET ");
+        if (path_start != std::string::npos) {
+          path_start += 4; // skip "GET "
+          
+          size_t path_end = request.find(" HTTP/", path_start);
+          if (path_end != std::string::npos && path_start < path_end) {
+            std::string path = request.substr(path_start, path_end - path_start);
+            
+            log(LogLevel::Debug, "Received request for path: " + path);
+            
+            if (path == "/device-info") {
+              send(new_socket, http_response.c_str(), http_response.length(), 0);
+              log(LogLevel::Info, "Sent device info response: " + json_str);
+            } else {
+              send(new_socket, not_found_response.c_str(), not_found_response.length(), 0);
+              log(LogLevel::Warn, "Path not found: " + path);
+            }
+          } else {
+            send(new_socket, not_found_response.c_str(), not_found_response.length(), 0);
+            log(LogLevel::Warn, "Invalid HTTP request format");
+          }
         } else {
           send(new_socket, not_found_response.c_str(), not_found_response.length(), 0);
-          log(LogLevel::Warn, "Path not found: " + path);
+          log(LogLevel::Warn, "Not a GET request");
         }
       }
       

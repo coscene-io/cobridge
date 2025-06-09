@@ -30,7 +30,7 @@ enum class LogLevel
   Info,
   Warn,
   Error,
-  Critical
+  Fatal
 };
 
 using LogHandler = std::function<void(LogLevel, const char*)>;
