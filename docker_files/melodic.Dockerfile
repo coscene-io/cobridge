@@ -5,6 +5,6 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libasio-dev zip ros-${ROS_DISTRO}-resource-retriever \
+    libasio-dev zip ros-${ROS_DISTRO}-resource-retriever ros-${ROS_DISTRO}-cv-bridge \
     python-bloom devscripts fakeroot debhelper apt-utils gnupg
 RUN rm -rf /var/lib/apt/lists/*
