@@ -50,6 +50,10 @@ jobs:
             distro: noble
             label: [ linux-arm-64-8c-32g-300gb ]
           - ros_distribution: indigo
+            arch: amd64
+            distro: trusty
+            label: ubuntu-latest
+          - ros_distribution: indigo
             arch: armhf
             distro: trusty
             label: [ linux-arm-64-8c-32g-300gb ]
@@ -68,6 +72,7 @@ jobs:
       matrix_result_humble_arm64: ${{ steps.build_deb.outputs.matrix_result_humble_arm64 }}
       matrix_result_jazzy_amd64: ${{ steps.build_deb.outputs.matrix_result_jazzy_amd64 }}
       matrix_result_jazzy_arm64: ${{ steps.build_deb.outputs.matrix_result_jazzy_arm64 }}
+      matrix_result_indigo_amd64: ${{ steps.build_deb.outputs.matrix_result_indigo_amd64 }}
       matrix_result_indigo_armhf: ${{ steps.build_deb.outputs.matrix_result_indigo_armhf }}
 
     steps:
@@ -181,6 +186,7 @@ jobs:
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_humble_arm64 }};"
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_jazzy_amd64 }};"
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_jazzy_arm64 }};"
+          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_indigo_amd64 }};"
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_indigo_armhf }};"
           
           IFS=';' read -ra URL_ARRAY <<< "$URLS"
