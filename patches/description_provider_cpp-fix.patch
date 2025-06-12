@@ -1,0 +1,141 @@
+diff --git vendor/ros_babel_fish/0.9.3/ros_babel_fish/generation/description_provider.cpp vendor/ros_babel_fish/0.9.3/ros_babel_fish/generation/description_provider.cpp
+index 1f493bd..7c4c2f5 100644
+--- vendor/ros_babel_fish/0.9.3/ros_babel_fish/generation/description_provider.cpp
++++ vendor/ros_babel_fish/0.9.3/ros_babel_fish/generation/description_provider.cpp
+@@ -428,46 +428,105 @@ DescriptionProvider::MessageSpec DescriptionProvider::createSpec( const std::str
+   spec.package = package;
+   spec.text = specification;
+ 
+-  static std::regex constant_regex( R"(^\s*(\w+)\s+([a-zA-Z]\w*)\s*=\s*(.*\S)\s*$)" );
+-  static std::regex strip_comment_regex( R"(([^#]*[^#\s])\s*(?:#.*)?)" );
+-  static std::regex field_regex( R"(^\s*((\w+\/?\w+)(?:\s*\[\d*\])?)\s*(\w+)\s*)" );
+-  std::smatch match;
+-  std::string definition;
+-  definition.reserve( 8192 );
++  // 使用字符串解析代替正则表达式
+   std::string::size_type start = 0;
+   std::string::size_type end;
+   while ( true )
+   {
+     end = specification.find( '\n', start );
+-    std::string::const_iterator first = specification.begin() + start;
+-    std::string::const_iterator last = end == std::string::npos ? specification.end() : specification.begin() + end;
+-    if ( std::regex_search( first, last, match, constant_regex ) && match.size() == 4 )
+-    {
+-      std::string constant_type = match.str( 1 );
+-      std::string name = match.str( 2 );
+-      std::string val = match.str( 3 );
+-      if ( constant_type != "string" )
+-      {
+-        std::regex_search( val.cbegin(), val.cend(), match, strip_comment_regex );
+-        val = match.str( 1 );
++    std::string line;
++    if ( end == std::string::npos ) {
++      line = specification.substr( start );
++    } else {
++      line = specification.substr( start, end - start );
++    }
++
++    // 去除前后空白
++    std::string::size_type first = line.find_first_not_of(" \t\r");
++    if ( first == std::string::npos ) {
++      if ( end == std::string::npos ) break;
++      start = end + 1;
++      continue;
++    }
++    std::string::size_type last = line.find_last_not_of(" \t\r");
++    line = line.substr(first, last - first + 1);
++
++    // 跳过注释行
++    if ( line.empty() || line[0] == '#' ) {
++      if ( end == std::string::npos ) break;
++      start = end + 1;
++      continue;
++    }
++
++    // 检查是否是常量定义 (type name = value)
++    std::string::size_type eq_pos = line.find('=');
++    if ( eq_pos != std::string::npos ) {
++      std::string left_part = line.substr(0, eq_pos);
++      std::string value_part = line.substr(eq_pos + 1);
++
++      // 解析左边部分 (type name)
++      std::string::size_type space_pos = left_part.find_first_of(" \t");
++      if ( space_pos != std::string::npos ) {
++        std::string constant_type = left_part.substr(0, space_pos);
++        std::string name_part = left_part.substr(space_pos);
++        std::string::size_type name_start = name_part.find_first_not_of(" \t");
++        if ( name_start != std::string::npos ) {
++          std::string::size_type name_end = name_part.find_first_of(" \t", name_start);
++          std::string name = name_part.substr(name_start, name_end == std::string::npos ? std::string::npos : name_end - name_start);
++
++          // 处理值部分
++          std::string val = value_part;
++          std::string::size_type val_start = val.find_first_not_of(" \t");
++          if ( val_start != std::string::npos ) {
++            val = val.substr(val_start);
++            // 如果不是字符串类型，移除注释
++            if ( constant_type != "string" ) {
++              std::string::size_type comment_pos = val.find('#');
++              if ( comment_pos != std::string::npos ) {
++                val = val.substr(0, comment_pos);
++                std::string::size_type val_end = val.find_last_not_of(" \t");
++                if ( val_end != std::string::npos ) {
++                  val = val.substr(0, val_end + 1);
++                }
++              }
++            }
++
++            spec.constants.push_back(
++              MessageSpec::Constant{ constant_type, name, val } );
++          }
++        }
+       }
+-      spec.constants.push_back(
+-        MessageSpec::Constant{ .type = constant_type, .name = name, .val = val } );
+     }
+-    else if ( std::regex_search( first, last, match, field_regex ) && match.size() == 4 )
+-    {
+-      std::string dep_type = match.str( 2 );
+-      if ( dep_type == "Header" ) dep_type = "std_msgs/Header";
+-      if ( !isBuiltIn( dep_type ))
+-      {
+-        if ( dep_type.find( '/' ) == std::string::npos ) dep_type.insert( 0, spec.package + '/' );
+-        if ( std::find( spec.dependencies.begin(), spec.dependencies.end(), dep_type ) == spec.dependencies.end())
+-        {
+-          spec.dependencies.push_back( dep_type );
++    else {
++      // 检查是否是字段定义 (type name)
++      std::string::size_type space_pos = line.find_first_of(" \t");
++      if ( space_pos != std::string::npos ) {
++        std::string type_part = line.substr(0, space_pos);
++        std::string name_part = line.substr(space_pos);
++        std::string::size_type name_start = name_part.find_first_not_of(" \t");
++        if ( name_start != std::string::npos ) {
++          std::string::size_type name_end = name_part.find_first_of(" \t", name_start);
++          std::string name = name_part.substr(name_start, name_end == std::string::npos ? std::string::npos : name_end - name_start);
++
++          // 提取基础类型（去除数组标记）
++          std::string base_type = type_part;
++          std::string::size_type bracket_pos = base_type.find('[');
++          if ( bracket_pos != std::string::npos ) {
++            base_type = base_type.substr(0, bracket_pos);
++          }
++
++          std::string dep_type = base_type;
++          if ( dep_type == "Header" ) dep_type = "std_msgs/Header";
++          if ( !isBuiltIn( dep_type )) {
++            if ( dep_type.find( '/' ) == std::string::npos ) dep_type.insert( 0, spec.package + '/' );
++            if ( std::find( spec.dependencies.begin(), spec.dependencies.end(), dep_type ) == spec.dependencies.end()) {
++              spec.dependencies.push_back( dep_type );
++            }
++          }
++          spec.types.push_back( type_part );
++          spec.names.push_back( name );
+         }
+       }
+-      spec.types.push_back( match.str( 1 ));
+-      spec.names.push_back( match.str( 3 ));
+     }
+ 
+     if ( end == std::string::npos ) break;

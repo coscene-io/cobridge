@@ -15,11 +15,12 @@
 #ifndef PARAMETER_HPP_
 #define PARAMETER_HPP_
 
-#include <any>
+// #include <any>
 #include <stdint.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "standard.hpp"
 
 namespace cobridge_base
 {
@@ -72,12 +73,12 @@ public:
   template<typename T>
   inline const T & getValue() const
   {
-    return std::any_cast<const T &>(_value);
+    return any_cast<const T &>(_value);
   }
 
 private:
   ParameterType _type;
-  std::any _value;
+  any _value;
 };
 
 class Parameter

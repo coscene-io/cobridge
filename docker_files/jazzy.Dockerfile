@@ -1,9 +1,12 @@
 FROM ros:jazzy
 
 ENV ROS_DISTRO=jazzy
-# RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 4B63CF8FDE49746E98FA01DDAD19BAB3CBF125EA
+
+RUN apt-get update && apt-get install -y curl gnupg
+RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | apt-key add -
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libasio-dev zip ros-${ROS_DISTRO}-resource-retriever \
+    libasio-dev zip ros-${ROS_DISTRO}-resource-retriever ros-${ROS_DISTRO}-cv-bridge \
     python3-bloom devscripts fakeroot debhelper apt-utils gnupg
 RUN rm -rf /var/lib/apt/lists/*

@@ -14,7 +14,12 @@
 #ifndef PARAM_UTILS_HPP_
 #define PARAM_UTILS_HPP_
 
+#ifdef ROS1_VERSION_INDIGO
+#include <XmlRpc.h>
+#else
 #include <xmlrpcpp/XmlRpc.h>
+#endif
+
 #include <parameter.hpp>
 
 #include <regex>

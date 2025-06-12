@@ -105,7 +105,7 @@ public:
     }
   }
 
-  constexpr bool static_test(websocketpp::log::level channel) const
+  bool static_test(websocketpp::log::level channel) const
   {
     return (channel & _static_channels) != 0;
   }

@@ -1,5 +1,5 @@
 diff --git vendor/websocketpp/0.8.2/websocketpp/impl/connection_impl.hpp vendor/websocketpp/0.8.2/websocketpp/impl/connection_impl.hpp
-index bf88c95..54c7697 100644
+index bf88c95..9ca896d 100644
 --- vendor/websocketpp/0.8.2/websocketpp/impl/connection_impl.hpp
 +++ vendor/websocketpp/0.8.2/websocketpp/impl/connection_impl.hpp
 @@ -80,28 +80,28 @@ session::state::value connection<config>::get_state() const {

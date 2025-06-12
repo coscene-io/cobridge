@@ -44,8 +44,9 @@ struct GenericService
   }
 };
 }  // namespace cobridge
-
-namespace ros::service_traits
+namespace ros
+{
+namespace service_traits
 {
 template<>
 struct MD5Sum<cobridge::GenericService>
@@ -74,9 +75,10 @@ struct DataType<cobridge::GenericService>
     return "*";
   }
 };
-}  // namespace ros::service_traits
+}  // namespace service_traits
 
-namespace ros::serialization
+
+namespace serialization
 {
 
 template<>
@@ -99,5 +101,8 @@ struct Serializer<cobridge::GenericService>
     return m.data.size();
   }
 };
-}  // namespace ros::serialization
+}  // namespace serialization
+
+}  // namespace ros
+
 #endif  // GENERIC_SERVICE_HPP_

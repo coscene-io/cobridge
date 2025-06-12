@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ros_distribution: [melodic, noetic, foxy, humble, jazzy]
+        ros_distribution: [indigo]
 
     steps:
       - name: Checkout repository
@@ -45,6 +45,7 @@ jobs:
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5.3.0
+        if: matrix.ros_distribution != 'indigo'
         with:
           file: ./docker_files/${{ matrix.ros_distribution }}.Dockerfile
           platforms: |
@@ -54,3 +55,17 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Build and push Docker image (indigo)
+        uses: docker/build-push-action@v5.3.0
+        if: matrix.ros_distribution == 'indigo'
+        with:
+          file: ./docker_files/${{ matrix.ros_distribution }}.Dockerfile
+          platforms: |
+            linux/amd64
+            linux/arm/v7
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+

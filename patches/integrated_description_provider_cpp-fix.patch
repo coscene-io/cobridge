@@ -1,0 +1,185 @@
+diff --git vendor/ros_babel_fish/0.9.3/ros_babel_fish/generation/providers/integrated_description_provider.cpp vendor/ros_babel_fish/0.9.3/ros_babel_fish/generation/providers/integrated_description_provider.cpp
+index d724b43..ca6a6bb 100644
+--- vendor/ros_babel_fish/0.9.3/ros_babel_fish/generation/providers/integrated_description_provider.cpp
++++ vendor/ros_babel_fish/0.9.3/ros_babel_fish/generation/providers/integrated_description_provider.cpp
+@@ -5,12 +5,13 @@
+ 
+ #include <ros/package.h>
+ 
+-#include <experimental/filesystem>
++// experimental/filesystem
++#include <sys/stat.h>
++#include <dirent.h>
++#include <unistd.h>
+ #include <fstream>
+ #include <regex>
+ 
+-namespace fs = std::experimental::filesystem;
+-
+ namespace ros_babel_fish
+ {
+ 
+@@ -24,12 +25,39 @@ const std::string OS_PATHSEP( ":" );
+ 
+ const std::string CATKIN_MARKER_FILE = ".catkin";
+ 
+-std::vector<fs::path> findWorkspaceShares()
++bool file_exists(const std::string& path) {
++  struct stat buffer;
++  return (stat(path.c_str(), &buffer) == 0);
++}
++
++bool is_regular_file(const std::string& path) {
++  struct stat buffer;
++  return (stat(path.c_str(), &buffer) == 0) && S_ISREG(buffer.st_mode);
++}
++
++bool is_directory(const std::string& path) {
++  struct stat buffer;
++  return (stat(path.c_str(), &buffer) == 0) && S_ISDIR(buffer.st_mode);
++}
++
++std::string join_path(const std::string& base, const std::string& append) {
++  if (base.empty()) return append;
++  if (append.empty()) return base;
++
++  std::string result = base;
++  if (result.back() != '/') {
++    result += '/';
++  }
++  result += append;
++  return result;
++}
++
++std::vector<std::string> findWorkspaceShares()
+ {
+   char *cmake_prefix_path = std::getenv( "CMAKE_PREFIX_PATH" );
+   if ( cmake_prefix_path == nullptr ) return {};
+   size_t length = std::strlen( cmake_prefix_path );
+-  std::vector<fs::path> paths;
++  std::vector<std::string> paths;
+   std::string path;
+   size_t path_sep_index = 0;
+   for ( size_t i = 0; i <= length; ++i )
+@@ -38,9 +66,9 @@ std::vector<fs::path> findWorkspaceShares()
+     {
+       if ( !path.empty())
+       {
+-        fs::path catkin_marker_path = fs::path( path ) / CATKIN_MARKER_FILE;
+-        fs::path share_path = fs::path( path ) / "share";
+-        if ( fs::is_regular_file( catkin_marker_path ) && fs::is_directory( share_path ))
++        std::string catkin_marker_path = join_path(path, CATKIN_MARKER_FILE);
++        std::string share_path = join_path(path, "share");
++        if ( is_regular_file( catkin_marker_path ) && is_directory( share_path ))
+         {
+           paths.push_back( share_path );
+         }
+@@ -52,6 +80,7 @@ std::vector<fs::path> findWorkspaceShares()
+     path_sep_index = 0;
+     path.push_back( cmake_prefix_path[i] );
+   }
++
+   return paths;
+ }
+ }
+@@ -62,34 +91,34 @@ IntegratedDescriptionProvider::IntegratedDescriptionProvider()
+   if ( !ros::package::getAll( packages ))
+     throw BabelFishException( "Failed to retrieve package paths, will not be able to look up message definitions!" );
+ 
+-
+-  std::vector<fs::path> workspace_shares = findWorkspaceShares();
++  std::vector<std::string> workspace_shares = findWorkspaceShares();
+   for ( auto &pkg : packages )
+   {
+-    fs::path base_path = ros::package::getPath( pkg );
++    std::string base_path = ros::package::getPath( pkg );
+     std::vector<std::string> msg_paths, srv_paths;
+ 
+     // First check directories returned by ros::package::getPath
+-    fs::path msg_path = base_path / "msg";
+-    if ( fs::is_directory( msg_path ))
+-      msg_paths.push_back( msg_path.string());
+-    fs::path srv_path = base_path / "srv";
+-    if ( fs::is_directory( srv_path ))
+-      srv_paths.push_back( srv_path.string());
++    std::string msg_path = join_path(base_path, "msg");
++    if ( is_directory( msg_path ))
++      msg_paths.push_back( msg_path );
++
++    std::string srv_path = join_path(base_path, "srv");
++    if ( is_directory( srv_path ))
++      srv_paths.push_back( srv_path );
+ 
+     // Then check first result in workspaces
+-    for ( const fs::path &workspace_share : workspace_shares )
++    for ( const std::string &workspace_share : workspace_shares )
+     {
+-      fs::path project_path = workspace_share / pkg;
+-      if ( fs::is_directory( project_path ))
++      std::string project_path = join_path(workspace_share, pkg);
++      if ( is_directory( project_path ))
+       {
+         if ( project_path == base_path ) break;
+-        fs::path workspace_msg_path = project_path / "msg";
+-        if ( fs::is_directory( workspace_msg_path ))
+-          msg_paths.push_back( workspace_msg_path.string());
+-        fs::path workspace_srv_path = project_path / "srv";
+-        if ( fs::is_directory( workspace_srv_path ))
+-          srv_paths.push_back( workspace_srv_path.string());
++        std::string workspace_msg_path = join_path(project_path, "msg");
++        if ( is_directory( workspace_msg_path ))
++          msg_paths.push_back( workspace_msg_path );
++        std::string workspace_srv_path = join_path(project_path, "srv");
++        if ( is_directory( workspace_srv_path ))
++          srv_paths.push_back( workspace_srv_path );
+         // Only add the first match and only if it differed from the base_path
+         break;
+       }
+@@ -117,11 +146,11 @@ MessageDescription::ConstPtr IntegratedDescriptionProvider::getMessageDescriptio
+     return nullptr;
+   }
+   const std::vector<std::string> &package_paths = it->second;
+-  fs::path message_path;
++  std::string message_path;
+   for ( const auto &package_path : package_paths )
+   {
+-    fs::path p = fs::path( package_path ) / (msg_type + ".msg");
+-    if ( !fs::is_regular_file( p )) continue;
++    std::string p = join_path(package_path, msg_type + ".msg");
++    if ( !is_regular_file( p )) continue;
+     message_path = p;
+     break;
+   }
+@@ -133,7 +162,7 @@ MessageDescription::ConstPtr IntegratedDescriptionProvider::getMessageDescriptio
+   }
+ 
+   // Load message specification from file
+-  std::ifstream file_input( message_path );
++  std::ifstream file_input( message_path.c_str() );
+   file_input.seekg( 0, std::ios::end );
+   std::string specification;
+   specification.resize( file_input.tellg());
+@@ -161,11 +190,11 @@ ServiceDescription::ConstPtr IntegratedDescriptionProvider::getServiceDescriptio
+     return nullptr;
+   }
+   const std::vector<std::string> &package_paths = it->second;
+-  fs::path service_path;
++  std::string service_path;
+   for ( const auto &package_path : package_paths )
+   {
+-    fs::path p = fs::path( package_path ) / (msg_type + ".srv");
+-    if ( !fs::is_regular_file( p )) continue;
++    std::string p = join_path(package_path, msg_type + ".srv");
++    if ( !is_regular_file( p )) continue;
+     service_path = p;
+     break;
+   }
+@@ -177,7 +206,7 @@ ServiceDescription::ConstPtr IntegratedDescriptionProvider::getServiceDescriptio
+   }
+ 
+   // Load service specification from file
+-  std::ifstream file_input( service_path );
++  std::ifstream file_input( service_path.c_str() );
+   file_input.seekg( 0, std::ios::end );
+   std::string spec;
+   spec.resize( file_input.tellg());
