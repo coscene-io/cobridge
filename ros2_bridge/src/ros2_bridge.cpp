@@ -93,6 +93,7 @@ CoBridge::CoBridge(const rclcpp::NodeOptions & options)
   if (_use_sim_time) {
     server_options.capabilities.push_back(cobridge_base::CAPABILITY_TIME);
   }
+  server_options.capabilities.emplace_back(cobridge_base::CAPABILITY_MESSAGE_TIME);
   server_options.supported_encodings = {"cdr"};
   server_options.metadata = {{"ROS_DISTRO", ros_distro}};
   server_options.send_buffer_limit_bytes = send_buffer_limit;

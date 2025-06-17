@@ -158,6 +158,7 @@ public:
       if (use_sim_time_) {
         server_options.capabilities.emplace_back(cobridge_base::CAPABILITY_TIME);
       }
+      server_options.capabilities.emplace_back(cobridge_base::CAPABILITY_MESSAGE_TIME);
       server_options.supported_encodings = {ROS1_CHANNEL_ENCODING};
       server_options.metadata = {{"ROS_DISTRO", ros_distro}};
       server_options.send_buffer_limit_bytes = send_buffer_limit;
@@ -941,8 +942,11 @@ private:
     const ros::MessageEvent<ros_babel_fish::BabelFishMessage const> & msg_event)
   {
     const auto & msg = msg_event.getConstMessage();
-    const auto receipt_time_ns = msg_event.getReceiptTime().toNSec();
-    _server->send_message(client_handle, channel_id, receipt_time_ns, msg->buffer(), msg->size());
+    _server->send_message(
+      client_handle, channel_id,
+      msg_event.getReceiptTime().toNSec(),
+      msg->buffer(),
+      msg->size());
   }
 
   void service_request(
