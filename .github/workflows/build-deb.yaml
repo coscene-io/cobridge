@@ -2,6 +2,7 @@ name: build deb
 on:
   workflow_dispatch:
   release:
+    types: [ published ]
 
 jobs:
   build-deb-package:
