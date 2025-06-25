@@ -220,9 +220,9 @@ TEST(SmokeTest, testMultiConnection) {
   EXPECT_EQ(std::future_status::ready, client_0->connect(URI).wait_for(DEFAULT_TIMEOUT));
   EXPECT_EQ(std::future_status::ready, client0_login_future.wait_for(THREE_SECOND));
   CompareJsonWithoutFields(
-  "{\"op\":\"login\",\"userId\":\"\",\"username\":\"\"}",
-  client0_login_future.get(),
-  {"infoPort", "lanCandidates", "macAddr", "linkType"}
+    "{\"op\":\"login\",\"userId\":\"\",\"username\":\"\"}",
+    client0_login_future.get(),
+    {"infoPort", "lanCandidates", "macAddr", "linkType"}
   );
   client_0->login("user_0", "test-user-id-0000");
 
