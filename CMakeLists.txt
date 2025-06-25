@@ -148,7 +148,7 @@ if(NOT ROS1_FOUND EQUAL -1)
         find_package(catkin REQUIRED COMPONENTS nodelet resource_retriever rosgraph_msgs roslib roscpp xmlrpcpp)
         find_package(Boost REQUIRED)
 
-        add_library(ros_babel_fish
+        add_library(babel_fish
                 ${PRIVATE_ROS_BABEL_FISH_DIR}/ros_babel_fish/generation/providers/integrated_description_provider.cpp
                 ${PRIVATE_ROS_BABEL_FISH_DIR}/ros_babel_fish/generation/description_provider.cpp
                 ${PRIVATE_ROS_BABEL_FISH_DIR}/ros_babel_fish/generation/message_creation.cpp
@@ -161,19 +161,19 @@ if(NOT ROS1_FOUND EQUAL -1)
                 ${PRIVATE_ROS_BABEL_FISH_DIR}/ros_babel_fish/message_extractor.cpp
         )
 
-        target_include_directories(ros_babel_fish
+        target_include_directories(babel_fish
                 PUBLIC
                 ${PRIVATE_ROS_BABEL_FISH_DIR}
                 SYSTEM PRIVATE
                 ${catkin_INCLUDE_DIRS}
         )
-        target_link_libraries(ros_babel_fish
+        target_link_libraries(babel_fish
                 ${OPENSSL_LIBRARIES}
                 ${catkin_LIBRARIES})
 
         catkin_package(
                 INCLUDE_DIRS cobridge_base/include
-                LIBRARIES cobridge_base cobridge_nodelet ros_babel_fish
+                LIBRARIES cobridge_base cobridge_nodelet babel_fish
                 CATKIN_DEPENDS nodelet resource_retriever rosgraph_msgs roslib roscpp xmlrpcpp
                 DEPENDS Boost
         )
@@ -191,7 +191,7 @@ if(NOT ROS1_FOUND EQUAL -1)
                 $<INSTALL_INTERFACE:include>
                 ${catkin_INCLUDE_DIRS}
         )
-        target_link_libraries(cobridge_nodelet cobridge_base ros_babel_fish ${catkin_LIBRARIES})
+        target_link_libraries(cobridge_nodelet cobridge_base babel_fish ${catkin_LIBRARIES})
         enable_strict_compiler_warnings(cobridge_nodelet)
 
         add_executable(cobridge ros1_bridge/src/ros1_bridge_node.cpp)
@@ -295,7 +295,7 @@ if(ROS_BUILD_TYPE STREQUAL "catkin")
     install(TARGETS cobridge
             RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
-    install(TARGETS cobridge_base cobridge_nodelet ros_babel_fish
+    install(TARGETS cobridge_base cobridge_nodelet babel_fish
             ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
             LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
             RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
