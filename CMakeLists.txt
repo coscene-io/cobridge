@@ -49,8 +49,7 @@ find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
 
 if(NOT CMAKE_BUILD_TYPE)
-#    set(CMAKE_BUILD_TYPE RelWithDebInfo)
-    set(CMAKE_BUILD_TYPE Debug)
+    set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
 
 option(USE_ASIO_STANDALONE "Build with standalone ASIO" ON)
@@ -102,6 +101,19 @@ target_link_libraries(cobridge_base
 )
 
 enable_strict_compiler_warnings(cobridge_base)
+
+add_library(http_server SHARED
+    http_server/src/http_server.cpp
+)
+target_include_directories(http_server
+    PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/http_server/include>
+    $<INSTALL_INTERFACE:include>
+)
+target_link_libraries(http_server
+    ${CMAKE_THREAD_LIBS_INIT}
+)
+enable_strict_compiler_warnings(http_server)
 
 find_package(catkin QUIET)
 find_package(ament_cmake QUIET)
@@ -188,10 +200,11 @@ if(NOT ROS1_FOUND EQUAL -1)
                 SYSTEM PRIVATE
                 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/cobridge_base/include>
                 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/ros1_bridge/include>
+                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/http_server/include>
                 $<INSTALL_INTERFACE:include>
                 ${catkin_INCLUDE_DIRS}
         )
-        target_link_libraries(cobridge_nodelet cobridge_base babel_fish ${catkin_LIBRARIES})
+        target_link_libraries(cobridge_nodelet cobridge_base babel_fish http_server ${catkin_LIBRARIES})
         enable_strict_compiler_warnings(cobridge_nodelet)
 
         add_executable(cobridge ros1_bridge/src/ros1_bridge_node.cpp)
@@ -226,11 +239,12 @@ elseif(NOT ROS2_FOUND EQUAL -1)
                 PUBLIC
                 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/cobridge_base/include>
                 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/ros2_bridge/include>
+                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/http_server/include>
                 $<INSTALL_INTERFACE:include>
         )
 
         ament_target_dependencies(cobridge_component rclcpp rclcpp_components resource_retriever rosgraph_msgs ament_index_cpp)
-        target_link_libraries(cobridge_component cobridge_base)
+        target_link_libraries(cobridge_component cobridge_base http_server)
         rclcpp_components_register_nodes(cobridge_component "cobridge::CoBridge")
         enable_strict_compiler_warnings(cobridge_component)
         add_executable(cobridge
@@ -295,7 +309,7 @@ if(ROS_BUILD_TYPE STREQUAL "catkin")
     install(TARGETS cobridge
             RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
-    install(TARGETS cobridge_base cobridge_nodelet babel_fish
+    install(TARGETS cobridge_base cobridge_nodelet babel_fish http_server
             ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
             LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
             RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
@@ -310,10 +324,13 @@ elseif(ROS_BUILD_TYPE STREQUAL "ament_cmake")
     install(FILES ros2_bridge/include/ros2_bridge.hpp
             DESTINATION include/${PROJECT_NAME}/
     )
+    install(FILES http_server/include/http_server.h
+            DESTINATION include/${PROJECT_NAME}/
+    )
     install(TARGETS cobridge
             DESTINATION lib/${PROJECT_NAME}
     )
-    install(TARGETS cobridge_base cobridge_component
+    install(TARGETS cobridge_base cobridge_component http_server
             ARCHIVE DESTINATION lib
             LIBRARY DESTINATION lib
             RUNTIME DESTINATION bin
@@ -324,6 +341,6 @@ elseif(ROS_BUILD_TYPE STREQUAL "ament_cmake")
     install(FILES ros2_bridge/include/utils.hpp
             DESTINATION include/${PROJECT_NAME}/
     )
-    ament_export_libraries(cobridge_base cobridge_component)
+    ament_export_libraries(cobridge_base cobridge_component http_server)
     ament_package()
 endif()
