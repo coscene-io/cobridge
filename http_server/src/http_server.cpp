@@ -50,7 +50,8 @@ bool get_dev_mac_addr(std::string& mac_addresses)
       continue;
     }
     
-    ifreq ifr{};
+    ifreq ifr;
+    memset(&ifr, 0, sizeof(ifr));
     strcpy(ifr.ifr_name, ifa->ifa_name);
     
     if (ioctl(fd, SIOCGIFHWADDR, &ifr) != -1) {
@@ -213,7 +214,8 @@ void HttpServer::run_server()
     return;
   }
   
-  sockaddr_in address{};
+  sockaddr_in address;
+  memset(&address, 0, sizeof(address));
   address.sin_family = AF_INET;
   address.sin_addr.s_addr = INADDR_ANY;
   address.sin_port = htons(_port);
@@ -258,7 +260,8 @@ void HttpServer::run_server()
     FD_ZERO(&read_fds);
     FD_SET(server_fd, &read_fds);
     
-    struct timeval timeout{};
+    struct timeval timeout;
+    memset(&timeout, 0, sizeof(timeout));
     timeout.tv_sec = 1;
     timeout.tv_usec = 0;
     
@@ -277,7 +280,8 @@ void HttpServer::run_server()
     
     if (FD_ISSET(server_fd, &read_fds)) {
       int new_socket;
-      struct sockaddr_in client_addr{};
+      struct sockaddr_in client_addr;
+      memset(&client_addr, 0, sizeof(client_addr));
       socklen_t addrlen = sizeof(client_addr);
       
       if ((new_socket = accept(server_fd, reinterpret_cast<struct sockaddr*>(&client_addr), &addrlen)) < 0) {
@@ -289,7 +293,8 @@ void HttpServer::run_server()
       inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
       log(LogLevel::Debug, std::string("New connection from ") + client_ip);
       
-      struct timeval recv_timeout{};
+      struct timeval recv_timeout;
+      memset(&recv_timeout, 0, sizeof(recv_timeout));
       recv_timeout.tv_sec = 5;
       recv_timeout.tv_usec = 0;
       setsockopt(new_socket, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout, sizeof(recv_timeout));
