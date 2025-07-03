@@ -185,8 +185,8 @@ public:
         }
       };
 
-    http_server_ = std::make_unique<http_server::HttpServer>(
-      21275, mac_addresses, ip_addresses, http_log_handler);
+    http_server_ = std::unique_ptr<http_server::HttpServer>(
+      new http_server::HttpServer(21275, mac_addresses, ip_addresses, http_log_handler));
     http_server_->start();
 
     try {
