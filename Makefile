@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-ROS1_DISTRO := noetic
+ROS1_DISTRO := indigo melodic noetic
 ROS2_DISTRO := foxy humble jazzy
 
 ROS_WS := $(shell pwd)

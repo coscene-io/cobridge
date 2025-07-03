@@ -41,8 +41,8 @@ void from_json(const nlohmann::json & json_obj, Channel & chan)
 {
   const auto schema_encoding =
     json_obj.find("schemaEncoding") == json_obj.end() ?
-    std::optional<std::string>(std::nullopt) :
-    std::optional<std::string>(json_obj["schemaEncoding"].get<std::string>());
+    optional<std::string>(nullopt) :
+    optional<std::string>(json_obj["schemaEncoding"].get<std::string>());
 
   ChannelWithoutId channel_without_id{
     json_obj["topic"].get<std::string>(),
@@ -68,8 +68,7 @@ void to_json(nlohmann::json & json_obj, const ParameterValue & param_val)
     json_obj = param_val.getValue<std::string>();
   } else if (paramType == ParameterType::PARAMETER_BYTE_ARRAY) {
     const auto & paramValue = param_val.getValue<std::vector<unsigned char>>();
-    const std::string_view strValue(
-      reinterpret_cast<const char *>(paramValue.data()),
+    const string_view strValue(reinterpret_cast<const char *>(paramValue.data()),
       paramValue.size());
     json_obj = base64_encode(strValue);
   } else if (paramType == ParameterType::PARAMETER_STRUCT) {

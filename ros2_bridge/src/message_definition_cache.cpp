@@ -19,7 +19,6 @@
 #include <ament_index_cpp/get_resources.hpp>
 #include <rcutils/logging_macros.h>
 
-#include <optional>
 #include <filesystem>
 #include <fstream>
 #include <iostream>

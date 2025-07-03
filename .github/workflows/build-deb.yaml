@@ -2,6 +2,7 @@ name: build deb
 on:
   workflow_dispatch:
   release:
+    types: [ published ]
 
 jobs:
   build-deb-package:
@@ -49,6 +50,14 @@ jobs:
             arch: arm64
             distro: noble
             label: [ linux-arm-64-8c-32g-300gb ]
+          - ros_distribution: indigo
+            arch: amd64
+            distro: trusty
+            label: ubuntu-latest
+          - ros_distribution: indigo
+            arch: armhf
+            distro: trusty
+            label: [ linux-arm-64-8c-32g-300gb ]
 
     name: Build deb (ROS ${{ matrix.ros_distribution }} - ${{ matrix.arch }})
     runs-on: ${{ matrix.label }}
@@ -64,6 +73,8 @@ jobs:
       matrix_result_humble_arm64: ${{ steps.build_deb.outputs.matrix_result_humble_arm64 }}
       matrix_result_jazzy_amd64: ${{ steps.build_deb.outputs.matrix_result_jazzy_amd64 }}
       matrix_result_jazzy_arm64: ${{ steps.build_deb.outputs.matrix_result_jazzy_arm64 }}
+      matrix_result_indigo_amd64: ${{ steps.build_deb.outputs.matrix_result_indigo_amd64 }}
+      matrix_result_indigo_armhf: ${{ steps.build_deb.outputs.matrix_result_indigo_armhf }}
 
     steps:
       - name: Checkout code
@@ -113,7 +124,13 @@ jobs:
           DEB_FILENAME=$(basename $(ls $GITHUB_WORKSPACE/artifacts/*.deb))
           echo "DEB_FILENAME=$DEB_FILENAME" >> $GITHUB_ENV
           
-          download_url="https://apt.coscene.cn/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/ros-${{ matrix.ros_distribution }}-cobridge_latest_${{ matrix.arch }}.deb"
+          if [ "${{ github.event_name }}" = "release" ]; then
+            URL_PREFIX="https://apt.coscene.cn"
+          else
+            URL_PREFIX="https://download.coscene.cn"
+          fi
+          
+          download_url="${URL_PREFIX}/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/ros-${{ matrix.ros_distribution }}-cobridge_latest_${{ matrix.arch }}.deb"
 
           matrix_key="${{ matrix.ros_distribution }}_${{ matrix.arch }}"
           echo "matrix_result_${matrix_key}=${{ matrix.arch }},${{ matrix.ros_distribution }},${{ matrix.distro }},$download_url" >> $GITHUB_OUTPUT
@@ -170,6 +187,8 @@ jobs:
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_humble_arm64 }};"
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_jazzy_amd64 }};"
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_jazzy_arm64 }};"
+          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_indigo_amd64 }};"
+          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_indigo_armhf }};"
           
           IFS=';' read -ra URL_ARRAY <<< "$URLS"
           for url_item in "${URL_ARRAY[@]}"; do
