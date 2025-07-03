@@ -1,0 +1,22 @@
+diff --git vendor/ros_babel_fish/0.9.3/ros_babel_fish/generation/message_template.h vendor/ros_babel_fish/0.9.3/ros_babel_fish/generation/message_template.h
+index 79474ef..6b79180 100644
+--- vendor/ros_babel_fish/0.9.3/ros_babel_fish/generation/message_template.h
++++ vendor/ros_babel_fish/0.9.3/ros_babel_fish/generation/message_template.h
+@@ -24,7 +24,7 @@ struct MessageTemplate
+     std::string datatype;
+     std::vector<std::string> names;
+     std::vector<MessageTemplate::ConstPtr> types;
+-  } compound{};
++  } compound{"", {}, {}};
+   struct
+   {
+     /*!
+@@ -40,7 +40,7 @@ struct MessageTemplate
+      * Element template for compound arrays
+      */
+     MessageTemplate::ConstPtr element_template;
+-  } array{};
++  } array{-1, MessageType{}, nullptr};
+ };
+ } // ros_babel_fish
+ 

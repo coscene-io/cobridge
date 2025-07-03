@@ -33,7 +33,7 @@ std::future<std::string> wait_for_kicked(std::shared_ptr<ClientInterface> client
   auto future = promise->get_future();
 
   client->set_text_message_handler(
-    [promise = std::move(promise)](const std::string & payload) {
+    [promise](const std::string & payload) {
       const auto msg = nlohmann::json::parse(payload);
       const auto & op = msg["op"].get<std::string>();
 
@@ -53,7 +53,7 @@ std::future<std::string> wait_for_login(
   auto future = promise->get_future();
 
   client->set_text_message_handler(
-    [promise = std::move(promise), operate](const std::string & payload) {
+    [promise, operate](const std::string & payload) {
       const auto msg = nlohmann::json::parse(payload);
       std::string op = msg["op"].get<std::string>();
 
@@ -73,7 +73,7 @@ std::future<std::vector<uint8_t>> wait_for_channel_msg(
   auto future = promise->get_future();
 
   client->set_binary_message_handler(
-    [promise = std::move(promise), subscription_id](const uint8_t * data, size_t dataLength) {
+    [promise, subscription_id](const uint8_t * data, size_t dataLength) {
       if (read_uint32_LE(data + 1) != subscription_id) {
         return;
       }
@@ -94,7 +94,7 @@ std::future<std::vector<Parameter>> wait_for_parameters(
   auto future = promise->get_future();
 
   client->set_text_message_handler(
-    [promise = std::move(promise), request_id](const std::string & payload) {
+    [promise, request_id](const std::string & payload) {
       const auto msg = nlohmann::json::parse(payload);
       const auto & op = msg["op"].get<std::string>();
       const auto id = msg.value("id", "");
@@ -114,7 +114,7 @@ std::future<ServiceResponse> wait_for_service_response(std::shared_ptr<ClientInt
   auto future = promise->get_future();
 
   client->set_binary_message_handler(
-    [promise = std::move(promise)](const uint8_t * data, size_t data_length) mutable {
+    [promise](const uint8_t * data, size_t data_length) mutable {
       if (static_cast<BinaryOpcode>(data[0]) != BinaryOpcode::SERVICE_CALL_RESPONSE) {
         return;
       }
@@ -134,7 +134,7 @@ std::future<Service> wait_for_service(
   auto future = promise->get_future();
 
   client->set_text_message_handler(
-    [promise = std::move(promise), service_name](const std::string & payload) mutable {
+    [promise, service_name](const std::string & payload) mutable {
       const auto msg = nlohmann::json::parse(payload);
       const auto & op = msg["op"].get<std::string>();
 
@@ -160,7 +160,7 @@ std::future<Channel> wait_for_channel(
   auto future = promise->get_future();
 
   client->set_text_message_handler(
-    [promise = std::move(promise), topic_name](const std::string & payload) mutable {
+    [promise, topic_name](const std::string & payload) mutable {
       const auto msg = nlohmann::json::parse(payload);
       const auto & op = msg["op"].get<std::string>();
 
@@ -185,7 +185,7 @@ std::future<FetchAssetResponse> wait_for_fetch_asset_response(
   auto future = promise->get_future();
 
   client->set_binary_message_handler(
-    [promise = std::move(promise)](const uint8_t * data, size_t data_length) mutable {
+    [promise](const uint8_t * data, size_t data_length) mutable {
       if (static_cast<BinaryOpcode>(data[0]) != BinaryOpcode::FETCH_ASSET_RESPONSE) {
         return;
       }

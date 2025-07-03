@@ -149,7 +149,7 @@ private:
 
   void set_parameters(
     const std::vector<cobridge_base::Parameter> & parameters,
-    const std::optional<std::string> & request_id, ConnectionHandle hdl);
+    const optional<std::string> & request_id, ConnectionHandle hdl);
 
   void subscribe_parameters(
     const std::vector<std::string> & parameters,
@@ -157,7 +157,7 @@ private:
 
   void get_parameters(
     const std::vector<std::string> & parameters,
-    const std::optional<std::string> & request_id, ConnectionHandle hdl);
+    const optional<std::string> & request_id, ConnectionHandle hdl);
 
   void parameter_updates(const std::vector<cobridge_base::Parameter> & parameters);
 

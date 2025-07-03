@@ -13,11 +13,10 @@
   <arg name="nodelet_manager"                   default="co_nodelet_manager" />
   <arg name="num_threads"                       default="0" />
   <arg name="capabilities"                      default="[clientPublish,services,connectionGraph,assets]" />
-  <arg name="asset_uri_allowlist"               default="['^package://(?:\w+/)*\w+\.(?:dae|fbx|glb|gltf|jpeg|jpg|mtl|obj|png|stl|tif|tiff|urdf|webp|xacro)$']" />
+  <arg name="asset_uri_allowlist"               default="['^package://(?:\\w+/)*\\w+\\.(?:dae|fbx|glb|gltf|jpeg|jpg|mtl|obj|png|stl|tif|tiff|urdf|webp|xacro)$']" />
   <arg name="service_type_retrieval_timeout_ms" default="250" />
 
-  <node pkg="nodelet" type="nodelet" name="co_nodelet_manager" args="manager"
-        if="$(eval nodelet_manager == 'co_nodelet_manager')">
+  <node pkg="nodelet" type="nodelet" name="co_nodelet_manager" args="manager">
     <param name="num_worker_threads"  type="int"        value="$(arg num_threads)" />
   </node>
 

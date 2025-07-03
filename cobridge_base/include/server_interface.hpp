@@ -15,7 +15,7 @@
 #ifndef SERVER_INTERFACE_HPP_
 #define SERVER_INTERFACE_HPP_
 
-#include <optional>
+// #include <optional>
 #include <functional>
 #include <regex>
 #include <string>
@@ -41,7 +41,7 @@ public:
   : std::runtime_error(what_arg), _id(id)
   {}
 
-  [[nodiscard]] IdType id() const
+  IdType id() const
   {
     return _id;
   }
@@ -89,9 +89,9 @@ struct ServerHandlers
   std::function<void(const ClientAdvertisement &, ConnectionHandle)> client_advertise_handler;
   std::function<void(ClientChannelId, ConnectionHandle)> client_unadvertise_handler;
   std::function<void(const ClientMessage &, ConnectionHandle)> client_message_handler;
-  std::function<void(const std::vector<std::string> &, const std::optional<std::string> &,
+  std::function<void(const std::vector<std::string> &, const optional<std::string> &,
     ConnectionHandle)> parameter_request_handler;
-  std::function<void(const std::vector<Parameter> &, const std::optional<std::string> &,
+  std::function<void(const std::vector<Parameter> &, const optional<std::string> &,
     ConnectionHandle)> parameter_change_handler;
   std::function<void(const std::vector<std::string> &, ParameterSubscriptionOperation,
     ConnectionHandle)> parameter_subscription_handler;
@@ -117,7 +117,7 @@ public:
   virtual void publish_parameter_values(
     ConnectionHandle client_handle,
     const std::vector<Parameter> & parameters,
-    const std::optional<std::string> & request_id) = 0;
+    const optional<std::string> & request_id) = 0;
 
   virtual void update_parameter_values(const std::vector<Parameter> & parameters) = 0;
 

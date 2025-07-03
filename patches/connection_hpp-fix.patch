@@ -1,5 +1,5 @@
 diff --git vendor/websocketpp/0.8.2/websocketpp/connection.hpp vendor/websocketpp/0.8.2/websocketpp/connection.hpp
-index d019fce..9353e25 100644
+index d019fce..95df897 100644
 --- vendor/websocketpp/0.8.2/websocketpp/connection.hpp
 +++ vendor/websocketpp/0.8.2/websocketpp/connection.hpp
 @@ -651,9 +651,10 @@ public:

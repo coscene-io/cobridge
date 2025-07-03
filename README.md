@@ -4,114 +4,118 @@ cobridge runs as a ros node on the robot side, and interacts with the cloud via 
 After cobridge establishes a link with the cloud, it can subscribe to ros topic and call ros service according to the instructions from the cloud, so as to real-time monitor the status of the robot and remotely issue commands.
 
 ## Install
-  
-**CAUTION: only support `noetic`, `foxy`, `humble`, `jazzy` now**
 
-* Import public key
-  
-  ``` bash
+### Compatibility
+
+| ROS Version | Distribution Names  | Status       |
+| ----------- | ------------------- | ------------ |
+| ROS 1       | melodic, noetic     | ✅ Supported |
+| ROS 2       | foxy, humble, jazzy | ✅ Supported |
+
+### Installation Steps
+
+- Import public key
+
+  ```bash
   curl -fsSL https://apt.coscene.cn/coscene.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/coscene.gpg
   ```
-  
-* Add source
 
-  ``` bash
+- Add source
+
+  ```bash
   echo "deb [signed-by=/etc/apt/trusted.gpg.d/coscene.gpg] https://apt.coscene.cn $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/coscene.list
   ```
-  
-* Update and install
 
-  ``` bash
+- Update and install
+
+  ```bash
   sudo apt update
-  # CAUTION: ${ROS_DISTRO} need to be replaced by 'noetic', 'foxy', 'humble' or 'jazzy', if ROS_DISTRO not in your env
+  # CAUTION: ${ROS_DISTRO} need to be replaced by `melodic`, 'noetic', 'foxy', 'humble' or 'jazzy', if ROS_DISTRO not in your env
   sudo apt install ros-${ROS_DISTRO}-cobridge -y
   ```
 
-* Run coBridge
+- Run coBridge
 
-  ``` bash
+  ```bash
   source /opt/ros/${ROS_DISTRO}/setup.bash
-  
+
   # for ros 1 distribution
   roslaunch cobridge cobridge.launch
-  
-  # for ros 2 distribution
-  ros2 launch cobridge cobridge_launch.xml 
-  ```
 
+  # for ros 2 distribution
+  ros2 launch cobridge cobridge_launch.xml
+  ```
 
 ## Compile by source (Recommended !)
 
-* Install deps 
+- Install deps
 
-  ``` bash
+  ```bash
   # for ROS 1 distribution
   sudo apt install -y \
     libasio-dev \
-    ros-${ROS_DISTRO}-cv-bridge \
-    ros-${ROS_DISTRO}-resource-retriever \
-    ros-${ROS_DISTRO}-ros-babel-fish
-    
+    ros-${ROS_DISTRO}-resource-retriever
+
   # for ROS 2 distribution
   sudo apt install -y \
-      libasio-dev \
-      ros-${ROS_DISTRO}-cv-bridge \
-      ros-${ROS_DISTRO}-resource-retriever
+    libasio-dev \
+    ros-${ROS_DISTRO}-resource-retriever
   ```
 
-* ROS1
+- ROS1
 
-  ``` bash
+  ```bash
   # copy this project into {your_ros_ws}/src/
   cp -r {this_repo} {your_ros_ws}/src/.
-  
+
   # Init Env variables
   source /opt/ros/{ros_distro}/setup.bash
- 
-  # Enter into your ros workspace 
+
+  # Enter into your ros workspace
   cd {your_ros_ws}
-  
+
   # apply patches
-  ./patch_apply.sh  
-  
+  ./patch_apply.sh
+
   # Compile
   catkin_make install
   ```
 
+- ROS2
 
-* ROS2
-
-  ``` bash 
+  ```bash
   # Init Env variables
   source /opt/ros/{ros_distro}/setup.bash
-   
+
   # Copy this repo into your workspace
-  cp -r {this_repo} {your_ros_ws}/src/. 
-  
-  # Enter into your ros workspace 
+  cp -r {this_repo} {your_ros_ws}/src/.
+
+  # Enter into your ros workspace
   cd {your_ros_ws}
-  
+
   # apply patches
   ./patch_apply.sh
-  
+
   # Build
   colcon build --packages-select cobridge
   ```
 
 ## Run
 
-  ``` bash
-    source /opt/ros/{ros_distro}/setup.bash
-    
-    # ros 1
-    roslaunch cobridge cobridge.launch
-    
-    # ros 2
-    ros2 launch cobridge cobridge_launch.xml 
-  ```
+```bash
+  source /opt/ros/{ros_distro}/setup.bash
 
-## Cloud Visualization 
+  # ros 1
+  roslaunch cobridge cobridge.launch
+
+  # ros 2
+  ros2 launch cobridge cobridge_launch.xml
+```
+
+## Cloud Visualization
+
 The cloud visualisation needs to be coupled with the carve line `coLink` component to visualise the state of the robot side in real time via the web side.
 
 ## Credits
-originally from foxglove, thanks for their wonderful work. 
+
+originally from foxglove, thanks for their wonderful work.
