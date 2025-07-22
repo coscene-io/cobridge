@@ -188,12 +188,26 @@ static std::pair<std::string, std::string> split_service_definition(
     normalized_definition.replace(pos, 1, "\n");
   }
 
-  constexpr char SEP[] = "\n---\n";
-  const auto definitions = split_string(normalized_definition, SEP);
-  if (definitions.size() != 2) {
+  std::string SERVICE_REQUEST_RESPONSE_SEPARATOR = "---";
+  const auto definitions = split_string(normalized_definition);
+  if (definitions.size() == 1 && definitions[0] != SERVICE_REQUEST_RESPONSE_SEPARATOR) {
     throw std::invalid_argument("Invalid service definition:\n" + service_definition);
   }
-  return {definitions[0], definitions[1]};
+  
+  std::string request, response;
+  bool is_request = true;
+  for (const auto & definition : definitions) {
+    if (definition == SERVICE_REQUEST_RESPONSE_SEPARATOR) {
+      is_request = false;
+      continue;
+    }
+    if (is_request) {
+      request += definition + "\n";
+    } else {
+      response += definition + "\n";
+    }
+  }
+  return {request, response};
 }
 
 inline bool ends_with(const std::string & str, const std::string & suffix)
