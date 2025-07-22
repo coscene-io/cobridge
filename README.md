@@ -1,52 +1,52 @@
-# cobridge
+# coBridge
 
-cobridge runs as a ros node on the robot side, and interacts with the cloud via websocket. cobridge establishes a link with the cloud to subscribe to a ros topic and invoke a ros service according to cloud instructions.
-After cobridge establishes a link with the cloud, it can subscribe to ros topic and call ros service according to the instructions from the cloud, so as to real-time monitor the status of the robot and remotely issue commands.
+coBridge is a ROS node deployed on robots to facilitate real-time interaction between the robot and the cloud platform via WebSocket. It subscribes to ROS topics and invokes ROS services based on instructions received from the cloud, enabling remote monitoring and command execution.
 
-## Install
+## Supported Versions
 
-### Compatibility
+| ROS Version | Distribution Names | Ubuntu Version | Status       |
+| ----------- | ------------------ | -------------- | ------------ |
+| ROS 1       | melodic            | 18.04 Bionic   | ✅ Supported |
+| ROS 1       | noetic             | 20.04 Focal    | ✅ Supported |
+| ROS 2       | foxy               | 20.04 Focal    | ✅ Supported |
+| ROS 2       | humble             | 22.04 Jammy    | ✅ Supported |
+| ROS 2       | jazzy              | 24.04 Noble    | ✅ Supported |
 
-| ROS Version | Distribution Names  | Status       |
-| ----------- | ------------------- | ------------ |
-| ROS 1       | melodic, noetic     | ✅ Supported |
-| ROS 2       | foxy, humble, jazzy | ✅ Supported |
+## Installation (Binary)
 
-### Installation Steps
+1. Import public key
 
-- Import public key
+```bash
+curl -fsSL https://apt.coscene.cn/coscene.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/coscene.gpg
+```
 
-  ```bash
-  curl -fsSL https://apt.coscene.cn/coscene.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/coscene.gpg
-  ```
+2. Add source
 
-- Add source
+```bash
+echo "deb [signed-by=/etc/apt/trusted.gpg.d/coscene.gpg] https://apt.coscene.cn $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/coscene.list
+```
 
-  ```bash
-  echo "deb [signed-by=/etc/apt/trusted.gpg.d/coscene.gpg] https://apt.coscene.cn $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/coscene.list
-  ```
+3. Update and install
 
-- Update and install
+```bash
+sudo apt update
+# CAUTION: ${ROS_DISTRO} need to be replaced by `melodic`, 'noetic', 'foxy', 'humble' or 'jazzy', if ROS_DISTRO not in your env
+sudo apt install ros-${ROS_DISTRO}-cobridge -y
+```
 
-  ```bash
-  sudo apt update
-  # CAUTION: ${ROS_DISTRO} need to be replaced by `melodic`, 'noetic', 'foxy', 'humble' or 'jazzy', if ROS_DISTRO not in your env
-  sudo apt install ros-${ROS_DISTRO}-cobridge -y
-  ```
+4. Run coBridge
 
-- Run coBridge
+```bash
+source /opt/ros/${ROS_DISTRO}/setup.bash
 
-  ```bash
-  source /opt/ros/${ROS_DISTRO}/setup.bash
+# for ros 1 distribution
+roslaunch cobridge cobridge.launch
 
-  # for ros 1 distribution
-  roslaunch cobridge cobridge.launch
+# for ros 2 distribution
+ros2 launch cobridge cobridge_launch.xml
+```
 
-  # for ros 2 distribution
-  ros2 launch cobridge cobridge_launch.xml
-  ```
-
-## Compile by source (Recommended !)
+## Installation from Source (Recommended)
 
 - Install deps
 
@@ -114,8 +114,8 @@ After cobridge establishes a link with the cloud, it can subscribe to ros topic 
 
 ## Cloud Visualization
 
-The cloud visualisation needs to be coupled with the carve line `coLink` component to visualise the state of the robot side in real time via the web side.
+The cloud visualization needs to be coupled with the carve line `coLink` component to visualize the state of the robot side in real time via the web side.
 
 ## Credits
 
-originally from foxglove, thanks for their wonderful work.
+Derived from Foxglove's foundational work. Thanks to their outstanding contributions.
