@@ -193,7 +193,7 @@ static std::pair<std::string, std::string> split_service_definition(
   if (definitions.size() == 1 && definitions[0] != SERVICE_REQUEST_RESPONSE_SEPARATOR) {
     throw std::invalid_argument("Invalid service definition:\n" + service_definition);
   }
-  
+
   std::string request, response;
   bool is_request = true;
   for (const auto & definition : definitions) {
