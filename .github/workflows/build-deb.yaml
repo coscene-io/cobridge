@@ -130,7 +130,7 @@ jobs:
             URL_PREFIX="https://download.coscene.cn"
           fi
           
-          download_url="${URL_PREFIX}/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/ros-${{ matrix.ros_distribution }}-cobridge_latest_${{ matrix.arch }}.deb"
+          download_url="${URL_PREFIX}/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/${DEB_FILENAME}"
 
           matrix_key="${{ matrix.ros_distribution }}_${{ matrix.arch }}"
           echo "matrix_result_${matrix_key}=${{ matrix.arch }},${{ matrix.ros_distribution }},${{ matrix.distro }},$download_url" >> $GITHUB_OUTPUT
