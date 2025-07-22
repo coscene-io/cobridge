@@ -175,28 +175,25 @@ static std::tuple<std::string, std::string, std::string> split_action_msg_defini
 static std::pair<std::string, std::string> split_service_definition(
   const std::string & service_definition)
 {
-  constexpr char SEP[] = "---";
+  // Convert all \r\n and \r to \n for consistent line endings
+  std::string normalized_definition = service_definition;
+  // Replace \r\n with \n
+  size_t pos = 0;
+  while ((pos = normalized_definition.find("\r\n", pos)) != std::string::npos) {
+    normalized_definition.replace(pos, 2, "\n");
+  }
+  // Replace remaining \r with \n
+  pos = 0;
+  while ((pos = normalized_definition.find('\r', pos)) != std::string::npos) {
+    normalized_definition.replace(pos, 1, "\n");
+  }
 
-  const auto definitions = split_string(service_definition, SEP);
+  constexpr char SEP[] = "\n---\n";
+  const auto definitions = split_string(normalized_definition, SEP);
   if (definitions.size() != 2) {
     throw std::invalid_argument("Invalid service definition:\n" + service_definition);
   }
-
-  std::string request = definitions[0];
-  while (!request.empty() && (request.back() == '\n' || request.back() == '\r')) {
-    request.pop_back();
-  }
-
-  std::string response = definitions[1];
-  size_t pos = 0;
-  while (pos < response.size() && (response[pos] == '\n' || response[pos] == '\r')) {
-    pos++;
-  }
-  if (pos > 0) {
-    response = response.substr(pos);
-  }
-
-  return {request, response};
+  return {definitions[0], definitions[1]};
 }
 
 inline bool ends_with(const std::string & str, const std::string & suffix)
