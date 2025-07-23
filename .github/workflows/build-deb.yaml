@@ -136,6 +136,20 @@ jobs:
           echo "matrix_result_${matrix_key}=${{ matrix.arch }},${{ matrix.ros_distribution }},${{ matrix.distro }},$download_url" >> $GITHUB_OUTPUT
           echo "download url: $download_url"
 
+      - name: Update APT Source (AWS)
+        uses: coscene-io/update-apt-source@test
+        with:
+          ubuntu_distro: ${{ matrix.distro }}
+          deb_paths: ${{ github.workspace }}/artifacts/${{ env.DEB_FILENAME }}
+          architectures: ${{ matrix.platform }}
+          storage_type: aws
+          endpoint: https://s3.us-east-1.amazonaws.com
+          region: us-east-1
+          bucket_name: coscene-apt
+          access_key_id: ${{ secrets.S3_ARTIFACTS_ACCESS_KEY }}
+          access_key_secret: ${{ secrets.S3_ARTIFACTS_ACCESS_SECRET }}
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+
       - name: Update APT Source ( OSS )
         if: github.event_name == 'release'
         uses: coscene-io/update-apt-source@main
