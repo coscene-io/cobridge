@@ -137,7 +137,7 @@ jobs:
           echo "download url: $download_url"
 
       - name: Update APT Source (AWS)
-        uses: coscene-io/update-apt-source@test
+        uses: coscene-io/update-apt-source@main
         with:
           ubuntu_distro: ${{ matrix.distro }}
           deb_paths: ${{ github.workspace }}/artifacts/${{ env.DEB_FILENAME }}
