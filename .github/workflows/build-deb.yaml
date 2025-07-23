@@ -124,24 +124,25 @@ jobs:
           DEB_FILENAME=$(basename $(ls $GITHUB_WORKSPACE/artifacts/*.deb))
           echo "DEB_FILENAME=$DEB_FILENAME" >> $GITHUB_ENV
           
+          matrix_key="${{ matrix.ros_distribution }}_${{ matrix.arch }}"
           if [ "${{ github.event_name }}" = "release" ]; then
-            URL_PREFIX="https://apt.coscene.cn"
+            OVERSEA_URL="https://apt.coscene.io/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/${DEB_FILENAME}"
+            DOMESTIC_URL="https://apt.coscene.cn/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/${DEB_FILENAME}"
+            echo "matrix_result_${matrix_key}=${{ matrix.arch }},${{ matrix.ros_distribution }},${{ matrix.distro }},overseas,$OVERSEA_URL;${{ matrix.arch }},${{ matrix.ros_distribution }},${{ matrix.distro }},domestic,$DOMESTIC_URL" >> $GITHUB_OUTPUT
           else
-            URL_PREFIX="https://download.coscene.cn"
+            download_url="https://download.coscene.cn/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/${DEB_FILENAME}"
+  
+            echo "matrix_result_${matrix_key}=${{ matrix.arch }},${{ matrix.ros_distribution }},${{ matrix.distro }},domestic,$download_url" >> $GITHUB_OUTPUT
+            echo "download url: $download_url"
           fi
           
-          download_url="${URL_PREFIX}/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/${DEB_FILENAME}"
-
-          matrix_key="${{ matrix.ros_distribution }}_${{ matrix.arch }}"
-          echo "matrix_result_${matrix_key}=${{ matrix.arch }},${{ matrix.ros_distribution }},${{ matrix.distro }},$download_url" >> $GITHUB_OUTPUT
-          echo "download url: $download_url"
 
       - name: Update APT Source (AWS)
         uses: coscene-io/update-apt-source@main
         with:
           ubuntu_distro: ${{ matrix.distro }}
           deb_paths: ${{ github.workspace }}/artifacts/${{ env.DEB_FILENAME }}
-          architectures: ${{ matrix.platform }}
+          architectures: ${{ matrix.distro }}
           storage_type: aws
           endpoint: https://s3.us-east-1.amazonaws.com
           region: us-east-1
@@ -184,11 +185,11 @@ jobs:
     needs: build-deb-package
     runs-on: ubuntu-latest
     steps:
-      - name: Create workflow summary
+      - name: "Create workflow summary"
         run: |
           echo "## All Download URLs" >> $GITHUB_STEP_SUMMARY
-          echo "| Platform | ROS Distro | Ubuntu Distro | URL |" >> $GITHUB_STEP_SUMMARY
-          echo "| --- | --- | --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | ROS Distro | Ubuntu Distro | Region | URL |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- | --- | --- | --- |" >> $GITHUB_STEP_SUMMARY
           
           URLS=""
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_melodic_amd64 }};"
