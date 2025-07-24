@@ -145,7 +145,7 @@ jobs:
         with:
           ubuntu_distro: ${{ matrix.distro }}
           deb_paths: ${{ github.workspace }}/artifacts/${{ env.DEB_FILENAME }}
-          architectures: ${{ matrix.distro }}
+          architectures: ${{ matrix.arch }}
           storage_type: aws
           endpoint: https://s3.us-east-1.amazonaws.com
           region: us-east-1
