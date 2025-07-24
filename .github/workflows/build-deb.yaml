@@ -125,7 +125,7 @@ jobs:
           echo "DEB_FILENAME=$DEB_FILENAME" >> $GITHUB_ENV
           
           matrix_key="${{ matrix.ros_distribution }}_${{ matrix.arch }}"
-          if [ "${{ github.event_name }}" = "release" ]; then
+          if [ "${{ github.event_name }}" == "release" ]; then
             OVERSEA_URL="https://apt.coscene.io/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/${DEB_FILENAME}"
             DOMESTIC_URL="https://apt.coscene.cn/dists/${{ matrix.distro }}/main/binary-${{ matrix.arch }}/${DEB_FILENAME}"
             echo "matrix_result_${matrix_key}=${{ matrix.arch }},${{ matrix.ros_distribution }},${{ matrix.distro }},overseas,$OVERSEA_URL;${{ matrix.arch }},${{ matrix.ros_distribution }},${{ matrix.distro }},domestic,$DOMESTIC_URL" >> $GITHUB_OUTPUT
@@ -138,6 +138,7 @@ jobs:
           
 
       - name: Update APT Source (AWS)
+        if: github.event_name == 'release'
         uses: coscene-io/update-apt-source@main
         with:
           ubuntu_distro: ${{ matrix.distro }}
@@ -209,6 +210,6 @@ jobs:
           for url_item in "${URL_ARRAY[@]}"; do
             if [ -n "$url_item" ]; then
               IFS=',' read -ra ITEM <<< "$url_item"
-              echo "| ${ITEM[0]} | ${ITEM[1]} | ${ITEM[2]} | [${ITEM[3]}](${ITEM[3]}) |" >> $GITHUB_STEP_SUMMARY
+              echo "| ${ITEM[0]} | ${ITEM[1]} | ${ITEM[2]} | ${ITEM[3]} | [${ITEM[4]}](${ITEM[4]}) |" >> $GITHUB_STEP_SUMMARY
             fi
           done
