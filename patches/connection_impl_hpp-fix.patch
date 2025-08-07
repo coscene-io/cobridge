@@ -1,8 +1,27 @@
 diff --git vendor/websocketpp/0.8.2/websocketpp/impl/connection_impl.hpp vendor/websocketpp/0.8.2/websocketpp/impl/connection_impl.hpp
-index bf88c95..9ca896d 100644
+index bf88c95..0b57826 100644
 --- vendor/websocketpp/0.8.2/websocketpp/impl/connection_impl.hpp
 +++ vendor/websocketpp/0.8.2/websocketpp/impl/connection_impl.hpp
-@@ -80,28 +80,28 @@ session::state::value connection<config>::get_state() const {
+@@ -73,6 +73,18 @@ size_t connection<config>::get_buffered_amount() const {
+     return m_send_buffer_size;
+ }
+ 
++template <typename config>
++void connection<config>::get_network_statistics(int& send_bytes, int& dropped_bytes, int& dropped_msgs)
++{
++    send_bytes = m_send_bytes_amount;
++    dropped_bytes = m_dropped_bytes_amount;
++    dropped_msgs = m_dropped_msgs_amount;
++
++    m_send_bytes_amount = 0;
++    m_dropped_bytes_amount = 0;
++    m_dropped_msgs_amount = 0;
++}
++
+ template <typename config>
+ session::state::value connection<config>::get_state() const {
+     //scoped_lock_type lock(m_connection_state_lock);
+@@ -80,28 +92,28 @@ session::state::value connection<config>::get_state() const {
  }
  
  template <typename config>
@@ -36,7 +55,7 @@ index bf88c95..9ca896d 100644
  {
      if (m_alog->static_test(log::alevel::devel)) {
          m_alog->write(log::alevel::devel,"connection send");
-@@ -121,7 +121,7 @@ lib::error_code connection<config>::send(typename config::message_type::ptr msg)
+@@ -121,7 +133,7 @@ lib::error_code connection<config>::send(typename config::message_type::ptr msg)
          outgoing_msg = msg;
  
          scoped_lock_type lock(m_write_lock);
@@ -45,7 +64,7 @@ index bf88c95..9ca896d 100644
          needs_writing = !m_write_flag && !m_send_queue.empty();
      } else {
          outgoing_msg = m_msg_manager->get_message();
-@@ -137,7 +137,7 @@ lib::error_code connection<config>::send(typename config::message_type::ptr msg)
+@@ -137,7 +149,7 @@ lib::error_code connection<config>::send(typename config::message_type::ptr msg)
              return ec;
          }
  
@@ -54,7 +73,7 @@ index bf88c95..9ca896d 100644
          needs_writing = !m_write_flag && !m_send_queue.empty();
      }
  
-@@ -206,7 +206,7 @@ void connection<config>::ping(std::string const& payload, lib::error_code& ec) {
+@@ -206,7 +218,7 @@ void connection<config>::ping(std::string const& payload, lib::error_code& ec) {
      bool needs_writing = false;
      {
          scoped_lock_type lock(m_write_lock);
@@ -63,7 +82,7 @@ index bf88c95..9ca896d 100644
          needs_writing = !m_write_flag && !m_send_queue.empty();
      }
  
-@@ -277,7 +277,7 @@ void connection<config>::pong(std::string const& payload, lib::error_code& ec) {
+@@ -277,7 +289,7 @@ void connection<config>::pong(std::string const& payload, lib::error_code& ec) {
      bool needs_writing = false;
      {
          scoped_lock_type lock(m_write_lock);
@@ -72,7 +91,7 @@ index bf88c95..9ca896d 100644
          needs_writing = !m_write_flag && !m_send_queue.empty();
      }
  
-@@ -1793,6 +1793,7 @@ template <typename config>
+@@ -1793,6 +1805,7 @@ template <typename config>
  void connection<config>::write_frame() {
      //m_alog->write(log::alevel::devel,"connection write_frame");
  
@@ -80,7 +99,7 @@ index bf88c95..9ca896d 100644
      {
          scoped_lock_type lock(m_write_lock);
  
-@@ -1807,15 +1808,21 @@ void connection<config>::write_frame() {
+@@ -1807,15 +1820,21 @@ void connection<config>::write_frame() {
          // pull off all the messages that are ready to write.
          // stop if we get a message marked terminal
          message_ptr next_message = write_pop();
@@ -103,7 +122,7 @@ index bf88c95..9ca896d 100644
          if (m_current_msgs.empty()) {
              // there was nothing to send
              return;
-@@ -1835,50 +1842,6 @@ void connection<config>::write_frame() {
+@@ -1835,50 +1854,6 @@ void connection<config>::write_frame() {
          m_send_buffer.push_back(transport::buffer(header.c_str(),header.size()));
          m_send_buffer.push_back(transport::buffer(payload.c_str(),payload.size()));   
      }
@@ -154,7 +173,7 @@ index bf88c95..9ca896d 100644
      transport_con_type::async_write(
          m_send_buffer,
          m_write_frame_handler
-@@ -2143,7 +2106,7 @@ lib::error_code connection<config>::send_close_frame(close::status::value code,
+@@ -2143,7 +2118,7 @@ lib::error_code connection<config>::send_close_frame(close::status::value code,
      bool needs_writing = false;
      {
          scoped_lock_type lock(m_write_lock);
@@ -163,7 +182,7 @@ index bf88c95..9ca896d 100644
          needs_writing = !m_write_flag && !m_send_queue.empty();
      }
  
-@@ -2207,19 +2170,24 @@ connection<config>::get_processor(int version) const {
+@@ -2207,19 +2182,24 @@ connection<config>::get_processor(int version) const {
  }
  
  template <typename config>
@@ -191,7 +210,7 @@ index bf88c95..9ca896d 100644
          m_alog->write(log::alevel::devel,s.str());
      }
  }
-@@ -2233,16 +2201,24 @@ typename config::message_type::ptr connection<config>::write_pop()
+@@ -2233,16 +2213,28 @@ typename config::message_type::ptr connection<config>::write_pop()
          return msg;
      }
  
@@ -219,7 +238,11 @@ index bf88c95..9ca896d 100644
 +        m_send_queue.pop();
 +
 +        if (time_diff_ms < 100 || is_reliable) {
++            m_send_bytes_amount += msg_size;
 +            return msg;
++        } else {
++            m_dropped_msgs_amount++;
++            m_dropped_bytes_amount += msg_size;
 +        }
      }
      return msg;
