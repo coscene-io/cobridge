@@ -2,16 +2,17 @@
 
 cobridge 会以 ros node 的方式运行在机器人端，并通过 websocket 方式与云端进行交互。cobridge 与云端建立链接后，根据云端指令可以实现订阅 ros topic，调用 ros service，实现实时监控机器人状态、远程下发指令等功能。
 
-## 安装
+## 已适配版本
 
-### 兼容性
+| ROS 版本 | 发型版本 | Ubuntu 版本  | 状态      |
+| -------- | -------- | ------------ | --------- |
+| ROS 1    | melodic  | 18.04 Bionic | ✅ 已支持 |
+| ROS 1    | noetic   | 20.04 Focal  | ✅ 已支持 |
+| ROS 2    | foxy     | 20.04 Focal  | ✅ 已支持 |
+| ROS 2    | humble   | 22.04 Jammy  | ✅ 已支持 |
+| ROS 2    | jazzy    | 24.04 Noble  | ✅ 已支持 |
 
-| ROS 版本 | 发行版名称          | 状态    |
-| -------- | ------------------- | ------- |
-| ROS 1    | melodic, noetic     | ✅ 支持 |
-| ROS 2    | foxy, humble, jazzy | ✅ 支持 |
-
-### 安装步骤
+## 从 APT 安装
 
 - 导入公钥
 
@@ -45,7 +46,7 @@ cobridge 会以 ros node 的方式运行在机器人端，并通过 websocket �
   ros2 launch cobridge cobridge_launch.xml
   ```
 
-## 编译 (推荐！)
+## 自编译 (推荐)
 
 - 安装依赖库
 
