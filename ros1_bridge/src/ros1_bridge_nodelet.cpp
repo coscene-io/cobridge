@@ -195,7 +195,7 @@ public:
       if (use_sim_time_) {
         server_options.capabilities.emplace_back(cobridge_base::CAPABILITY_TIME);
       }
-      server_options.capabilities.emplace_back(cobridge_base::CAPABILITY_MESSAGE_TIME);
+      // server_options.capabilities.emplace_back(cobridge_base::CAPABILITY_MESSAGE_TIME);
       server_options.supported_encodings = {ROS1_CHANNEL_ENCODING};
       server_options.metadata = {{"ROS_DISTRO", ros_distro}, {"COLINK", colink_ip}};
       server_options.send_buffer_limit_bytes = send_buffer_limit;

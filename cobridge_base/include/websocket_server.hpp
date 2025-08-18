@@ -283,6 +283,7 @@ private:
     std::unordered_set<ClientChannelId> advertised_channels;
     bool subscribed_to_connection_graph = false;
     bool login = true;
+    bool time_synced = false;
 
     explicit ClientInfo(
       std::string endpoint_name, std::string user_name, std::string user_id,
@@ -729,8 +730,8 @@ inline void Server<ServerConfiguration>::send_message(
     sub_id = subs->second;
   }
 
-  std::array<uint8_t, 1 + 4 + 8> msg_header;
-  msg_header[0] = uint8_t(BinaryOpcode::MESSAGE_DATA);
+  std::array<uint8_t, 1 + 4 + 8> msg_header{};
+  msg_header[0] = static_cast<uint8_t>(BinaryOpcode::MESSAGE_DATA);
   write_uint32_LE(msg_header.data() + 1, sub_id);
   write_uint64_LE(msg_header.data() + 5, timestamp);
 
@@ -966,7 +967,7 @@ inline void Server<ServerConfiguration>::send_periodic_message()
     // Send to all connected clients
     for (const auto& client : _clients) {
       try {
-        if (client.second.login) {
+        if (client.second.time_synced) {
           auto con = _server.get_con_from_hdl(client.first);
           int send_bytes = 0, dropped_bytes = 0, dropped_msgs = 0;
           con->get_network_statistics(send_bytes, dropped_bytes, dropped_msgs);
@@ -1038,7 +1039,7 @@ void Server<ServerConfiguration>::handle_sync_time(const Json & payload, ConnHan
   const auto client_time = payload.at("clientTime").get<uint64_t>();
 
   const auto network_delay = ( timestamp - server_time ) / 2;
-  uint64_t time_offset = client_time - ( server_time + network_delay);
+  auto time_offset = static_cast<int64_t>( client_time - ( server_time + network_delay) );
 
   const auto con = _server.get_con_from_hdl(hdl);
   con->send(
@@ -1088,6 +1089,15 @@ void Server<ServerConfiguration>::handle_sync_time(const Json & payload, ConnHan
       {"op", "advertiseServices"},
       {"services", std::move(services)},
     });
+
+  {
+    std::lock_guard<std::mutex> clients_lock(_clients_mutex);
+
+    const auto client_iter = _clients.find(hdl);
+    if (client_iter != _clients.end()) {
+      client_iter->second.time_synced = true;
+    }
+  }
 }
 
 template<typename ServerConfiguration>
