@@ -68,7 +68,7 @@ bool get_dev_ip_addrs(std::vector<std::string>& ip_addresses, std::string& colin
 bool get_dev_netmask(const std::string& ifname,  std::string  & mask);
 
 inline uint32_t ipv4_to_uint32(const std::string& ip) {
-  std::array<uint32_t, 4> parts{};
+  std::array<uint32_t, 4> parts{{0}};
   char dot;
   std::istringstream iss(ip);
 
