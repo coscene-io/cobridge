@@ -142,7 +142,11 @@ CoBridge::CoBridge(const rclcpp::NodeOptions & options)
   }
   // server_options.capabilities.emplace_back(cobridge_base::CAPABILITY_MESSAGE_TIME);
   server_options.supported_encodings = {"cdr"};
-  server_options.metadata = {{"ROS_DISTRO", ros_distro}, {"COLINK", colink_ip}, {"NETMASK", colink_netmask}};
+  server_options.metadata = {
+    {"ROS_DISTRO", ros_distro},
+    {"COLINK", colink_ip},
+    {"NETMASK", colink_netmask}
+  };
   server_options.send_buffer_limit_bytes = send_buffer_limit;
   server_options.session_id = std::to_string(std::time(nullptr));
   server_options.use_compression = use_compression;
