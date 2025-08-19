@@ -348,8 +348,7 @@ private:
   // Timer for periodic message sending
   std::atomic<bool> _timer_running{false};
   std::unique_ptr<std::thread> _timer_thread;
-  std::chrono::milliseconds _timer_interval{1000}; // 1 second default
-
+  std::chrono::milliseconds _timer_interval{1000};
 };
 
 //-----------------------------------------------------------------------------------------------------------------
@@ -965,31 +964,34 @@ inline void Server<ServerConfiguration>::send_periodic_message()
 {
   try {
     // Send to all connected clients
-    for (const auto& client : _clients) {
+    for (const auto & client : _clients) {
       try {
         if (client.second.time_synced) {
           auto con = _server.get_con_from_hdl(client.first);
           int send_bytes = 0, dropped_bytes = 0, dropped_msgs = 0;
           con->get_network_statistics(send_bytes, dropped_bytes, dropped_msgs);
-          double package_loss = static_cast<double>(dropped_bytes) / static_cast<double>(dropped_bytes+send_bytes);
+          double package_loss = static_cast<double>(dropped_bytes) /
+            static_cast<double>(dropped_bytes + send_bytes);
 
           const Json msg = {
-              {"op", "networkStatistics"},
-              {"curSpeed", static_cast<double>(send_bytes) / 1024.0}, // KiB/s
-              {"droppedMsgs", dropped_msgs}, // count of messages dropped by server
-              {"packageLoss", package_loss} // rate of package, calculated by bytes, not message count
+            {"op", "networkStatistics"},
+            {"curSpeed", static_cast<double>(send_bytes) / 1024.0},   // KiB/s
+            {"droppedMsgs", dropped_msgs},   // count of messages dropped by server
+            {"packageLoss", package_loss}   // calculated by bytes, not message count
           };
           const auto payload = msg.dump();
           _server.get_alog().write(APP, "network statistics:" + payload);
           con->send(payload, true);
         }
-      } catch (const std::exception& e) {
-        _server.get_elog().write(RECOVERABLE,
+      } catch (const std::exception & e) {
+        _server.get_elog().write(
+          RECOVERABLE,
           "Failed to send periodic message to client: " + std::string(e.what()));
       }
     }
-  } catch (const std::exception& e) {
-    _server.get_elog().write(RECOVERABLE,
+  } catch (const std::exception & e) {
+    _server.get_elog().write(
+      RECOVERABLE,
       "Exception in send_periodic_message: " + std::string(e.what()));
   }
 }
@@ -1033,7 +1035,9 @@ inline bool Server<ServerConfiguration>::validate_connection(ConnHandle hdl)
 
 
 template<typename ServerConfiguration>
-void Server<ServerConfiguration>::handle_sync_time(const Json & payload, ConnHandle hdl, uint64_t timestamp)
+void Server<ServerConfiguration>::handle_sync_time(
+  const Json & payload, ConnHandle hdl,
+  uint64_t timestamp)
 {
   const auto server_time = payload.at("serverTime").get<uint64_t>();
   const auto client_time = payload.at("clientTime").get<uint64_t>();
@@ -1044,12 +1048,12 @@ void Server<ServerConfiguration>::handle_sync_time(const Json & payload, ConnHan
   const auto con = _server.get_con_from_hdl(hdl);
   con->send(
     Json(
-      {
-        {"op", "timeOffset"},
-        {"timeOffset", time_offset}
+    {
+      {"op", "timeOffset"},
+      {"timeOffset", time_offset}
     })
     .dump(), true
-    );
+  );
 
   con->send(
     Json(
@@ -1114,7 +1118,8 @@ void Server<ServerConfiguration>::handle_login(const Json & payload, ConnHandle 
       for (auto it = _clients.begin(); it != _clients.end(); ) {
         auto con = _server.get_con_from_hdl(it->first);
         it->second.login = false;
-        con->close(4001, Json(
+        con->close(
+          4001, Json(
           {
             {"op", "kicked"},
             {"message", "The client was forcibly disconnected by the server."},
@@ -1133,16 +1138,18 @@ void Server<ServerConfiguration>::handle_login(const Json & payload, ConnHandle 
 
   uint64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
     std::chrono::high_resolution_clock::now().time_since_epoch()
-    ).count();;
+    ).count();
 
   // const auto con = _server.get_con_from_hdl(hdl);
-  send_json(hdl,
-    Json({
+  send_json(
+    hdl,
+    Json(
+    {
       {"op", "syncTime"},
       {"serverTime", timestamp},
     }
-      )
-    );
+    )
+  );
 }
 
 template<typename ServerConfiguration>
@@ -1703,7 +1710,7 @@ inline void Server<ServerConfiguration>::handle_text_message(ConnHandle hdl, Mes
 {
   const uint64_t cur_timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
     std::chrono::high_resolution_clock::now().time_since_epoch()
-    ).count();;
+    ).count();
 
   const Json payload = Json::parse(msg->get_payload());
   const std::string & op = payload.at("op").get<std::string>();
