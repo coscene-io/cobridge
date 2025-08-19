@@ -103,7 +103,7 @@ bool get_dev_netmask(const std::string& ifname,  std::string  & mask) {
   int fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (fd < 0) throw std::runtime_error("socket failed");
 
-  ifreq ifr{};
+  ifreq ifr;
   std::memset(&ifr, 0, sizeof(ifr));
   std::strncpy(ifr.ifr_name, ifname.c_str(), IFNAMSIZ - 1);
 
