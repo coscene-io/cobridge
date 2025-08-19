@@ -111,7 +111,7 @@ private:
 
 TEST(SmokeTest, testMultiConnection) {
   auto client_0 = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
-  auto client0_login_future = cobridge_base::wait_for_login(client_0, "login");
+  auto client0_login_future = cobridge_base::wait_for_operation(client_0, "login");
   EXPECT_EQ(std::future_status::ready, client_0->connect(URI).wait_for(DEFAULT_TIMEOUT));
   EXPECT_EQ(std::future_status::ready, client0_login_future.wait_for(THREE_SECOND));
   CompareJsonWithoutFields(
@@ -122,7 +122,7 @@ TEST(SmokeTest, testMultiConnection) {
   client_0->login("user_0", "test-user-id-0000");
 
   auto client_1 = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
-  auto client1_login_future = cobridge_base::wait_for_login(client_1, "login");
+  auto client1_login_future = cobridge_base::wait_for_operation(client_1, "login");
   EXPECT_EQ(std::future_status::ready, client_1->connect(URI).wait_for(DEFAULT_TIMEOUT));
   EXPECT_EQ(std::future_status::ready, client1_login_future.wait_for(THREE_SECOND));
   CompareJsonWithoutFields(
@@ -131,7 +131,7 @@ TEST(SmokeTest, testMultiConnection) {
     {"infoPort", "lanCandidates", "macAddr", "linkType"});
 
   auto client0_kicked_future = cobridge_base::wait_for_kicked(client_0);
-  auto server_info_future = cobridge_base::wait_for_login(client_1, "serverInfo");
+  auto server_info_future = cobridge_base::wait_for_operation(client_1, "serverInfo");
   client_1->login("user_1", "test-user-id-0001");
   EXPECT_EQ(std::future_status::ready, client0_kicked_future.wait_for(THREE_SECOND));
   EXPECT_EQ(std::future_status::ready, server_info_future.wait_for(THREE_SECOND));

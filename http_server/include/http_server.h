@@ -20,6 +20,7 @@
 #include <vector>
 #include <functional>
 #include <memory>
+#include <sstream>
 
 namespace http_server
 {
@@ -63,6 +64,31 @@ private:
 bool get_dev_mac_addr(std::string& mac_addresses);
 
 bool get_dev_ip_addrs(std::vector<std::string>& ip_addresses, std::string& colink_ip);
+
+bool get_dev_netmask(const std::string& ifname,  std::string  & mask);
+
+inline uint32_t ipv4_to_uint32(const std::string& ip) {
+  std::array<uint32_t, 4> parts{};
+  char dot;
+  std::istringstream iss(ip);
+
+  iss >> parts[0] >> dot >> parts[1] >> dot >> parts[2] >> dot >> parts[3];
+  if (iss.fail()) {
+    throw std::invalid_argument("Invalid IPv4 string: " + ip);
+  }
+
+  return (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3];
+}
+
+inline bool is_ip_in_subnet(const std::string& iface_ip,
+                            const std::string& netmask,
+                            const std::string& target_ip) {
+  uint32_t iface = ipv4_to_uint32(iface_ip);
+  uint32_t mask  = ipv4_to_uint32(netmask);
+  uint32_t target = ipv4_to_uint32(target_ip);
+
+  return (iface & mask) == (target & mask);
+}
 
 }  // namespace http_server
 #endif  // HTTP_SERVER_HPP_

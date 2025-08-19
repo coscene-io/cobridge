@@ -45,6 +45,7 @@
 #include "regex_utils.hpp"
 #include "server_interface.hpp"
 #include "websocket_logging.hpp"
+#include "../../http_server/include/http_server.h"
 
 #define COS_DEBOUNCE(f, ms) \
   { \
@@ -980,7 +981,7 @@ inline void Server<ServerConfiguration>::send_periodic_message()
             {"packageLoss", package_loss}   // calculated by bytes, not message count
           };
           const auto payload = msg.dump();
-          _server.get_alog().write(APP, "network statistics:" + payload);
+          // _server.get_alog().write(APP, "network statistics:" + payload);
           con->send(payload, true);
         }
       } catch (const std::exception & e) {
@@ -1160,6 +1161,7 @@ inline void Server<ServerConfiguration>::handle_connection_opened(cobridge_base:
   _server.get_alog().write(APP, "websocket connection  " + endpoint + " connected.");
   std::string link_type = "other";
   std::string colink_ip = _options.metadata["COLINK"];
+  std::string colink_mask = _options.metadata["NETMASK"];
 
   if (!colink_ip.empty()) {
     std::string endpoint_ip = endpoint;
@@ -1167,8 +1169,11 @@ inline void Server<ServerConfiguration>::handle_connection_opened(cobridge_base:
     if (colon_pos != std::string::npos) {
       endpoint_ip = endpoint_ip.substr(0, colon_pos);
     }
-    if (endpoint_ip == colink_ip) {
+    if (http_server::is_ip_in_subnet(colink_ip, colink_mask, endpoint_ip)) {
+      _server.get_alog().write(APP, endpoint + " connected from colink");
       link_type = "colink";
+    } else {
+      _server.get_alog().write(APP, endpoint + " connected from other way");
     }
   }
 

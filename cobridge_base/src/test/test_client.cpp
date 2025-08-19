@@ -45,7 +45,7 @@ std::future<std::string> wait_for_kicked(std::shared_ptr<ClientInterface> client
   return future;
 }
 
-std::future<std::string> wait_for_login(
+std::future<std::string> wait_for_operation(
   std::shared_ptr<ClientInterface> client,
   std::string operate)
 {
