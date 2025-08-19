@@ -729,7 +729,7 @@ inline void Server<ServerConfiguration>::send_message(
     sub_id = subs->second;
   }
 
-  std::array<uint8_t, 1 + 4 + 8> msg_header{};
+  std::array<uint8_t, 1 + 4 + 8> msg_header{{0}};
   msg_header[0] = static_cast<uint8_t>(BinaryOpcode::MESSAGE_DATA);
   write_uint32_LE(msg_header.data() + 1, sub_id);
   write_uint64_LE(msg_header.data() + 5, timestamp);
