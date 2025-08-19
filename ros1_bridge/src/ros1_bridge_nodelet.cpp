@@ -14,6 +14,7 @@
 
 // #include <shared_mutex>
 #include <nodelet/nodelet.h>
+#include <http_server.h>
 
 #include <pluginlib/class_list_macros.h>
 #include <resource_retriever/retriever.h>
@@ -45,6 +46,12 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
+namespace http_server
+{
+class HttpServer;
+}
+
 namespace
 {
 
@@ -152,6 +159,36 @@ public:
       cobridge_base::COBRIDGE_VERSION, cobridge_base::COBRIDGE_GIT_HASH,
       cobridge_base::websocket_user_agent());
 
+    std::string mac_addresses;
+    std::vector<std::string> ip_addresses;
+    std::string colink_ip;
+    http_server::get_dev_mac_addr(mac_addresses);
+    http_server::get_dev_ip_addrs(ip_addresses, colink_ip);
+
+    auto http_log_handler = [this](http_server::LogLevel level, const char * msg) {
+        switch (level) {
+          case http_server::LogLevel::Debug:
+            ROS_DEBUG("[HTTP_SERVER] %s", msg);
+            break;
+          case http_server::LogLevel::Info:
+            ROS_INFO("[HTTP_SERVER] %s", msg);
+            break;
+          case http_server::LogLevel::Warn:
+            ROS_WARN("[HTTP_SERVER] %s", msg);
+            break;
+          case http_server::LogLevel::Error:
+            ROS_ERROR("[HTTP_SERVER] %s", msg);
+            break;
+          case http_server::LogLevel::Fatal:
+            ROS_FATAL("[HTTP_SERVER] %s", msg);
+            break;
+        }
+      };
+
+    http_server_ = std::unique_ptr<http_server::HttpServer>(
+      new http_server::HttpServer(21275, mac_addresses, ip_addresses, http_log_handler));
+    http_server_->start();
+
     try {
       cobridge_base::ServerOptions server_options;
       server_options.capabilities = capabilities_;
@@ -160,7 +197,7 @@ public:
       }
       server_options.capabilities.emplace_back(cobridge_base::CAPABILITY_MESSAGE_TIME);
       server_options.supported_encodings = {ROS1_CHANNEL_ENCODING};
-      server_options.metadata = {{"ROS_DISTRO", ros_distro}};
+      server_options.metadata = {{"ROS_DISTRO", ros_distro}, {"COLINK", colink_ip}};
       server_options.send_buffer_limit_bytes = send_buffer_limit;
       server_options.session_id = session_id;
       server_options.use_tls = use_tls;
@@ -168,6 +205,8 @@ public:
       server_options.key_file = keyfile;
       server_options.use_compression = use_compression;
       server_options.client_topic_whitelist_patterns = client_topic_whitelist_patterns;
+      server_options.mac_addr = mac_addresses;
+      server_options.ip_addrs = ip_addresses;
 
       const auto log_handler =
         std::bind(&CoBridge::log_handler, this, std::placeholders::_1, std::placeholders::_2);
@@ -245,6 +284,10 @@ public:
     xmlrpc_server_.shutdown();
     if (_server) {
       _server->stop();
+    }
+
+    if (http_server_) {
+      http_server_->stop();
     }
   }
 
@@ -1064,6 +1107,8 @@ private:
   int service_retrieval_timeout_ms_ = DEFAULT_SERVICE_TYPE_RETRIEVAL_TIMEOUT_MS;
   std::atomic<bool> subscribe_graph_updates_{false};
   std::unique_ptr<cobridge_base::CallbackQueue> fetch_asset_queue_;
+
+  std::unique_ptr<http_server::HttpServer> http_server_;
 };
 
 }  // namespace cobridge

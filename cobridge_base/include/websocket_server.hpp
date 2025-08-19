@@ -1015,6 +1015,19 @@ inline void Server<ServerConfiguration>::handle_connection_opened(cobridge_base:
   _server.get_alog().write(
     APP, "websocket connection  " + endpoint + " connected via " +
     con->get_resource());
+  std::string link_type = "other";
+  std::string colink_ip = _options.metadata["COLINK"];
+
+  if (!colink_ip.empty()) {
+    std::string endpoint_ip = endpoint;
+    size_t colon_pos = endpoint_ip.find(":");
+    if (colon_pos != std::string::npos) {
+      endpoint_ip = endpoint_ip.substr(0, colon_pos);
+    }
+    if (endpoint_ip == colink_ip) {
+      link_type = "colink";
+    }
+  }
 
   if (_clients.size() != 0) {
     std::string login_user_id;
@@ -1032,9 +1045,16 @@ inline void Server<ServerConfiguration>::handle_connection_opened(cobridge_base:
         {"op", "login"},
         {"userId", login_user_id},
         {"username", login_user_name},
+        {"infoPort", "21275"},
+        {"macAddr", _options.mac_addr},
+        {"lanCandidates", _options.ip_addrs},
+        {"linkType", link_type}
       });
   } else {
-    send_json(hdl, {{"op", "login"}, {"userId", ""}, {"username", ""}});
+    send_json(
+      hdl, {{"op", "login"}, {"userId", ""}, {"username", ""}, {"infoPort", "21275"},
+        {"macAddr", _options.mac_addr}, {"lanCandidates", _options.ip_addrs},
+        {"linkType", link_type}});
   }
 }
 
