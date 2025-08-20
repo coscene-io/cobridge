@@ -107,9 +107,18 @@ CoBridge::CoBridge(const rclcpp::NodeOptions & options)
   std::vector<std::string> ip_addresses;
   std::string colink_ip;
   std::string colink_netmask;
-  http_server::get_dev_mac_addr(mac_addresses);
-  http_server::get_dev_ip_addrs(ip_addresses, colink_ip);
-  http_server::get_dev_netmask("colink", colink_netmask);
+  if (!http_server::get_dev_mac_addr(mac_addresses)) {
+    mac_addresses = "";
+    RCLCPP_WARN(this->get_logger(), "Failed to get MAC address.");
+  }
+  if (!http_server::get_dev_ip_addrs(ip_addresses, colink_ip)) {
+    colink_ip = "0.0.0.0";
+    RCLCPP_WARN(this->get_logger(), "Failed to get colink IP address.");
+  }
+  if (!http_server::get_dev_netmask("colink", colink_netmask)) {
+    colink_netmask = "255.255.255.0";
+    RCLCPP_WARN(this->get_logger(), "Failed to get colink netmask.");
+  }
 
   auto http_log_handler = [this](http_server::LogLevel level, const char * msg) {
       switch (level) {

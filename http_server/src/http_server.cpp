@@ -109,7 +109,7 @@ bool get_dev_netmask(const std::string& ifname,  std::string  & mask) {
 
   if (ioctl(fd, SIOCGIFNETMASK, &ifr) < 0) {
     close(fd);
-    throw std::runtime_error("ioctl SIOCGIFNETMASK failed");
+    return false;
   }
   close(fd);
 
