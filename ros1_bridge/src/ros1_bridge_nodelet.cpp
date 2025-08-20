@@ -162,8 +162,10 @@ public:
     std::string mac_addresses;
     std::vector<std::string> ip_addresses;
     std::string colink_ip;
+    std::string colink_netmask;
     http_server::get_dev_mac_addr(mac_addresses);
     http_server::get_dev_ip_addrs(ip_addresses, colink_ip);
+    http_server::get_dev_netmask("colink", colink_netmask);
 
     auto http_log_handler = [this](http_server::LogLevel level, const char * msg) {
         switch (level) {
@@ -197,7 +199,11 @@ public:
       }
       // server_options.capabilities.emplace_back(cobridge_base::CAPABILITY_MESSAGE_TIME);
       server_options.supported_encodings = {ROS1_CHANNEL_ENCODING};
-      server_options.metadata = {{"ROS_DISTRO", ros_distro}, {"COLINK", colink_ip}};
+      server_options.metadata = {
+          {"ROS_DISTRO", ros_distro},
+          {"COLINK", colink_ip},
+          {"NETMASK", colink_netmask}
+      };
       server_options.send_buffer_limit_bytes = send_buffer_limit;
       server_options.session_id = session_id;
       server_options.use_tls = use_tls;

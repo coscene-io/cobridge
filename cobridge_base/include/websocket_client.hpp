@@ -64,6 +64,8 @@ public:
 
   virtual void login(std::string user_name, std::string user_id) = 0;
 
+  virtual void sync_time(int64_t server_time) = 0;
+
   virtual void subscribe(
     const std::vector<std::pair<SubscriptionId, ChannelId>> & subscriptions) = 0;
 
@@ -208,6 +210,16 @@ public:
       {"op", "login"},
       {"username", user_name},
       {"userId", user_id}}.dump();
+    send_text(payload);
+  }
+
+  void sync_time(int64_t server_time) override {
+
+    const std::string payload =
+      nlohmann::json{
+        {"op", "syncTime"},
+        {"serverTime", server_time},
+        {"clientTime", server_time+1}}.dump();
     send_text(payload);
   }
 
