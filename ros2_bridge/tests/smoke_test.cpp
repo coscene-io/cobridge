@@ -294,7 +294,6 @@ TEST(SmokeTest, testSubscription) {
 
   // Unsubscribe from the channel again.
   client->unsubscribe({subscription_id});
-
 }
 
 TEST(SmokeTest, testPublishing) {

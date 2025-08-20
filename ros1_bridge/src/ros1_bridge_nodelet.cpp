@@ -200,9 +200,9 @@ public:
       // server_options.capabilities.emplace_back(cobridge_base::CAPABILITY_MESSAGE_TIME);
       server_options.supported_encodings = {ROS1_CHANNEL_ENCODING};
       server_options.metadata = {
-          {"ROS_DISTRO", ros_distro},
-          {"COLINK", colink_ip},
-          {"NETMASK", colink_netmask}
+        {"ROS_DISTRO", ros_distro},
+        {"COLINK", colink_ip},
+        {"NETMASK", colink_netmask}
       };
       server_options.send_buffer_limit_bytes = send_buffer_limit;
       server_options.session_id = session_id;

@@ -213,13 +213,13 @@ public:
     send_text(payload);
   }
 
-  void sync_time(int64_t server_time) override {
-
+  void sync_time(int64_t server_time) override
+  {
     const std::string payload =
       nlohmann::json{
-        {"op", "syncTime"},
-        {"serverTime", server_time},
-        {"clientTime", server_time+1}}.dump();
+      {"op", "syncTime"},
+      {"serverTime", server_time},
+      {"clientTime", server_time + 1}}.dump();
     send_text(payload);
   }
 
