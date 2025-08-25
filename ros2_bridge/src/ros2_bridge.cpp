@@ -106,8 +106,19 @@ CoBridge::CoBridge(const rclcpp::NodeOptions & options)
   std::string mac_addresses;
   std::vector<std::string> ip_addresses;
   std::string colink_ip;
-  http_server::get_dev_mac_addr(mac_addresses);
-  http_server::get_dev_ip_addrs(ip_addresses, colink_ip);
+  std::string colink_netmask;
+  if (!http_server::get_dev_mac_addr(mac_addresses)) {
+    mac_addresses = "";
+    RCLCPP_WARN(this->get_logger(), "Failed to get MAC address.");
+  }
+  if (!http_server::get_dev_ip_addrs(ip_addresses, colink_ip)) {
+    colink_ip = "0.0.0.0";
+    RCLCPP_WARN(this->get_logger(), "Failed to get colink IP address.");
+  }
+  if (!http_server::get_dev_netmask("colink", colink_netmask)) {
+    colink_netmask = "255.255.255.0";
+    RCLCPP_WARN(this->get_logger(), "Failed to get colink netmask.");
+  }
 
   auto http_log_handler = [this](http_server::LogLevel level, const char * msg) {
       switch (level) {
@@ -138,9 +149,13 @@ CoBridge::CoBridge(const rclcpp::NodeOptions & options)
   if (_use_sim_time) {
     server_options.capabilities.push_back(cobridge_base::CAPABILITY_TIME);
   }
-  server_options.capabilities.emplace_back(cobridge_base::CAPABILITY_MESSAGE_TIME);
+  // server_options.capabilities.emplace_back(cobridge_base::CAPABILITY_MESSAGE_TIME);
   server_options.supported_encodings = {"cdr"};
-  server_options.metadata = {{"ROS_DISTRO", ros_distro}, {"COLINK", colink_ip}};
+  server_options.metadata = {
+    {"ROS_DISTRO", ros_distro},
+    {"COLINK", colink_ip},
+    {"NETMASK", colink_netmask}
+  };
   server_options.send_buffer_limit_bytes = send_buffer_limit;
   server_options.session_id = std::to_string(std::time(nullptr));
   server_options.use_compression = use_compression;
