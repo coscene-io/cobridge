@@ -981,7 +981,7 @@ inline void Server<ServerConfiguration>::send_periodic_message()
             {"packageLoss", package_loss}   // calculated by bytes, not message count
           };
           const auto payload = msg.dump();
-          // _server.get_alog().write(APP, "network statistics:" + payload);
+          _server.get_alog().write(APP, "network statistics:" + payload);
           con->send(payload, true);
         }
       } catch (const std::exception & e) {
