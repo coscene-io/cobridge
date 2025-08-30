@@ -92,6 +92,7 @@ add_library(cobridge_base SHARED
 target_include_directories(cobridge_base
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/cobridge_base/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/http_server/include>
         $<INSTALL_INTERFACE:include>
 )
 target_link_libraries(cobridge_base

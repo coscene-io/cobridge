@@ -707,6 +707,42 @@ TEST(SmokeTest, receiveMessagesOfMultipleTransientLocalPublishers) {
   spinnerThread.join();
 }
 
+TEST(FetchAssetTest, preFetchExistingAsset) {
+  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
+  EXPECT_EQ(std::future_status::ready, client->connect(URI).wait_for(DEFAULT_TIMEOUT));
+
+  client->login("test user", "test-user-id-0000");
+
+  auto sync_future = cobridge_base::wait_for_operation(client, "syncTime");
+  EXPECT_EQ(std::future_status::ready, sync_future.wait_for(THREE_SECOND));
+  nlohmann::json json = nlohmann::json::parse(sync_future.get());
+  client->sync_time(json["serverTime"].get<int64_t>());
+
+  const auto millis_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+    std::chrono::system_clock::now().time_since_epoch());
+  const auto tmp_file_path =
+    std::filesystem::temp_directory_path() / std::to_string(millis_since_epoch.count());
+  constexpr char content[] = "Hello, world";
+  FILE * tmp_asset_file = std::fopen(tmp_file_path.c_str(), "w");
+  std::fputs(content, tmp_asset_file);
+  std::fclose(tmp_asset_file);
+
+  const std::string uri = std::string("file://") + tmp_file_path.string();
+  const uint32_t request_id = 123;
+
+  auto future = cobridge_base::wait_for_pre_fetch_asset_response(client);
+  client->pre_fetch_asset(uri, request_id);
+  ASSERT_EQ(std::future_status::ready, future.wait_for(DEFAULT_TIMEOUT));
+  const cobridge_base::PreFetchAssetResponse response = future.get();
+
+  EXPECT_EQ(response.request_id, request_id);
+  EXPECT_EQ(response.status, cobridge_base::FetchAssetStatus::Success);
+  // +1 since NULL terminator is not written to file.
+  const auto file_etag = std::array<uint8_t, 8>{0x68, 0xB4, 0xD5, 0x39, 0x92, 0x5E, 0xB8, 0x34};
+  EXPECT_EQ(response.etag, file_etag);
+  std::remove(tmp_file_path.c_str());
+}
+
 TEST(FetchAssetTest, fetchExistingAsset) {
   auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
   EXPECT_EQ(std::future_status::ready, client->connect(URI).wait_for(DEFAULT_TIMEOUT));

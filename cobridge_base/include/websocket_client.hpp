@@ -93,6 +93,8 @@ public:
 
   virtual void fetch_asset(const std::string & name, uint32_t request_id) = 0;
 
+  virtual void pre_fetch_asset(const std::string & name, uint32_t request_id) = 0;
+
   virtual void set_text_message_handler(TextMessageHandler handler) = 0;
 
   virtual void set_binary_message_handler(BinaryMessageHandler handler) = 0;
@@ -323,6 +325,14 @@ public:
   void fetch_asset(const std::string & uri, uint32_t request_id) override
   {
     nlohmann::json jsonPayload{{"op", "fetchAsset"},
+      {"uri", uri},
+      {"requestId", request_id}};
+    send_text(jsonPayload.dump());
+  }
+
+  void pre_fetch_asset(const std::string & uri, uint32_t request_id) override
+  {
+    nlohmann::json jsonPayload{{"op", "preFetchAsset"},
       {"uri", uri},
       {"requestId", request_id}};
     send_text(jsonPayload.dump());

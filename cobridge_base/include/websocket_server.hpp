@@ -45,7 +45,7 @@
 #include "regex_utils.hpp"
 #include "server_interface.hpp"
 #include "websocket_logging.hpp"
-#include "../../http_server/include/http_server.h"
+#include <http_server.h>
 
 #define COS_DEBOUNCE(f, ms) \
   { \
@@ -89,6 +89,7 @@ constexpr auto UNSUBSCRIBE_PARAMETER_UPDATES = string_hash("unsubscribeParameter
 constexpr auto SUBSCRIBE_CONNECTION_GRAPH = string_hash("subscribeConnectionGraph");
 constexpr auto UNSUBSCRIBE_CONNECTION_GRAPH = string_hash("unsubscribeConnectionGraph");
 constexpr auto FETCH_ASSET = string_hash("fetchAsset");
+constexpr auto PRE_FETCH_ASSET = string_hash("preFetchAsset");
 }  // namespace cobridge_base
 
 namespace cobridge_base
@@ -195,6 +196,11 @@ public:
   void
   send_fetch_asset_response(ConnHandle client_handle, const FetchAssetResponse & response) override;
 
+  void
+  send_pre_fetch_asset_response(
+    ConnHandle client_handle,
+    const PreFetchAssetResponse & response) override;
+
   uint16_t get_port() override;
 
   std::string remote_endpoint_string(ConnHandle client_handle) override;
@@ -266,6 +272,8 @@ private:
   void handle_unsubscribe_connection_graph(ConnHandle hdl);
 
   void handle_fetch_asset(const Json & payload, ConnHandle hdl);
+
+  void handle_pre_fetch_asset(const Json & payload, ConnHandle hdl);
 
   /**
    * Send periodic message to all connected clients
@@ -867,6 +875,43 @@ inline void Server<ServerConfiguration>::update_connection_graph(
 }
 
 template<typename ServerConfiguration>
+inline void Server<ServerConfiguration>::send_pre_fetch_asset_response(
+  ConnHandle client_handle, const PreFetchAssetResponse & response)
+{
+  websocketpp::lib::error_code ec;
+  const auto con = _server.get_con_from_hdl(client_handle, ec);
+  if (ec || !con) {
+    return;
+  }
+
+  const size_t err_msg_size =
+    response.status == FetchAssetStatus::Error ? response.error_message.size() : 0ul;
+
+  const size_t message_size = 1 + 4 + 1 + 8 + 4 + err_msg_size;
+
+  auto message = con->get_message(OpCode::BINARY, message_size);
+
+  const auto op = BinaryOpcode::PRE_FETCH_ASSET_RESPONSE;
+  message->append_payload(&op, 1);
+
+  std::array<uint8_t, 4> uint32_data;
+  write_uint32_LE(uint32_data.data(), response.request_id);
+
+  message->append_payload(uint32_data.data(), uint32_data.size());
+
+  const auto status = static_cast<uint8_t>(response.status);
+  message->append_payload(&status, 1);
+
+  message->append_payload(response.etag.data(), 8);
+
+  write_uint32_LE(uint32_data.data(), response.error_message.size());
+  message->append_payload(uint32_data.data(), uint32_data.size());
+  message->append_payload(response.error_message.data(), err_msg_size);
+
+  con->send(message, true);
+}
+
+template<typename ServerConfiguration>
 inline void Server<ServerConfiguration>::send_fetch_asset_response(
   ConnHandle client_handle, const FetchAssetResponse & response)
 {
@@ -880,7 +925,7 @@ inline void Server<ServerConfiguration>::send_fetch_asset_response(
     response.status == FetchAssetStatus::Error ? response.error_message.size() : 0ul;
   const size_t data_size =
     response.status == FetchAssetStatus::Success ? response.data.size() : 0ul;
-  const size_t message_size = 1 + 4 + 1 + 4 + err_msg_size + data_size;
+  const size_t message_size = 1 + 4 + 1 + 8 + 4 + err_msg_size + data_size;
 
   auto message = con->get_message(OpCode::BINARY, message_size);
 
@@ -895,11 +940,14 @@ inline void Server<ServerConfiguration>::send_fetch_asset_response(
   const auto status = static_cast<uint8_t>(response.status);
   message->append_payload(&status, 1);
 
+  message->append_payload(response.etag.data(), 8);
+
   write_uint32_LE(uint32_data.data(), response.error_message.size());
   message->append_payload(uint32_data.data(), uint32_data.size());
   message->append_payload(response.error_message.data(), err_msg_size);
 
   message->append_payload(response.data.data(), data_size);
+
   con->send(message, true);
 }
 
@@ -1042,9 +1090,10 @@ void Server<ServerConfiguration>::handle_sync_time(
 {
   const auto server_time = payload.at("serverTime").get<uint64_t>();
   const auto client_time = payload.at("clientTime").get<uint64_t>();
+  const auto delay_time = payload.at("delayTime").get<uint64_t>();
 
-  const auto network_delay = ( timestamp - server_time ) / 2;
-  auto time_offset = static_cast<int64_t>( client_time - ( server_time + network_delay) );
+  const auto network_delay = ( timestamp - delay_time - server_time ) / 2;
+  auto time_offset = static_cast<int64_t>( client_time - ( server_time + network_delay ) );
 
   const auto con = _server.get_con_from_hdl(hdl);
   con->send(
@@ -1405,6 +1454,8 @@ inline bool Server<ServerConfiguration>::has_handler(uint32_t op) const
       return static_cast<bool>(_handlers.subscribe_connection_graph_handler);
     case FETCH_ASSET:
       return static_cast<bool>(_handlers.fetch_asset_handler);
+    case PRE_FETCH_ASSET:
+      return static_cast<bool>(_handlers.pre_fetch_asset_handler);
     default:
       throw std::runtime_error("Unknown operation: " + std::to_string(op));
   }
@@ -1711,6 +1762,15 @@ void Server<ServerConfiguration>::handle_fetch_asset(const Json & payload, ConnH
 }
 
 template<typename ServerConfiguration>
+void Server<ServerConfiguration>::handle_pre_fetch_asset(const Json & payload, ConnHandle hdl)
+{
+  const auto uri = payload.at("uri").get<std::string>();
+  const auto request_id = payload.at("requestId").get<uint32_t>();
+  _handlers.pre_fetch_asset_handler(uri, request_id, hdl);
+}
+
+
+template<typename ServerConfiguration>
 inline void Server<ServerConfiguration>::handle_text_message(ConnHandle hdl, MessagePtr msg)
 {
   const uint64_t cur_timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -1779,6 +1839,9 @@ inline void Server<ServerConfiguration>::handle_text_message(ConnHandle hdl, Mes
         break;
       case FETCH_ASSET:
         handle_fetch_asset(payload, hdl);
+        break;
+      case PRE_FETCH_ASSET:
+        handle_pre_fetch_asset(payload, hdl);
         break;
       default:
         send_status_and_log_msg(

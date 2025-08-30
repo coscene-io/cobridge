@@ -65,6 +65,21 @@ inline std::unordered_set<std::string> rpc_value_to_string_set(const XmlRpc::Xml
   return set;
 }
 
+std::array<uint8_t, 8> calculate_hash(const uint8_t * data, size_t size)
+{
+  uint64_t hash = 0;
+  for (size_t i = 0; i < size; ++i) {
+    hash = ((hash << 5) + hash) + data[i];
+  }
+
+  std::array<uint8_t, 8> hash_bytes;
+  for (int i = 7; i >= 0; --i) {
+    hash_bytes[i] = (hash >> (i * 8)) & 0xFF;
+  }
+
+  return hash_bytes;
+}
+
 }  // namespace
 
 namespace cobridge
@@ -146,8 +161,7 @@ public:
 
     const auto asset_uri_allowlist = nhp.param<std::vector<std::string>>(
       "asset_uri_allowlist",
-      {"^package://(?:\\w+/"
-        ")*\\w+\\.(?:dae|fbx|glb|gltf|jpeg|jpg|mtl|obj|png|stl|tif|tiff|urdf|webp|xacro)$"});
+      {"^package://.*\\.(dae|fbx|glb|gltf|jpeg|jpg|mtl|obj|png|stl|tif|tiff|urdf|webp|xacro)$"});
     asset_uri_allowlist_patterns_ = parse_regex_patterns(asset_uri_allowlist);
     if (asset_uri_allowlist.size() != asset_uri_allowlist_patterns_.size()) {
       ROS_ERROR("Failed to parse one or more asset URI whitelist patterns");
@@ -258,6 +272,13 @@ public:
             cobridge_base::ConnHandle hdl) {
             fetch_asset_queue_->add_callback(
               std::bind(&CoBridge::fetch_asset, this, uri, requestId, hdl));
+          };
+
+        hdlrs.pre_fetch_asset_handler = [this](
+          const std::string & uri, uint32_t requestId,
+          ConnectionHandle hdl)
+          {
+            pre_fetch_asset(uri, requestId, hdl);
           };
       }
 
@@ -1050,6 +1071,36 @@ private:
     }
   }
 
+  void pre_fetch_asset(const std::string & uri, uint32_t request_id, ConnectionHandle client_handle)
+  {
+    cobridge_base::PreFetchAssetResponse response;
+    response.request_id = request_id;
+
+    try {
+      if (uri.find("..") != std::string::npos) {
+        throw std::runtime_error("Asset URI not allowed: " + uri);
+      }
+
+      if (!is_whitelisted(uri, asset_uri_allowlist_patterns_)) {
+        throw std::runtime_error("Asset URI not allowed: " + uri);
+      }
+
+      resource_retriever::Retriever resource_retriever;
+      const resource_retriever::MemoryResource memory_resource = resource_retriever.get(uri);
+      response.status = cobridge_base::FetchAssetStatus::Success;
+      response.error_message = "";
+      response.etag = calculate_hash(memory_resource.data.get(), memory_resource.size);
+    } catch (const std::exception & ex) {
+      ROS_WARN("Failed to retrieve asset in prefetch asset '%s': %s", uri.c_str(), ex.what());
+      response.status = cobridge_base::FetchAssetStatus::Error;
+      response.error_message = "Failed to retrieve asset " + uri;
+    }
+
+    if (_server) {
+      _server->send_pre_fetch_asset_response(client_handle, response);
+    }
+  }
+
   void fetch_asset(const std::string & uri, uint32_t request_id, ConnectionHandle client_handle)
   {
     cobridge_base::FetchAssetResponse response;
@@ -1061,9 +1112,11 @@ private:
       // be accessible over the WebSocket connection. Example:
       // `package://<pkg_name>/../../../secret.txt`. This is an extra security measure and should
       // not be necessary if the allowlist is strict enough.
-      if (uri.find("..") != std::string::npos ||
-        !is_whitelisted(uri, asset_uri_allowlist_patterns_))
-      {
+      if (uri.find("..") != std::string::npos) {
+        throw std::runtime_error("Asset URI not allowed: " + uri);
+      }
+
+      if (!is_whitelisted(uri, asset_uri_allowlist_patterns_)) {
         throw std::runtime_error("Asset URI not allowed: " + uri);
       }
 
@@ -1071,10 +1124,12 @@ private:
       const resource_retriever::MemoryResource memory_resource = resource_retriever.get(uri);
       response.status = cobridge_base::FetchAssetStatus::Success;
       response.error_message = "";
+
+      response.etag = calculate_hash(memory_resource.data.get(), memory_resource.size);
       response.data.resize(memory_resource.size);
       std::memcpy(response.data.data(), memory_resource.data.get(), memory_resource.size);
     } catch (const std::exception & ex) {
-      ROS_WARN("Failed to retrieve asset '%s': %s", uri.c_str(), ex.what());
+      ROS_WARN("Failed to retrieve asset in fetch asset'%s': %s", uri.c_str(), ex.what());
       response.status = cobridge_base::FetchAssetStatus::Error;
       response.error_message = "Failed to retrieve asset " + uri;
     }

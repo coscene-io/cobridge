@@ -54,6 +54,10 @@ std::future<FetchAssetResponse> wait_for_fetch_asset_response(
   std::shared_ptr<ClientInterface>
   client);
 
+std::future<PreFetchAssetResponse> wait_for_pre_fetch_asset_response(
+  std::shared_ptr<ClientInterface>
+  client);
+
 extern template class Client<websocketpp::config::asio_client>;
 
 }  // namespace cobridge_base
