@@ -23,10 +23,19 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#ifdef ROS_DISTRO_rolling
+#include <rmw/qos_profiles.h>
+#endif
+
 namespace
 {
 
 constexpr char PARAM_SEP = '.';
+
+#ifdef ROS_DISTRO_rolling
+// ROS2 Rolling - define rmw_qos_profile_parameters for compatibility
+const rmw_qos_profile_t rmw_qos_profile_parameters = rmw_qos_profile_parameters_default;
+#endif
 
 std::pair<std::string, std::string> get_node_and_param_name(
   const std::string & node_name_and_param_name)
@@ -229,9 +238,17 @@ ParameterList ParameterInterface::get_params(
 
     auto client_iter = _param_clients_by_node.find(node_name);
     if (client_iter == _param_clients_by_node.end()) {
+#ifdef ROS_DISTRO_rolling
+      // ROS2 Rolling - use rclcpp::QoS instead of rmw_qos_profile_t
+      const auto inserted_pair = _param_clients_by_node.emplace(
+        node_name, rclcpp::AsyncParametersClient::make_shared(
+          _node, node_name, rclcpp::QoS(rmw_qos_profile_parameters), _callback_group));
+#else
+      // Older ROS2 versions - use rmw_qos_profile_t
       const auto inserted_pair = _param_clients_by_node.emplace(
         node_name, rclcpp::AsyncParametersClient::make_shared(
           _node, node_name, rmw_qos_profile_parameters, _callback_group));
+#endif
       client_iter = inserted_pair.first;
     }
 
@@ -275,9 +292,17 @@ void ParameterInterface::set_params(
   for (const auto & [node_name, params] : params_by_node) {
     auto param_client_iter = _param_clients_by_node.find(node_name);
     if (param_client_iter == _param_clients_by_node.end()) {
+#ifdef ROS_DISTRO_rolling
+      // ROS2 Rolling - use rclcpp::QoS instead of rmw_qos_profile_t
+      const auto inserted_pair = _param_clients_by_node.emplace(
+        node_name, rclcpp::AsyncParametersClient::make_shared(
+          _node, node_name, rclcpp::QoS(rmw_qos_profile_parameters), _callback_group));
+#else
+      // Older ROS2 versions - use rmw_qos_profile_t
       const auto inserted_pair = _param_clients_by_node.emplace(
         node_name, rclcpp::AsyncParametersClient::make_shared(
           _node, node_name, rmw_qos_profile_parameters, _callback_group));
+#endif
       param_client_iter = inserted_pair.first;
     }
 
@@ -323,9 +348,17 @@ void ParameterInterface::subscribe_params(const std::vector<std::string> & param
   for (const auto & node_name : nodes_to_subscribe) {
     auto param_client_iter = _param_clients_by_node.find(node_name);
     if (param_client_iter == _param_clients_by_node.end()) {
+#ifdef ROS_DISTRO_rolling
+      // ROS2 Rolling - use rclcpp::QoS instead of rmw_qos_profile_t
+      const auto inserted_pair = _param_clients_by_node.emplace(
+        node_name, rclcpp::AsyncParametersClient::make_shared(
+          _node, node_name, rclcpp::QoS(rmw_qos_profile_parameters), _callback_group));
+#else
+      // Older ROS2 versions - use rmw_qos_profile_t
       const auto inserted_pair = _param_clients_by_node.emplace(
         node_name, rclcpp::AsyncParametersClient::make_shared(
           _node, node_name, rmw_qos_profile_parameters, _callback_group));
+#endif
       param_client_iter = inserted_pair.first;
     }
 

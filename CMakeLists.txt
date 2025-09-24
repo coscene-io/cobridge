@@ -300,7 +300,19 @@ elseif(ROS_BUILD_TYPE STREQUAL "ament_cmake")
         enable_strict_compiler_warnings(version_test)
 
         ament_add_gtest(smoke_test ros2_bridge/tests/smoke_test.cpp)
-        ament_target_dependencies(smoke_test rclcpp rclcpp_components std_msgs std_srvs)
+        if(ROS_VERSION_MAJOR EQUAL 2 AND ROS_VERSION_MINOR GREATER_EQUAL 0)
+            # ROS2 Rolling and newer - use modern CMake targets
+            target_link_libraries(smoke_test PUBLIC
+                ${std_msgs_TARGETS}
+                ${std_srvs_TARGETS}
+                rclcpp::rclcpp
+                rclcpp_components::component
+                rclcpp_components::component_manager
+            )
+        else()
+            # Older ROS2 versions - use deprecated ament_target_dependencies
+            ament_target_dependencies(smoke_test rclcpp rclcpp_components std_msgs std_srvs)
+        endif()
         target_link_libraries(smoke_test cobridge_component)
         enable_strict_compiler_warnings(smoke_test)
 
