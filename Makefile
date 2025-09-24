@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 ROS1_DISTRO := indigo melodic noetic
-ROS2_DISTRO := foxy humble jazzy
+ROS2_DISTRO := foxy humble jazzy rolling
 
 ROS_WS := $(shell pwd)
 export ROS_WS
