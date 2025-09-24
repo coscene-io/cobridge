@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ros_distribution: [indigo]
+        ros_distribution: [indigo, rolling]
 
     steps:
       - name: Checkout repository

@@ -50,6 +50,14 @@ jobs:
             arch: arm64
             distro: noble
             label: [ linux-arm-64-8c-32g-300gb ]
+          - ros_distribution: rolling
+            arch: amd64
+            distro: noble
+            label: ubuntu-latest
+          - ros_distribution: rolling
+            arch: arm64
+            distro: noble
+            label: [ linux-arm-64-8c-32g-300gb ]
           - ros_distribution: indigo
             arch: amd64
             distro: trusty
@@ -73,6 +81,8 @@ jobs:
       matrix_result_humble_arm64: ${{ steps.build_deb.outputs.matrix_result_humble_arm64 }}
       matrix_result_jazzy_amd64: ${{ steps.build_deb.outputs.matrix_result_jazzy_amd64 }}
       matrix_result_jazzy_arm64: ${{ steps.build_deb.outputs.matrix_result_jazzy_arm64 }}
+      matrix_result_rolling_amd64: ${{ steps.build_deb.outputs.matrix_result_rolling_amd64 }}
+      matrix_result_rolling_arm64: ${{ steps.build_deb.outputs.matrix_result_rolling_arm64 }}
       matrix_result_indigo_amd64: ${{ steps.build_deb.outputs.matrix_result_indigo_amd64 }}
       matrix_result_indigo_armhf: ${{ steps.build_deb.outputs.matrix_result_indigo_armhf }}
 
@@ -205,6 +215,8 @@ jobs:
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_humble_arm64 }};"
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_jazzy_amd64 }};"
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_jazzy_arm64 }};"
+          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_rolling_amd64 }};"
+          URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_rolling_arm64 }};"
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_indigo_amd64 }};"
           URLS="${URLS}${{ needs.build-deb-package.outputs.matrix_result_indigo_armhf }};"
           
