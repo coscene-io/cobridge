@@ -123,7 +123,7 @@ message(STATUS "ROS_DISTRO: " $ENV{ROS_DISTRO})
 message(STATUS "ROS_ROOT: " $ENV{ROS_ROOT})
 
 set(ROS1_DISTROS "indigo" "melodic" "noetic")
-set(ROS2_DISTROS "foxy" "humble" "jazzy")
+set(ROS2_DISTROS "foxy" "humble" "jazzy" "rolling")
 
 if("$ENV{ROS_DISTRO}" STREQUAL "indigo")
     add_definitions(-DROS1_VERSION_INDIGO)
@@ -143,6 +143,9 @@ elseif("$ENV{ROS_DISTRO}" STREQUAL "humble")
 elseif("$ENV{ROS_DISTRO}" STREQUAL "jazzy")
     add_definitions(-DROS2_VERSION_JAZZY)
     set(ROS_DISTRIBUTION "jazzy")
+elseif("$ENV{ROS_DISTRO}" STREQUAL "rolling")
+    add_definitions(-DROS2_VERSION_ROLLING)
+    set(ROS_DISTRIBUTION "rolling")
 endif()
 
 
