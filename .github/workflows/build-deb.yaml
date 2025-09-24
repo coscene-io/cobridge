@@ -69,7 +69,7 @@ jobs:
 
     name: Build deb (ROS ${{ matrix.ros_distribution }} - ${{ matrix.arch }})
     runs-on: ${{ matrix.label }}
-    container: cobridge/ros-${{ matrix.ros_distribution }}:latest
+    container: ${{ matrix.ros_distribution == 'rolling' && 'ros:rolling' || format('cobridge/ros-{0}:latest', matrix.ros_distribution) }}
     outputs:
       matrix_result_noetic_amd64: ${{ steps.build_deb.outputs.matrix_result_noetic_amd64 }}
       matrix_result_noetic_arm64: ${{ steps.build_deb.outputs.matrix_result_noetic_arm64 }}
@@ -108,6 +108,14 @@ jobs:
           else
             git checkout ${{ github.sha }}
           fi
+
+      - name: Install dependencies (rolling only)
+        if: matrix.ros_distribution == 'rolling'
+        run: |
+          apt-get update && apt-get install -y --no-install-recommends \
+            libasio-dev zip ros-${ROS_DISTRO}-resource-retriever ros-${ROS_DISTRO}-cv-bridge \
+            python3-bloom devscripts fakeroot debhelper apt-utils gnupg curl
+          rm -rf /var/lib/apt/lists/*
 
       - name: Apply patches
         run: |

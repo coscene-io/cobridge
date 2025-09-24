@@ -18,7 +18,7 @@ jobs:
     name: Build-And-Test (ROS ${{ matrix.ros_distribution }})
     runs-on: ubuntu-latest
     container:
-      image: cobridge/ros-${{ matrix.ros_distribution }}:latest
+      image: ${{ matrix.ros_distribution == 'rolling' && 'ros:rolling' || format('cobridge/ros-{0}:latest', matrix.ros_distribution) }}
     steps:
       - name: Checkout code
         if: matrix.ros_distribution != 'indigo' && matrix.ros_distribution != 'melodic'
@@ -45,6 +45,14 @@ jobs:
           else
             git checkout ${{ github.sha }}
           fi
+
+      - name: Install dependencies (rolling only)
+        if: matrix.ros_distribution == 'rolling'
+        run: |
+          apt-get update && apt-get install -y --no-install-recommends \
+            libasio-dev zip ros-${ROS_DISTRO}-resource-retriever ros-${ROS_DISTRO}-cv-bridge \
+            python3-bloom devscripts fakeroot debhelper apt-utils gnupg curl
+          rm -rf /var/lib/apt/lists/*
 
       - name: Apply patches
         run: |          
