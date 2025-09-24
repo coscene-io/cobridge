@@ -23,7 +23,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#ifdef ROS_DISTRO_rolling
+#if defined(ROS_DISTRO) && ROS_DISTRO == "rolling"
 #include <rmw/qos_profiles.h>
 #endif
 
@@ -32,7 +32,7 @@ namespace
 
 constexpr char PARAM_SEP = '.';
 
-#ifdef ROS_DISTRO_rolling
+#if defined(ROS_DISTRO) && ROS_DISTRO == "rolling"
 // ROS2 Rolling - define rmw_qos_profile_parameters for compatibility
 const rmw_qos_profile_t rmw_qos_profile_parameters = rmw_qos_profile_parameters_default;
 #endif
@@ -238,7 +238,7 @@ ParameterList ParameterInterface::get_params(
 
     auto client_iter = _param_clients_by_node.find(node_name);
     if (client_iter == _param_clients_by_node.end()) {
-#ifdef ROS_DISTRO_rolling
+#if defined(ROS_DISTRO) && ROS_DISTRO == "rolling"
       // ROS2 Rolling - use rclcpp::QoS instead of rmw_qos_profile_t
       const auto inserted_pair = _param_clients_by_node.emplace(
         node_name, rclcpp::AsyncParametersClient::make_shared(
@@ -292,7 +292,7 @@ void ParameterInterface::set_params(
   for (const auto & [node_name, params] : params_by_node) {
     auto param_client_iter = _param_clients_by_node.find(node_name);
     if (param_client_iter == _param_clients_by_node.end()) {
-#ifdef ROS_DISTRO_rolling
+#if defined(ROS_DISTRO) && ROS_DISTRO == "rolling"
       // ROS2 Rolling - use rclcpp::QoS instead of rmw_qos_profile_t
       const auto inserted_pair = _param_clients_by_node.emplace(
         node_name, rclcpp::AsyncParametersClient::make_shared(
@@ -348,7 +348,7 @@ void ParameterInterface::subscribe_params(const std::vector<std::string> & param
   for (const auto & node_name : nodes_to_subscribe) {
     auto param_client_iter = _param_clients_by_node.find(node_name);
     if (param_client_iter == _param_clients_by_node.end()) {
-#ifdef ROS_DISTRO_rolling
+#if defined(ROS_DISTRO) && ROS_DISTRO == "rolling"
       // ROS2 Rolling - use rclcpp::QoS instead of rmw_qos_profile_t
       const auto inserted_pair = _param_clients_by_node.emplace(
         node_name, rclcpp::AsyncParametersClient::make_shared(

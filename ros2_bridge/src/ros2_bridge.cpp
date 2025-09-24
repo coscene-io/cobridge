@@ -1026,7 +1026,7 @@ void CoBridge::fetch_asset(
     }
 
     resource_retriever::Retriever resource_retriever;
-#ifdef ROS_DISTRO_rolling
+#if defined(ROS_DISTRO) && ROS_DISTRO == "rolling"
     // ROS2 Rolling API change - get() returns a different type
     const auto memory_resource = resource_retriever.get(asset_id);
     response.status = cobridge_base::FetchAssetStatus::Success;
