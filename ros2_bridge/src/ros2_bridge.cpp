@@ -981,26 +981,46 @@ void CoBridge::service_request(
   }
 
   auto client = client_iter->second;
+  RCLCPP_DEBUG(this->get_logger(), "Waiting for service '%s' to be available...", 
+               service_iter->second.name.c_str());
+  
   if (!client->wait_for_service(1s)) {
+    RCLCPP_ERROR(this->get_logger(), "Service '%s' is not available (timeout after 1s)", 
+                 service_iter->second.name.c_str());
     throw cobridge_base::ServiceError(
             request.service_id,
             "Service " + service_iter->second.name + " is not available");
   }
+
+  RCLCPP_DEBUG(this->get_logger(), "Service '%s' is available, preparing request...", 
+               service_iter->second.name.c_str());
 
   auto req_message = std::make_shared<rclcpp::SerializedMessage>(request.serv_data.size());
   auto & rcl_serialized_msg = req_message->get_rcl_serialized_message();
   std::memcpy(rcl_serialized_msg.buffer, request.serv_data.data(), request.serv_data.size());
   rcl_serialized_msg.buffer_length = request.serv_data.size();
 
-  auto response_received_callback = [this, request,
+  RCLCPP_DEBUG(this->get_logger(), "Sending async service request to '%s' (service_id=%d, call_id=%d, size=%zu bytes)", 
+               service_iter->second.name.c_str(), request.service_id, request.call_id, request.serv_data.size());
+
+  auto service_name = service_iter->second.name;  // Capture for callback
+  auto response_received_callback = [this, request, service_name,
       client_handle](GenericClient::SharedFuture future)
     {
+      RCLCPP_DEBUG(this->get_logger(), "Received response from service '%s' (service_id=%d, call_id=%d)", 
+                   service_name.c_str(), request.service_id, request.call_id);
+      
       const auto serialized_response_msg = future.get()->get_rcl_serialized_message();
+      RCLCPP_DEBUG(this->get_logger(), "Response size: %zu bytes", serialized_response_msg.buffer_length);
+      
       cobridge_base::ServiceRequest response{request.service_id, request.call_id, request.encoding,
         std::vector<uint8_t>(serialized_response_msg.buffer_length)};
       std::memcpy(
         response.serv_data.data(), serialized_response_msg.buffer,
         serialized_response_msg.buffer_length);
+      
+      RCLCPP_DEBUG(this->get_logger(), "Sending service response back to client (service_id=%d, call_id=%d)", 
+                   request.service_id, request.call_id);
       _server->send_service_response(client_handle, response);
     };
   client->async_send_request(req_message, response_received_callback);
