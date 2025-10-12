@@ -275,6 +275,10 @@ if(ROS_BUILD_TYPE STREQUAL "catkin")
         target_link_libraries(version_test cobridge_base ${Boost_LIBRARIES})
         enable_strict_compiler_warnings(version_test)
 
+        catkin_add_gtest(serialization_test cobridge_base/tests/serialization_test.cpp)
+        target_link_libraries(serialization_test cobridge_base ${Boost_LIBRARIES})
+        enable_strict_compiler_warnings(serialization_test)
+
         add_rostest_gtest(smoke_test ros1_bridge/tests/smoke_test.xml ros1_bridge/tests/smoke_test.cpp)
         target_include_directories(smoke_test SYSTEM PRIVATE
                 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/cobridge_base/include>
@@ -295,6 +299,10 @@ elseif(ROS_BUILD_TYPE STREQUAL "ament_cmake")
         ament_add_gtest(version_test cobridge_base/tests/version_test.cpp)
         target_link_libraries(version_test cobridge_base)
         enable_strict_compiler_warnings(version_test)
+
+        ament_add_gtest(serialization_test cobridge_base/tests/serialization_test.cpp)
+        target_link_libraries(serialization_test cobridge_base)
+        enable_strict_compiler_warnings(serialization_test)
 
         ament_add_gtest(smoke_test ros2_bridge/tests/smoke_test.cpp)
         ament_target_dependencies(smoke_test rclcpp rclcpp_components std_msgs std_srvs)
