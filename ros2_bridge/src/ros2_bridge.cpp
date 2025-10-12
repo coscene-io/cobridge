@@ -981,19 +981,22 @@ void CoBridge::service_request(
   }
 
   auto client = client_iter->second;
-  RCLCPP_DEBUG(this->get_logger(), "Waiting for service '%s' to be available...",
-               service_iter->second.name.c_str());
+  RCLCPP_DEBUG(
+    this->get_logger(), "Waiting for service '%s' to be available...",
+    service_iter->second.name.c_str());
 
   if (!client->wait_for_service(1s)) {
-    RCLCPP_ERROR(this->get_logger(), "Service '%s' is not available (timeout after 1s)",
-                 service_iter->second.name.c_str());
+    RCLCPP_ERROR(
+      this->get_logger(), "Service '%s' is not available (timeout after 1s)",
+      service_iter->second.name.c_str());
     throw cobridge_base::ServiceError(
             request.service_id,
             "Service " + service_iter->second.name + " is not available");
   }
 
-  RCLCPP_DEBUG(this->get_logger(), "Service '%s' is available, preparing request...",
-               service_iter->second.name.c_str());
+  RCLCPP_DEBUG(
+    this->get_logger(), "Service '%s' is available, preparing request...",
+    service_iter->second.name.c_str());
 
   auto req_message = std::make_shared<rclcpp::SerializedMessage>(request.serv_data.size());
   auto & rcl_serialized_msg = req_message->get_rcl_serialized_message();
