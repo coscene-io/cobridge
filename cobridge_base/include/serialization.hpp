@@ -55,7 +55,8 @@ inline void write_uint32_LE(uint8_t * buf, uint32_t val)
 inline uint32_t read_uint32_LE(const uint8_t * buf)
 {
 #ifdef ARCH_IS_BIG_ENDIAN
-  uint32_t val = (bytes[0] << 24) + (bytes[1] << 16) + (bytes[2] << 8) + bytes[3];
+  // Read little-endian bytes and convert to big-endian native format
+  uint32_t val = buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24);
   return val;
 #else
   return reinterpret_cast<const uint32_t *>(buf)[0];
