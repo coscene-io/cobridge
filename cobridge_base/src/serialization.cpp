@@ -189,13 +189,14 @@ void ServiceResponse::read(const uint8_t * data, size_t data_length)
   offset += 4;
 
   // Validate encoding length is reasonable and fits in remaining data
-  constexpr size_t MAX_ENCODING_LENGTH = 256;  // Reasonable max for encoding strings like "cdr", "json", etc.
+  // Reasonable max for encoding strings like "cdr", "json", etc.
+  constexpr size_t MAX_ENCODING_LENGTH = 256;
   if (encoding_length > MAX_ENCODING_LENGTH) {
     throw std::runtime_error(
       "ServiceResponse encoding length too large: " + std::to_string(encoding_length) +
       " bytes (max " + std::to_string(MAX_ENCODING_LENGTH) + ")");
   }
-  
+
   if (offset + encoding_length > data_length) {
     throw std::runtime_error(
       "ServiceResponse encoding length " + std::to_string(encoding_length) +
