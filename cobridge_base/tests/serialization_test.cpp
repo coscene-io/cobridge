@@ -82,6 +82,7 @@ protected:
 };
 
 // Test: Valid message parsing
+// cppcheck-suppress syntaxError
 TEST_F(ServiceResponseReadTest, ValidMessageParsing)
 {
   auto message = createValidMessage(123, 456, "cdr", {0xAA, 0xBB, 0xCC});
