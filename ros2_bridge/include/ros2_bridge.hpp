@@ -175,6 +175,10 @@ private:
     const std::string & asset_id, uint32_t request_id,
     ConnectionHandle client_handle);
 
+  void pre_fetch_asset(
+    const std::string & asset_id, uint32_t request_id,
+    ConnectionHandle client_handle);
+
   bool has_capability(const std::string & capability);
 };
 }  // namespace cobridge

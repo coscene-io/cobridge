@@ -45,6 +45,7 @@
 #include "regex_utils.hpp"
 #include "server_interface.hpp"
 #include "websocket_logging.hpp"
+#include <http_server.h>
 
 #define COS_DEBOUNCE(f, ms) \
   { \
@@ -76,6 +77,7 @@ string_hash(const string_view str)
 }
 
 constexpr auto LOGIN = string_hash("login");
+constexpr auto SYNC_TIME = string_hash("syncTime");
 constexpr auto SUBSCRIBE = string_hash("subscribe");
 constexpr auto UNSUBSCRIBE = string_hash("unsubscribe");
 constexpr auto ADVERTISE = string_hash("advertise");
@@ -87,6 +89,7 @@ constexpr auto UNSUBSCRIBE_PARAMETER_UPDATES = string_hash("unsubscribeParameter
 constexpr auto SUBSCRIBE_CONNECTION_GRAPH = string_hash("subscribeConnectionGraph");
 constexpr auto UNSUBSCRIBE_CONNECTION_GRAPH = string_hash("unsubscribeConnectionGraph");
 constexpr auto FETCH_ASSET = string_hash("fetchAsset");
+constexpr auto PRE_FETCH_ASSET = string_hash("preFetchAsset");
 }  // namespace cobridge_base
 
 namespace cobridge_base
@@ -193,9 +196,18 @@ public:
   void
   send_fetch_asset_response(ConnHandle client_handle, const FetchAssetResponse & response) override;
 
+  void
+  send_pre_fetch_asset_response(
+    ConnHandle client_handle,
+    const PreFetchAssetResponse & response) override;
+
   uint16_t get_port() override;
 
   std::string remote_endpoint_string(ConnHandle client_handle) override;
+
+  void start_periodic_timer(uint32_t interval_ms = 1000);
+
+  void stop_periodic_timer();
 
 private:
   void socket_init(ConnHandle hdl);
@@ -237,6 +249,8 @@ private:
 
   void handle_login(const Json & payload, ConnHandle hdl);
 
+  void handle_sync_time(const Json & payload, ConnHandle hdl, uint64_t timestamp);
+
   void handle_subscribe(const Json & payload, ConnHandle hdl);
 
   void handle_unsubscribe(const Json & payload, ConnHandle hdl);
@@ -259,6 +273,14 @@ private:
 
   void handle_fetch_asset(const Json & payload, ConnHandle hdl);
 
+  void handle_pre_fetch_asset(const Json & payload, ConnHandle hdl);
+
+  /**
+   * Send periodic message to all connected clients
+   * This method is called by the timer thread
+   */
+  void send_periodic_message();
+
 private:
   struct ClientInfo
   {
@@ -270,6 +292,7 @@ private:
     std::unordered_set<ClientChannelId> advertised_channels;
     bool subscribed_to_connection_graph = false;
     bool login = true;
+    bool time_synced = false;
 
     explicit ClientInfo(
       std::string endpoint_name, std::string user_name, std::string user_id,
@@ -330,6 +353,11 @@ private:
     MapOfSets advertised_services;
   } _connection_graph;
   std::mutex _connection_graph_mutex;
+
+  // Timer for periodic message sending
+  std::atomic<bool> _timer_running{false};
+  std::unique_ptr<std::thread> _timer_thread;
+  std::chrono::milliseconds _timer_interval{1000};
 };
 
 //-----------------------------------------------------------------------------------------------------------------
@@ -377,10 +405,16 @@ inline Server<ServerConfiguration>::Server(
   // _handler_callback_queue = std::make_unique<CallbackQueue>(_logger, /*numThreads=*/ 1ul);
   _handler_callback_queue =
     std::unique_ptr<CallbackQueue>(new CallbackQueue(_logger, /*numThreads=*/ 1ul));
+
+  // Start periodic timer for sending messages to clients
+  start_periodic_timer();
 }
 
 template<typename ServerConfiguration>
-inline Server<ServerConfiguration>::~Server() = default;
+inline Server<ServerConfiguration>::~Server()
+{
+  stop_periodic_timer();
+}
 
 template<typename ServerConfiguration>
 inline void Server<ServerConfiguration>::start(const std::string & host, uint16_t port)
@@ -704,8 +738,8 @@ inline void Server<ServerConfiguration>::send_message(
     sub_id = subs->second;
   }
 
-  std::array<uint8_t, 1 + 4 + 8> msg_header;
-  msg_header[0] = uint8_t(BinaryOpcode::MESSAGE_DATA);
+  std::array<uint8_t, 1 + 4 + 8> msg_header{{0}};
+  msg_header[0] = static_cast<uint8_t>(BinaryOpcode::MESSAGE_DATA);
   write_uint32_LE(msg_header.data() + 1, sub_id);
   write_uint64_LE(msg_header.data() + 5, timestamp);
 
@@ -841,6 +875,43 @@ inline void Server<ServerConfiguration>::update_connection_graph(
 }
 
 template<typename ServerConfiguration>
+inline void Server<ServerConfiguration>::send_pre_fetch_asset_response(
+  ConnHandle client_handle, const PreFetchAssetResponse & response)
+{
+  websocketpp::lib::error_code ec;
+  const auto con = _server.get_con_from_hdl(client_handle, ec);
+  if (ec || !con) {
+    return;
+  }
+
+  const size_t err_msg_size =
+    response.status == FetchAssetStatus::Error ? response.error_message.size() : 0ul;
+
+  const size_t message_size = 1 + 4 + 1 + 8 + 4 + err_msg_size;
+
+  auto message = con->get_message(OpCode::BINARY, message_size);
+
+  const auto op = BinaryOpcode::PRE_FETCH_ASSET_RESPONSE;
+  message->append_payload(&op, 1);
+
+  std::array<uint8_t, 4> uint32_data;
+  write_uint32_LE(uint32_data.data(), response.request_id);
+
+  message->append_payload(uint32_data.data(), uint32_data.size());
+
+  const auto status = static_cast<uint8_t>(response.status);
+  message->append_payload(&status, 1);
+
+  message->append_payload(response.etag.data(), 8);
+
+  write_uint32_LE(uint32_data.data(), response.error_message.size());
+  message->append_payload(uint32_data.data(), uint32_data.size());
+  message->append_payload(response.error_message.data(), err_msg_size);
+
+  con->send(message, true);
+}
+
+template<typename ServerConfiguration>
 inline void Server<ServerConfiguration>::send_fetch_asset_response(
   ConnHandle client_handle, const FetchAssetResponse & response)
 {
@@ -854,7 +925,7 @@ inline void Server<ServerConfiguration>::send_fetch_asset_response(
     response.status == FetchAssetStatus::Error ? response.error_message.size() : 0ul;
   const size_t data_size =
     response.status == FetchAssetStatus::Success ? response.data.size() : 0ul;
-  const size_t message_size = 1 + 4 + 1 + 4 + err_msg_size + data_size;
+  const size_t message_size = 1 + 4 + 1 + 8 + 4 + err_msg_size + data_size;
 
   auto message = con->get_message(OpCode::BINARY, message_size);
 
@@ -869,11 +940,14 @@ inline void Server<ServerConfiguration>::send_fetch_asset_response(
   const auto status = static_cast<uint8_t>(response.status);
   message->append_payload(&status, 1);
 
+  message->append_payload(response.etag.data(), 8);
+
   write_uint32_LE(uint32_data.data(), response.error_message.size());
   message->append_payload(uint32_data.data(), uint32_data.size());
   message->append_payload(response.error_message.data(), err_msg_size);
 
   message->append_payload(response.data.data(), data_size);
+
   con->send(message, true);
 }
 
@@ -897,6 +971,79 @@ Server<ServerConfiguration>::remote_endpoint_string(cobridge_base::ConnHandle cl
   return con ? con->get_remote_endpoint() : "(unknown)";
 }
 
+template<typename ServerConfiguration>
+inline void Server<ServerConfiguration>::start_periodic_timer(uint32_t interval_ms)
+{
+  if (_timer_running) {
+    return;
+  }
+  _timer_interval = std::chrono::milliseconds(interval_ms);
+  _timer_running = true;
+  _timer_thread = std::unique_ptr<std::thread>(
+    new std::thread(
+      [this]() {
+        while (_timer_running) {
+          std::this_thread::sleep_for(_timer_interval);
+          if (_timer_running) {
+            send_periodic_message();
+          }
+        }
+      }));
+}
+
+/**
+ * Stop the periodic message timer
+ */
+template<typename ServerConfiguration>
+inline void Server<ServerConfiguration>::stop_periodic_timer()
+{
+  _timer_running = false;
+  if (_timer_thread && _timer_thread->joinable()) {
+    _timer_thread->join();
+    _timer_thread.reset();
+  }
+}
+
+/**
+ * Send periodic message to all connected clients
+ * This method is called by the timer thread
+ */
+template<typename ServerConfiguration>
+inline void Server<ServerConfiguration>::send_periodic_message()
+{
+  try {
+    // Send to all connected clients
+    for (const auto & client : _clients) {
+      try {
+        if (client.second.time_synced) {
+          auto con = _server.get_con_from_hdl(client.first);
+          int send_bytes = 0, dropped_bytes = 0, dropped_msgs = 0;
+          con->get_network_statistics(send_bytes, dropped_bytes, dropped_msgs);
+          double package_loss = static_cast<double>(dropped_bytes) /
+            static_cast<double>(dropped_bytes + send_bytes);
+
+          const Json msg = {
+            {"op", "networkStatistics"},
+            {"curSpeed", static_cast<double>(send_bytes) / 1024.0},   // KiB/s
+            {"droppedMsgs", dropped_msgs},   // count of messages dropped by server
+            {"packageLoss", package_loss}   // calculated by bytes, not message count
+          };
+          const auto payload = msg.dump();
+          // _server.get_alog().write(APP, "network statistics:" + payload);
+          con->send(payload, true);
+        }
+      } catch (const std::exception & e) {
+        _server.get_elog().write(
+          RECOVERABLE,
+          "Failed to send periodic message to client: " + std::string(e.what()));
+      }
+    }
+  } catch (const std::exception & e) {
+    _server.get_elog().write(
+      RECOVERABLE,
+      "Exception in send_periodic_message: " + std::string(e.what()));
+  }
+}
 
 //-----------------------------------------------------------------------------------------------------------------
 // private functions
@@ -935,38 +1082,29 @@ inline bool Server<ServerConfiguration>::validate_connection(ConnHandle hdl)
   return false;
 }
 
+
 template<typename ServerConfiguration>
-void Server<ServerConfiguration>::handle_login(const Json & payload, ConnHandle hdl)
+void Server<ServerConfiguration>::handle_sync_time(
+  const Json & payload, ConnHandle hdl,
+  uint64_t timestamp)
 {
-  const auto user_name = payload.at("username").get<std::string>();
-  const auto user_id = payload.at("userId").get<std::string>();
-  const auto endpoint = remote_endpoint_string(hdl);
-  _server.get_alog().write(APP, "'" + user_name + " (" + user_id + ")' is logging in.");
+  const auto server_time = payload.at("serverTime").get<uint64_t>();
+  const auto client_time = payload.at("clientTime").get<uint64_t>();
+  const auto delay_time = payload.at("delayTime").get<uint64_t>();
 
-  {
-    std::lock_guard<std::mutex> clients_lock(_clients_mutex);
-    if (_clients.size() != 0) {
-      for (auto it = _clients.begin(); it != _clients.end(); ) {
-        auto con = _server.get_con_from_hdl(it->first);
-        con->send(
-          Json(
-          {
-            {"op", "kicked"},
-            {"message", "The client was forcibly disconnected by the server."},
-            {"userId", user_id},
-            {"username", user_name}
-          })
-          .dump(), true);
-        it->second.login = false;
+  const auto network_delay = ( timestamp - delay_time - server_time ) / 2;
+  auto time_offset = static_cast<int64_t>( client_time - ( server_time + network_delay ) );
 
-        _server.get_alog().write(
-          APP, it->second.get_user_info() + "was kicked by '" + user_name + " (" + user_id + ")'");
-        ++it;
-      }
-    }
-    _clients.emplace(hdl, ClientInfo(endpoint, user_name, user_id, hdl));
-  }
   const auto con = _server.get_con_from_hdl(hdl);
+  con->send(
+    Json(
+    {
+      {"op", "timeOffset"},
+      {"timeOffset", time_offset}
+    })
+    .dump(), true
+  );
+
   con->send(
     Json(
     {
@@ -1005,6 +1143,63 @@ void Server<ServerConfiguration>::handle_login(const Json & payload, ConnHandle 
       {"op", "advertiseServices"},
       {"services", std::move(services)},
     });
+
+  {
+    std::lock_guard<std::mutex> clients_lock(_clients_mutex);
+
+    const auto client_iter = _clients.find(hdl);
+    if (client_iter != _clients.end()) {
+      client_iter->second.time_synced = true;
+    }
+  }
+}
+
+template<typename ServerConfiguration>
+void Server<ServerConfiguration>::handle_login(const Json & payload, ConnHandle hdl)
+{
+  const auto user_name = payload.at("username").get<std::string>();
+  const auto user_id = payload.at("userId").get<std::string>();
+  const auto endpoint = remote_endpoint_string(hdl);
+  _server.get_alog().write(APP, "'" + user_name + " (" + user_id + ")' is logging in.");
+
+  {
+    std::lock_guard<std::mutex> clients_lock(_clients_mutex);
+    if (_clients.size() != 0) {
+      for (auto it = _clients.begin(); it != _clients.end(); ) {
+        auto con = _server.get_con_from_hdl(it->first);
+        it->second.login = false;
+        con->close(
+          4001, Json(
+          {
+            {"op", "kicked"},
+            {"message", "The client was forcibly disconnected by the server."},
+            {"userId", user_id},
+            {"username", user_name}
+          })
+          .dump());
+
+        _server.get_alog().write(
+          APP, it->second.get_user_info() + "was kicked by '" + user_name + " (" + user_id + ")'");
+        ++it;
+      }
+    }
+    _clients.emplace(hdl, ClientInfo(endpoint, user_name, user_id, hdl));
+  }
+
+  uint64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+    std::chrono::high_resolution_clock::now().time_since_epoch()
+    ).count();
+
+  // const auto con = _server.get_con_from_hdl(hdl);
+  send_json(
+    hdl,
+    Json(
+    {
+      {"op", "syncTime"},
+      {"serverTime", timestamp},
+    }
+    )
+  );
 }
 
 template<typename ServerConfiguration>
@@ -1012,11 +1207,10 @@ inline void Server<ServerConfiguration>::handle_connection_opened(cobridge_base:
 {
   auto con = _server.get_con_from_hdl(hdl);
   const auto endpoint = remote_endpoint_string(hdl);
-  _server.get_alog().write(
-    APP, "websocket connection  " + endpoint + " connected via " +
-    con->get_resource());
+  _server.get_alog().write(APP, "websocket connection  " + endpoint + " connected.");
   std::string link_type = "other";
   std::string colink_ip = _options.metadata["COLINK"];
+  std::string colink_mask = _options.metadata["NETMASK"];
 
   if (!colink_ip.empty()) {
     std::string endpoint_ip = endpoint;
@@ -1024,8 +1218,11 @@ inline void Server<ServerConfiguration>::handle_connection_opened(cobridge_base:
     if (colon_pos != std::string::npos) {
       endpoint_ip = endpoint_ip.substr(0, colon_pos);
     }
-    if (endpoint_ip == colink_ip) {
+    if (http_server::is_ip_in_subnet(colink_ip, colink_mask, endpoint_ip)) {
+      _server.get_alog().write(APP, endpoint + " connected from colink");
       link_type = "colink";
+    } else {
+      _server.get_alog().write(APP, endpoint + " connected from other way");
     }
   }
 
@@ -1052,8 +1249,13 @@ inline void Server<ServerConfiguration>::handle_connection_opened(cobridge_base:
       });
   } else {
     send_json(
-      hdl, {{"op", "login"}, {"userId", ""}, {"username", ""}, {"infoPort", "21275"},
-        {"macAddr", _options.mac_addr}, {"lanCandidates", _options.ip_addrs},
+      hdl, {
+        {"op", "login"},
+        {"userId", ""},
+        {"username", ""},
+        {"infoPort", "21275"},
+        {"macAddr", _options.mac_addr},
+        {"lanCandidates", _options.ip_addrs},
         {"linkType", link_type}});
   }
 }
@@ -1228,6 +1430,7 @@ inline bool Server<ServerConfiguration>::has_handler(uint32_t op) const
 {
   switch (op) {
     case LOGIN:
+    case SYNC_TIME:
       // `login` must be the first request after websocket connected,
       // so, here return true forever
       return true;
@@ -1251,6 +1454,8 @@ inline bool Server<ServerConfiguration>::has_handler(uint32_t op) const
       return static_cast<bool>(_handlers.subscribe_connection_graph_handler);
     case FETCH_ASSET:
       return static_cast<bool>(_handlers.fetch_asset_handler);
+    case PRE_FETCH_ASSET:
+      return static_cast<bool>(_handlers.pre_fetch_asset_handler);
     default:
       throw std::runtime_error("Unknown operation: " + std::to_string(op));
   }
@@ -1557,8 +1762,21 @@ void Server<ServerConfiguration>::handle_fetch_asset(const Json & payload, ConnH
 }
 
 template<typename ServerConfiguration>
+void Server<ServerConfiguration>::handle_pre_fetch_asset(const Json & payload, ConnHandle hdl)
+{
+  const auto uri = payload.at("uri").get<std::string>();
+  const auto request_id = payload.at("requestId").get<uint32_t>();
+  _handlers.pre_fetch_asset_handler(uri, request_id, hdl);
+}
+
+
+template<typename ServerConfiguration>
 inline void Server<ServerConfiguration>::handle_text_message(ConnHandle hdl, MessagePtr msg)
 {
+  const uint64_t cur_timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+    std::chrono::high_resolution_clock::now().time_since_epoch()
+    ).count();
+
   const Json payload = Json::parse(msg->get_payload());
   const std::string & op = payload.at("op").get<std::string>();
 
@@ -1585,6 +1803,9 @@ inline void Server<ServerConfiguration>::handle_text_message(ConnHandle hdl, Mes
     switch (string_hash(op_string_view)) {
       case LOGIN:
         handle_login(payload, hdl);
+        break;
+      case SYNC_TIME:
+        handle_sync_time(payload, hdl, cur_timestamp);
         break;
       case SUBSCRIBE:
         handle_subscribe(payload, hdl);
@@ -1618,6 +1839,9 @@ inline void Server<ServerConfiguration>::handle_text_message(ConnHandle hdl, Mes
         break;
       case FETCH_ASSET:
         handle_fetch_asset(payload, hdl);
+        break;
+      case PRE_FETCH_ASSET:
+        handle_pre_fetch_asset(payload, hdl);
         break;
       default:
         send_status_and_log_msg(

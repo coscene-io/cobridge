@@ -98,6 +98,7 @@ struct ServerHandlers
   std::function<void(const ServiceRequest &, ConnectionHandle)> service_request_handler;
   std::function<void(bool)> subscribe_connection_graph_handler;
   std::function<void(const std::string &, uint32_t, ConnectionHandle)> fetch_asset_handler;
+  std::function<void(const std::string &, uint32_t, ConnectionHandle)> pre_fetch_asset_handler;
 };
 
 template<typename ConnectionHandle>
@@ -145,6 +146,10 @@ public:
   virtual void send_fetch_asset_response(
     ConnectionHandle client_handle,
     const FetchAssetResponse & response) = 0;
+
+  virtual void send_pre_fetch_asset_response(
+    ConnectionHandle client_handle,
+    const PreFetchAssetResponse & response) = 0;
 
   virtual uint16_t get_port() = 0;
 

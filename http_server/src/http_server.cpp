@@ -99,6 +99,25 @@ bool get_dev_mac_addr(std::string& mac_addresses)
   return !mac_addresses.empty();
 }
 
+bool get_dev_netmask(const std::string& ifname,  std::string  & mask) {
+  int fd = socket(AF_INET, SOCK_DGRAM, 0);
+  if (fd < 0) throw std::runtime_error("socket failed");
+
+  ifreq ifr;
+  std::memset(&ifr, 0, sizeof(ifr));
+  std::strncpy(ifr.ifr_name, ifname.c_str(), IFNAMSIZ - 1);
+
+  if (ioctl(fd, SIOCGIFNETMASK, &ifr) < 0) {
+    close(fd);
+    return false;
+  }
+  close(fd);
+
+  auto* netmask_addr = reinterpret_cast<struct sockaddr_in*>(&ifr.ifr_netmask);
+  mask = std::string(inet_ntoa(netmask_addr->sin_addr));
+  return true;
+}
+
 bool get_dev_ip_addrs(std::vector<std::string>& ip_addresses, std::string& colink_ip)
 {
   ip_addresses.clear();
@@ -123,7 +142,6 @@ bool get_dev_ip_addrs(std::vector<std::string>& ip_addresses, std::string& colin
       
       if (ip_str != "127.0.0.1") {
         if (std::string(ifa->ifa_name) == "colink") {
-          // 特殊处理colink的IP - 将最后一个八位字节改为1
           size_t last_dot = ip_str.find_last_of('.');
           if (last_dot != std::string::npos) {
             colink_ip = ip_str.substr(0, last_dot + 1) + "1";

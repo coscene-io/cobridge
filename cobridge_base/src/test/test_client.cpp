@@ -45,7 +45,7 @@ std::future<std::string> wait_for_kicked(std::shared_ptr<ClientInterface> client
   return future;
 }
 
-std::future<std::string> wait_for_login(
+std::future<std::string> wait_for_operation(
   std::shared_ptr<ClientInterface> client,
   std::string operate)
 {
@@ -196,6 +196,11 @@ std::future<FetchAssetResponse> wait_for_fetch_asset_response(
       offset += 4;
       response.status = static_cast<cobridge_base::FetchAssetStatus>(data[offset]);
       offset += 1;
+      response.etag = std::array<uint8_t, 8>{
+        data[offset], data[offset + 1], data[offset + 2], data[offset + 3],
+        data[offset + 4], data[offset + 5], data[offset + 6], data[offset + 7]
+      };
+      offset += 8;
       const size_t errorMsgLength = static_cast<size_t>(read_uint32_LE(data + offset));
       offset += 4;
       response.error_message =
@@ -204,6 +209,40 @@ std::future<FetchAssetResponse> wait_for_fetch_asset_response(
       const auto payloadLength = data_length - offset;
       response.data.resize(payloadLength);
       std::memcpy(response.data.data(), data + offset, payloadLength);
+      promise->set_value(response);
+    });
+  return future;
+}
+
+std::future<PreFetchAssetResponse> wait_for_pre_fetch_asset_response(
+  std::shared_ptr<ClientInterface>
+  client)
+{
+  auto promise = std::make_shared<std::promise<PreFetchAssetResponse>>();
+  auto future = promise->get_future();
+
+  client->set_binary_message_handler(
+    [promise](const uint8_t * data, size_t data_length) mutable {
+      if (static_cast<BinaryOpcode>(data[0]) != BinaryOpcode::PRE_FETCH_ASSET_RESPONSE) {
+        return;
+      }
+      (void) data_length;
+      cobridge_base::PreFetchAssetResponse response;
+      size_t offset = 1;
+      response.request_id = read_uint32_LE(data + offset);
+      offset += 4;
+      response.status = static_cast<cobridge_base::FetchAssetStatus>(data[offset]);
+      offset += 1;
+      response.etag = std::array<uint8_t, 8>{
+        data[offset], data[offset + 1], data[offset + 2], data[offset + 3],
+        data[offset + 4], data[offset + 5], data[offset + 6], data[offset + 7]
+      };
+      offset += 8;
+      const size_t errorMsgLength = static_cast<size_t>(read_uint32_LE(data + offset));
+      offset += 4;
+      response.error_message =
+      std::string(reinterpret_cast<const char *>(data + offset), errorMsgLength);
+      offset += errorMsgLength;
       promise->set_value(response);
     });
   return future;

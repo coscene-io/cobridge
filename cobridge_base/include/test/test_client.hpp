@@ -28,7 +28,7 @@ namespace cobridge_base
 {
 std::future<std::string> wait_for_kicked(std::shared_ptr<ClientInterface> client);
 
-std::future<std::string> wait_for_login(
+std::future<std::string> wait_for_operation(
   std::shared_ptr<ClientInterface> client,
   std::string operate);
 
@@ -51,6 +51,10 @@ std::future<Channel> wait_for_channel(
   const std::string & topic_name);
 
 std::future<FetchAssetResponse> wait_for_fetch_asset_response(
+  std::shared_ptr<ClientInterface>
+  client);
+
+std::future<PreFetchAssetResponse> wait_for_pre_fetch_asset_response(
   std::shared_ptr<ClientInterface>
   client);
 

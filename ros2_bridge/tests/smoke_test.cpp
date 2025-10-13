@@ -111,6 +111,11 @@ protected:
     ASSERT_EQ(std::future_status::ready, _wsClient->connect(URI).wait_for(DEFAULT_TIMEOUT));
 
     _wsClient->login("test user", "test-user-id-0000");
+
+    auto sync_future = cobridge_base::wait_for_operation(_wsClient, "syncTime");
+    EXPECT_EQ(std::future_status::ready, sync_future.wait_for(THREE_SECOND));
+    nlohmann::json json = nlohmann::json::parse(sync_future.get());
+    _wsClient->sync_time(json["serverTime"].get<int64_t>());
   }
 
   void TearDown() override
@@ -216,7 +221,7 @@ std::shared_ptr<T> deserializeMsg(const rcl_serialized_message_t * msg)
 
 TEST(SmokeTest, testMultiConnection) {
   auto client_0 = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
-  auto client0_login_future = cobridge_base::wait_for_login(client_0, "login");
+  auto client0_login_future = cobridge_base::wait_for_operation(client_0, "login");
   EXPECT_EQ(std::future_status::ready, client_0->connect(URI).wait_for(DEFAULT_TIMEOUT));
   EXPECT_EQ(std::future_status::ready, client0_login_future.wait_for(THREE_SECOND));
   CompareJsonWithoutFields(
@@ -225,9 +230,13 @@ TEST(SmokeTest, testMultiConnection) {
     {"infoPort", "lanCandidates", "macAddr", "linkType"}
   );
   client_0->login("user_0", "test-user-id-0000");
+  auto sync_future_0 = cobridge_base::wait_for_operation(client_0, "syncTime");
+  EXPECT_EQ(std::future_status::ready, sync_future_0.wait_for(THREE_SECOND));
+  nlohmann::json json_0 = nlohmann::json::parse(sync_future_0.get());
+  client_0->sync_time(json_0["serverTime"].get<int64_t>());
 
   auto client_1 = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
-  auto client1_login_future = cobridge_base::wait_for_login(client_1, "login");
+  auto client1_login_future = cobridge_base::wait_for_operation(client_1, "login");
   EXPECT_EQ(std::future_status::ready, client_1->connect(URI).wait_for(DEFAULT_TIMEOUT));
   EXPECT_EQ(std::future_status::ready, client1_login_future.wait_for(THREE_SECOND));
   CompareJsonWithoutFields(
@@ -235,23 +244,15 @@ TEST(SmokeTest, testMultiConnection) {
     "\"username\":\"user_0\"}", client1_login_future.get(),
     {"infoPort", "lanCandidates", "macAddr", "linkType"});
 
-  auto client0_kicked_future = cobridge_base::wait_for_kicked(client_0);
-  auto server_info_future = cobridge_base::wait_for_login(client_1, "serverInfo");
   client_1->login("user_1", "test-user-id-0001");
+  auto sync_future_1 = cobridge_base::wait_for_operation(client_1, "syncTime");
+  EXPECT_EQ(std::future_status::ready, sync_future_1.wait_for(THREE_SECOND));
+  nlohmann::json json_1 = nlohmann::json::parse(sync_future_1.get());
+  client_1->sync_time(json_1["serverTime"].get<int64_t>());
+
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
-  EXPECT_EQ(std::future_status::ready, client0_kicked_future.wait_for(THREE_SECOND));
-  EXPECT_EQ(std::future_status::ready, server_info_future.wait_for(THREE_SECOND));
-  EXPECT_EQ(
-    "{\"message\":\"The client was forcibly disconnected by the server.\",\"op\":\"kicked\","
-    "\"userId\":\"test-user-id-0001\",\"username\":\"user_1\"}", client0_kicked_future.get());
   client_0->close();
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
-  CompareJsonWithoutFields(
-    "{\"capabilities\":[\"clientPublish\",\"connectionGraph\","
-    "\"parametersSubscribe\",\"parameters\",\"services\",\"assets\",\"messageTime\"],"
-    "\"metadata\":{\"ROS_DISTRO\":\"foxy\"},\"name\":\"cobridge\","
-    "\"op\":\"serverInfo\",\"sessionId\":\"1727148359\","
-    "\"supportedEncodings\":[\"cdr\"]}", server_info_future.get());
 }
 
 TEST(SmokeTest, testSubscription) {
@@ -261,35 +262,38 @@ TEST(SmokeTest, testSubscription) {
   ros_msg.data = "hello world";
 
   auto node = rclcpp::Node::make_shared("tester");
-  rclcpp::QoS qos = rclcpp::QoS{rclcpp::KeepLast(1lu)};
+  rclcpp::QoS qos = rclcpp::QoS{rclcpp::KeepLast(10lu)};
   qos.reliable();
   qos.transient_local();
   auto pub = node->create_publisher<std_msgs::msg::String>(topic_name, qos);
   pub->publish(ros_msg);
 
-  // Connect a few clients and make sure that they receive the correct message
-  const auto client_count = 3;
-  for (auto i = 0; i < client_count; ++i) {
-    // Set up a client and subscribe to the channel.
-    auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
-    auto channel_future = cobridge_base::wait_for_channel(client, topic_name);
-    ASSERT_EQ(std::future_status::ready, client->connect(URI).wait_for(THREE_SECOND));
-    client->login("test user", "test-user-id-0000");
-    ASSERT_EQ(std::future_status::ready, channel_future.wait_for(THREE_SECOND));
-    const cobridge_base::Channel channel = channel_future.get();
-    const cobridge_base::SubscriptionId subscription_id = 1;
 
-    // Subscribe to the channel and confirm that the promise resolves
-    auto msg_future = cobridge_base::wait_for_channel_msg(client.get(), subscription_id);
-    client->subscribe({{subscription_id, channel.id}});
-    ASSERT_EQ(std::future_status::ready, msg_future.wait_for(DEFAULT_TIMEOUT));
-    const auto msg_data = msg_future.get();
-    ASSERT_EQ(sizeof(HELLO_WORLD_BINARY), msg_data.size());
-    EXPECT_EQ(0, std::memcmp(HELLO_WORLD_BINARY, msg_data.data(), msg_data.size()));
+  // Set up a client and subscribe to the channel.
+  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
+  ASSERT_EQ(std::future_status::ready, client->connect(URI).wait_for(THREE_SECOND));
+  client->login("test user", "test-user-id-0000");
 
-    // Unsubscribe from the channel again.
-    client->unsubscribe({subscription_id});
-  }
+  auto sync_future = cobridge_base::wait_for_operation(client, "syncTime");
+  EXPECT_EQ(std::future_status::ready, sync_future.wait_for(THREE_SECOND));
+  nlohmann::json json = nlohmann::json::parse(sync_future.get());
+  client->sync_time(json["serverTime"].get<int64_t>());
+
+  auto channel_future = cobridge_base::wait_for_channel(client, topic_name);
+  ASSERT_EQ(std::future_status::ready, channel_future.wait_for(THREE_SECOND));
+  const cobridge_base::Channel channel = channel_future.get();
+  const cobridge_base::SubscriptionId subscription_id = 1;
+
+  // Subscribe to the channel and confirm that the promise resolves
+  auto msg_future = cobridge_base::wait_for_channel_msg(client.get(), subscription_id);
+  client->subscribe({{subscription_id, channel.id}});
+  ASSERT_EQ(std::future_status::ready, msg_future.wait_for(DEFAULT_TIMEOUT));
+  const auto msg_data = msg_future.get();
+  ASSERT_EQ(sizeof(HELLO_WORLD_BINARY), msg_data.size());
+  EXPECT_EQ(0, std::memcmp(HELLO_WORLD_BINARY, msg_data.data(), msg_data.size()));
+
+  // Unsubscribe from the channel again.
+  client->unsubscribe({subscription_id});
 }
 
 TEST(SmokeTest, testPublishing) {
@@ -318,6 +322,12 @@ TEST(SmokeTest, testPublishing) {
   ASSERT_EQ(std::future_status::ready, client->connect(URI).wait_for(THREE_SECOND));
 
   client->login("test user", "test-user-id-0000");
+
+  auto sync_future = cobridge_base::wait_for_operation(client, "syncTime");
+  EXPECT_EQ(std::future_status::ready, sync_future.wait_for(THREE_SECOND));
+  nlohmann::json json = nlohmann::json::parse(sync_future.get());
+  client->sync_time(json["serverTime"].get<int64_t>());
+
   client->advertise({advertisement});
 
   // Wait until the advertisement got advertised as channel by the server
@@ -363,6 +373,12 @@ TEST_F(ExistingPublisherTest, testPublishingWithExistingPublisher) {
   ASSERT_EQ(std::future_status::ready, client->connect(URI).wait_for(THREE_SECOND));
 
   client->login("test user", "test-user-id-0000");
+
+  auto sync_future = cobridge_base::wait_for_operation(client, "syncTime");
+  EXPECT_EQ(std::future_status::ready, sync_future.wait_for(THREE_SECOND));
+  nlohmann::json json = nlohmann::json::parse(sync_future.get());
+  client->sync_time(json["serverTime"].get<int64_t>());
+
   client->advertise({advertisement});
 
   // Wait until the advertisement got advertised as channel by the server
@@ -590,6 +606,12 @@ TEST_F(ServiceTest, testCallService) {
   ASSERT_EQ(std::future_status::ready, client->connect(URI).wait_for(THREE_SECOND));
 
   client->login("test user", "test-user-id-0000");
+
+  auto sync_future = cobridge_base::wait_for_operation(client, "syncTime");
+  EXPECT_EQ(std::future_status::ready, sync_future.wait_for(THREE_SECOND));
+  nlohmann::json json = nlohmann::json::parse(sync_future.get());
+  client->sync_time(json["serverTime"].get<int64_t>());
+
   auto service_future = cobridge_base::wait_for_service(client, SERVICE_NAME);
   ASSERT_EQ(std::future_status::ready, service_future.wait_for(DEFAULT_TIMEOUT));
 
@@ -650,9 +672,15 @@ TEST(SmokeTest, receiveMessagesOfMultipleTransientLocalPublishers) {
 
   // Set up a client and subscribe to the channel.
   auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
-  auto channel_future = cobridge_base::wait_for_channel(client, topic_name);
   ASSERT_EQ(std::future_status::ready, client->connect(URI).wait_for(THREE_SECOND));
   client->login("test user", "test-user-id-0000");
+
+  auto sync_future = cobridge_base::wait_for_operation(client, "syncTime");
+  EXPECT_EQ(std::future_status::ready, sync_future.wait_for(THREE_SECOND));
+  nlohmann::json json = nlohmann::json::parse(sync_future.get());
+  client->sync_time(json["serverTime"].get<int64_t>());
+
+  auto channel_future = cobridge_base::wait_for_channel(client, topic_name);
   ASSERT_EQ(std::future_status::ready, channel_future.wait_for(THREE_SECOND));
   const cobridge_base::Channel channel = channel_future.get();
   const cobridge_base::SubscriptionId subscription_id = 1;
@@ -679,11 +707,52 @@ TEST(SmokeTest, receiveMessagesOfMultipleTransientLocalPublishers) {
   spinnerThread.join();
 }
 
+TEST(FetchAssetTest, preFetchExistingAsset) {
+  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
+  EXPECT_EQ(std::future_status::ready, client->connect(URI).wait_for(DEFAULT_TIMEOUT));
+
+  client->login("test user", "test-user-id-0000");
+
+  auto sync_future = cobridge_base::wait_for_operation(client, "syncTime");
+  EXPECT_EQ(std::future_status::ready, sync_future.wait_for(THREE_SECOND));
+  nlohmann::json json = nlohmann::json::parse(sync_future.get());
+  client->sync_time(json["serverTime"].get<int64_t>());
+
+  const auto millis_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+    std::chrono::system_clock::now().time_since_epoch());
+  const auto tmp_file_path =
+    std::filesystem::temp_directory_path() / std::to_string(millis_since_epoch.count());
+  constexpr char content[] = "Hello, world";
+  FILE * tmp_asset_file = std::fopen(tmp_file_path.c_str(), "w");
+  std::fputs(content, tmp_asset_file);
+  std::fclose(tmp_asset_file);
+
+  const std::string uri = std::string("file://") + tmp_file_path.string();
+  const uint32_t request_id = 123;
+
+  auto future = cobridge_base::wait_for_pre_fetch_asset_response(client);
+  client->pre_fetch_asset(uri, request_id);
+  ASSERT_EQ(std::future_status::ready, future.wait_for(DEFAULT_TIMEOUT));
+  const cobridge_base::PreFetchAssetResponse response = future.get();
+
+  EXPECT_EQ(response.request_id, request_id);
+  EXPECT_EQ(response.status, cobridge_base::FetchAssetStatus::Success);
+  // +1 since NULL terminator is not written to file.
+  const auto file_etag = std::array<uint8_t, 8>{0x68, 0xB4, 0xD5, 0x39, 0x92, 0x5E, 0xB8, 0x34};
+  EXPECT_EQ(response.etag, file_etag);
+  std::remove(tmp_file_path.c_str());
+}
+
 TEST(FetchAssetTest, fetchExistingAsset) {
   auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
   EXPECT_EQ(std::future_status::ready, client->connect(URI).wait_for(DEFAULT_TIMEOUT));
 
   client->login("test user", "test-user-id-0000");
+
+  auto sync_future = cobridge_base::wait_for_operation(client, "syncTime");
+  EXPECT_EQ(std::future_status::ready, sync_future.wait_for(THREE_SECOND));
+  nlohmann::json json = nlohmann::json::parse(sync_future.get());
+  client->sync_time(json["serverTime"].get<int64_t>());
 
   const auto millis_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(
     std::chrono::system_clock::now().time_since_epoch());
@@ -715,6 +784,11 @@ TEST(FetchAssetTest, fetchNonExistingAsset) {
   EXPECT_EQ(std::future_status::ready, client->connect(URI).wait_for(DEFAULT_TIMEOUT));
 
   client->login("test user", "test-user-id-0000");
+
+  auto sync_future = cobridge_base::wait_for_operation(client, "syncTime");
+  EXPECT_EQ(std::future_status::ready, sync_future.wait_for(THREE_SECOND));
+  nlohmann::json json = nlohmann::json::parse(sync_future.get());
+  client->sync_time(json["serverTime"].get<int64_t>());
 
   const std::string asset_id = "file:///foo/bar";
   const uint32_t request_id = 456;

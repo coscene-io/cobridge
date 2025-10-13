@@ -64,6 +64,8 @@ public:
 
   virtual void login(std::string user_name, std::string user_id) = 0;
 
+  virtual void sync_time(int64_t server_time) = 0;
+
   virtual void subscribe(
     const std::vector<std::pair<SubscriptionId, ChannelId>> & subscriptions) = 0;
 
@@ -90,6 +92,8 @@ public:
   virtual void unsubscribe_parameter_updates(const std::vector<std::string> & parameter_names) = 0;
 
   virtual void fetch_asset(const std::string & name, uint32_t request_id) = 0;
+
+  virtual void pre_fetch_asset(const std::string & name, uint32_t request_id) = 0;
 
   virtual void set_text_message_handler(TextMessageHandler handler) = 0;
 
@@ -211,6 +215,16 @@ public:
     send_text(payload);
   }
 
+  void sync_time(int64_t server_time) override
+  {
+    const std::string payload =
+      nlohmann::json{
+      {"op", "syncTime"},
+      {"serverTime", server_time},
+      {"clientTime", server_time + 1}}.dump();
+    send_text(payload);
+  }
+
   void subscribe(const std::vector<std::pair<SubscriptionId, ChannelId>> & subscriptions) override
   {
     nlohmann::json sub_json;
@@ -311,6 +325,14 @@ public:
   void fetch_asset(const std::string & uri, uint32_t request_id) override
   {
     nlohmann::json jsonPayload{{"op", "fetchAsset"},
+      {"uri", uri},
+      {"requestId", request_id}};
+    send_text(jsonPayload.dump());
+  }
+
+  void pre_fetch_asset(const std::string & uri, uint32_t request_id) override
+  {
+    nlohmann::json jsonPayload{{"op", "preFetchAsset"},
       {"uri", uri},
       {"requestId", request_id}};
     send_text(jsonPayload.dump());

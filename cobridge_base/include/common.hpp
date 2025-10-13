@@ -60,6 +60,7 @@ enum class BinaryOpcode : uint8_t
   TIME_DATA = 2,
   SERVICE_CALL_RESPONSE = 3,
   FETCH_ASSET_RESPONSE = 4,
+  PRE_FETCH_ASSET_RESPONSE = 5,
 };
 
 enum class ClientBinaryOpcode : uint8_t
@@ -205,6 +206,15 @@ struct FetchAssetResponse
   FetchAssetStatus status;
   std::string error_message;
   std::vector<uint8_t> data;
+  std::array<uint8_t, 8> etag;
+};
+
+struct PreFetchAssetResponse
+{
+  uint32_t request_id;
+  FetchAssetStatus status;
+  std::string error_message;
+  std::array<uint8_t, 8> etag;
 };
 }  // namespace cobridge_base
 
