@@ -296,26 +296,8 @@ elseif(ROS_BUILD_TYPE STREQUAL "ament_cmake")
         message(STATUS "Building tests with ament_cmake")
 
         find_package(ament_cmake_gtest REQUIRED)
-        find_package(std_msgs REQUIRED)
-        find_package(std_srvs REQUIRED)
-
-        # Configure linters with vendor directory exclusion
-        find_package(ament_cmake_copyright REQUIRED)
-        find_package(ament_cmake_cppcheck REQUIRED)
-        find_package(ament_cmake_cpplint REQUIRED)
-        find_package(ament_cmake_lint_cmake REQUIRED)
-        find_package(ament_cmake_uncrustify REQUIRED)
-        find_package(ament_cmake_xmllint REQUIRED)
-
-        # Run linters with vendor directory excluded
-        ament_copyright(EXCLUDE vendor build install log)
-        ament_cppcheck(EXCLUDE vendor build install log)
-        ament_cpplint(EXCLUDE vendor build install log)
-        ament_lint_cmake()
-        ament_uncrustify(
-            EXCLUDE vendor build install log
-        )
-        ament_xmllint()
+        find_package(ament_lint_auto REQUIRED)
+        ament_lint_auto_find_test_dependencies()
 
         ament_add_gtest(version_test cobridge_base/tests/version_test.cpp)
         target_link_libraries(version_test cobridge_base)
