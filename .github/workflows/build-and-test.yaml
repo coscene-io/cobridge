@@ -19,11 +19,18 @@ jobs:
           - ROS_DISTRO: indigo
     env:
       CCACHE_DIR: "${{ github.workspace }}/.ccache"
-      AFTER_INIT: 'cd $TARGET_REPO_PATH && chmod -R u+w vendor && ./patch_apply.sh'
+      TARGET_WORKSPACE: ${{ github.workspace }}/target_ws/src
       
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          path: ${{ github.workspace }}/target_ws/src/${{ github.event.repository.name }}
+      
+      - name: Apply patches
+        run: |
+          cd ${{ github.workspace }}/target_ws/src/${{ github.event.repository.name }}
+          ./patch_apply.sh
         
       - name: Setup ccache
         uses: actions/cache@v4
