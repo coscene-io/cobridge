@@ -19,7 +19,7 @@ jobs:
           - ROS_DISTRO: indigo
     env:
       CCACHE_DIR: "${{ github.workspace }}/.ccache"
-      BEFORE_INIT: 'bash -c "cd $BASEDIR/$TARGET_REPO_PATH && ./patch_apply.sh"'
+      AFTER_INIT: 'cd $TARGET_REPO_PATH && ./patch_apply.sh'
       
     steps:
       - name: Checkout code
