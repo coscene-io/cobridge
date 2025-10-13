@@ -45,4 +45,9 @@
         <build_type condition="$ROS_VERSION == 2">ament_cmake</build_type>
         <nodelet condition="$ROS_VERSION == 1" plugin="${prefix}/nodelets.xml" />
     </export>
+
+    <!-- Exclude vendor directory and problematic files from linting -->
+    <test_depend condition="$ROS_VERSION == 2">ament_cmake_copyright</test_depend>
+    <test_depend condition="$ROS_VERSION == 2">ament_cmake_cpplint</test_depend>
+    <test_depend condition="$ROS_VERSION == 2">ament_cmake_uncrustify</test_depend>
 </package>

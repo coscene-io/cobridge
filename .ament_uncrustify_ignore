@@ -1,0 +1,6 @@
+vendor/
+build/
+install/
+log/
+cobridge_base/include/standard.hpp
+

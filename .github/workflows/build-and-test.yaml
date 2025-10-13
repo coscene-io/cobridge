@@ -20,7 +20,6 @@ jobs:
     env:
       CCACHE_DIR: "${{ github.workspace }}/.ccache"
       TARGET_WORKSPACE: ${{ github.workspace }}/target_ws/src
-      SKIP_TESTS: "ament_copyright ament_cpplint ament_uncrustify ament_cppcheck ament_lint_cmake"
       
     steps:
       - name: Checkout code
