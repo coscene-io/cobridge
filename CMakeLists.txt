@@ -296,7 +296,7 @@ elseif(ROS_BUILD_TYPE STREQUAL "ament_cmake")
         message(STATUS "Building tests with ament_cmake")
 
         find_package(ament_cmake_gtest REQUIRED)
-        
+
         # Configure linters with vendor directory exclusion
         find_package(ament_cmake_copyright REQUIRED)
         find_package(ament_cmake_cppcheck REQUIRED)
@@ -304,14 +304,14 @@ elseif(ROS_BUILD_TYPE STREQUAL "ament_cmake")
         find_package(ament_cmake_lint_cmake REQUIRED)
         find_package(ament_cmake_uncrustify REQUIRED)
         find_package(ament_cmake_xmllint REQUIRED)
-        
+
         # Run linters with vendor directory excluded
         ament_copyright(EXCLUDE vendor build install log)
         ament_cppcheck(EXCLUDE vendor build install log)
         ament_cpplint(EXCLUDE vendor build install log)
         ament_lint_cmake()
         ament_uncrustify(
-            EXCLUDE vendor build install log 
+            EXCLUDE vendor build install log
         )
         ament_xmllint()
 
