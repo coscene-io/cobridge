@@ -20,8 +20,8 @@ test:
 ifeq ($(findstring $(ROS_DISTRO), $(ROS1_DISTRO)), $(ROS_DISTRO))
 	/ros_entrypoint.sh catkin_make run_tests
 else ifeq ($(findstring $(ROS_DISTRO), $(ROS2_DISTRO)), $(ROS_DISTRO))
-	./ros2_entry.sh build/cobridge/version_test
-	./ros2_entry.sh build/cobridge/smoke_test
+	src/ros2_entry.sh build/cobridge/version_test
+	src/ros2_entry.sh build/cobridge/smoke_test
 else
 	$(error Unsupported ROS_DISTRO: $(ROS_DISTRO))
 endif
