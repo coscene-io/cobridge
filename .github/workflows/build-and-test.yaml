@@ -53,8 +53,10 @@ jobs:
 
       - name: Build
         run: |
-          make -f ./src/cobridge/Makefile build
+          cd src/cobridge
+          make build
 
       - name: Test
         run: |
-          make -f ./src/cobridge/Makefile test
+          cd src/cobridge
+          make test
