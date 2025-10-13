@@ -232,7 +232,9 @@ ParameterList ParameterInterface::get_params(
 #ifdef ROS2_VERSION_ROLLING
       const auto inserted_pair = _param_clients_by_node.emplace(
         node_name, rclcpp::AsyncParametersClient::make_shared(
-          _node, node_name, rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_parameters)), _callback_group));
+          _node, node_name,
+          rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_parameters)),
+          _callback_group));
 #else
       const auto inserted_pair = _param_clients_by_node.emplace(
         node_name, rclcpp::AsyncParametersClient::make_shared(
@@ -284,7 +286,9 @@ void ParameterInterface::set_params(
 #ifdef ROS2_VERSION_ROLLING
       const auto inserted_pair = _param_clients_by_node.emplace(
         node_name, rclcpp::AsyncParametersClient::make_shared(
-          _node, node_name, rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_parameters)), _callback_group));
+          _node, node_name,
+          rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_parameters)),
+          _callback_group));
 #else
       const auto inserted_pair = _param_clients_by_node.emplace(
         node_name, rclcpp::AsyncParametersClient::make_shared(
@@ -338,7 +342,9 @@ void ParameterInterface::subscribe_params(const std::vector<std::string> & param
 #ifdef ROS2_VERSION_ROLLING
       const auto inserted_pair = _param_clients_by_node.emplace(
         node_name, rclcpp::AsyncParametersClient::make_shared(
-          _node, node_name, rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_parameters)), _callback_group));
+          _node, node_name,
+          rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_parameters)),
+          _callback_group));
 #else
       const auto inserted_pair = _param_clients_by_node.emplace(
         node_name, rclcpp::AsyncParametersClient::make_shared(
