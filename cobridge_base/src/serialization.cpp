@@ -174,6 +174,13 @@ void from_json(const nlohmann::json & json_obj, Service & service)
 
 void ServiceResponse::read(const uint8_t * data, size_t data_length)
 {
+  // Validate minimum message size
+  if (data_length < 12) {  // 4 + 4 + 4 = service_id + call_id + encoding_length
+    throw std::runtime_error(
+            "ServiceResponse message too short: " + std::to_string(
+              data_length) + " bytes (minimum 12)");
+  }
+
   size_t offset = 0;
   this->service_id = read_uint32_LE(data + offset);
   offset += 4;
@@ -181,8 +188,32 @@ void ServiceResponse::read(const uint8_t * data, size_t data_length)
   offset += 4;
   const size_t encoding_length = static_cast<size_t>(read_uint32_LE(data + offset));
   offset += 4;
+
+  // Validate encoding length is reasonable and fits in remaining data
+  // Reasonable max for encoding strings like "cdr", "json", etc.
+  constexpr size_t MAX_ENCODING_LENGTH = 256;
+  if (encoding_length > MAX_ENCODING_LENGTH) {
+    throw std::runtime_error(
+            "ServiceResponse encoding length too large: " + std::to_string(encoding_length) +
+            " bytes (max " + std::to_string(MAX_ENCODING_LENGTH) + ")");
+  }
+
+  if (offset + encoding_length > data_length) {
+    throw std::runtime_error(
+            "ServiceResponse encoding length " + std::to_string(encoding_length) +
+            " exceeds remaining data " + std::to_string(data_length - offset) + " bytes");
+  }
+
   this->encoding = std::string(reinterpret_cast<const char *>(data + offset), encoding_length);
   offset += encoding_length;
+
+  // Validate remaining data for payload
+  if (offset > data_length) {
+    throw std::runtime_error(
+            "ServiceResponse offset " + std::to_string(offset) +
+            " exceeds data length " + std::to_string(data_length));
+  }
+
   const auto payload_length = data_length - offset;
   this->serv_data.resize(payload_length);
   std::memcpy(this->serv_data.data(), data + offset, payload_length);
