@@ -296,6 +296,8 @@ elseif(ROS_BUILD_TYPE STREQUAL "ament_cmake")
         message(STATUS "Building tests with ament_cmake")
 
         find_package(ament_cmake_gtest REQUIRED)
+        find_package(std_msgs REQUIRED)
+        find_package(std_srvs REQUIRED)
 
         # Configure linters with vendor directory exclusion
         find_package(ament_cmake_copyright REQUIRED)
