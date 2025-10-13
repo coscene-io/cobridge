@@ -229,9 +229,15 @@ ParameterList ParameterInterface::get_params(
 
     auto client_iter = _param_clients_by_node.find(node_name);
     if (client_iter == _param_clients_by_node.end()) {
+#ifdef ROS2_VERSION_ROLLING
+      const auto inserted_pair = _param_clients_by_node.emplace(
+        node_name, rclcpp::AsyncParametersClient::make_shared(
+          _node, node_name, rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_parameters)), _callback_group));
+#else
       const auto inserted_pair = _param_clients_by_node.emplace(
         node_name, rclcpp::AsyncParametersClient::make_shared(
           _node, node_name, rmw_qos_profile_parameters, _callback_group));
+#endif
       client_iter = inserted_pair.first;
     }
 
@@ -275,9 +281,15 @@ void ParameterInterface::set_params(
   for (const auto & [node_name, params] : params_by_node) {
     auto param_client_iter = _param_clients_by_node.find(node_name);
     if (param_client_iter == _param_clients_by_node.end()) {
+#ifdef ROS2_VERSION_ROLLING
+      const auto inserted_pair = _param_clients_by_node.emplace(
+        node_name, rclcpp::AsyncParametersClient::make_shared(
+          _node, node_name, rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_parameters)), _callback_group));
+#else
       const auto inserted_pair = _param_clients_by_node.emplace(
         node_name, rclcpp::AsyncParametersClient::make_shared(
           _node, node_name, rmw_qos_profile_parameters, _callback_group));
+#endif
       param_client_iter = inserted_pair.first;
     }
 
@@ -323,9 +335,15 @@ void ParameterInterface::subscribe_params(const std::vector<std::string> & param
   for (const auto & node_name : nodes_to_subscribe) {
     auto param_client_iter = _param_clients_by_node.find(node_name);
     if (param_client_iter == _param_clients_by_node.end()) {
+#ifdef ROS2_VERSION_ROLLING
+      const auto inserted_pair = _param_clients_by_node.emplace(
+        node_name, rclcpp::AsyncParametersClient::make_shared(
+          _node, node_name, rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_parameters)), _callback_group));
+#else
       const auto inserted_pair = _param_clients_by_node.emplace(
         node_name, rclcpp::AsyncParametersClient::make_shared(
           _node, node_name, rmw_qos_profile_parameters, _callback_group));
+#endif
       param_client_iter = inserted_pair.first;
     }
 

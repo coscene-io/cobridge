@@ -1059,11 +1059,24 @@ void CoBridge::fetch_asset(
     }
 
     resource_retriever::Retriever resource_retriever;
+#ifdef ROS2_VERSION_ROLLING
+    // Rolling changed API: get() -> get_shared(), returns ResourceSharedPtr
+    // Resource struct has std::vector<unsigned char> data (not pointer)
+    auto resource = resource_retriever.get_shared(asset_id);
+    if (resource == nullptr) {
+      throw std::runtime_error("Failed to retrieve resource: " + asset_id);
+    }
+    response.status = cobridge_base::FetchAssetStatus::Success;
+    response.error_message = "";
+    response.data = resource->data;  // Direct vector assignment
+#else
+    // Humble/Jazzy: get() returns MemoryResource struct
     const resource_retriever::MemoryResource memory_resource = resource_retriever.get(asset_id);
     response.status = cobridge_base::FetchAssetStatus::Success;
     response.error_message = "";
     response.data.resize(memory_resource.size);
     std::memcpy(response.data.data(), memory_resource.data.get(), memory_resource.size);
+#endif
   } catch (const std::exception & ex) {
     RCLCPP_WARN(
       this->get_logger(), "Failed to retrieve asset '%s': %s", asset_id.c_str(),
