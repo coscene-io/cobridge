@@ -15,23 +15,24 @@
 #ifndef SERVER_FACTORY_HPP_
 #define SERVER_FACTORY_HPP_
 
-#include <websocketpp/common/connection_hdl.hpp>
 #include <memory>
 #include <string>
+
+#include <websocketpp/common/connection_hdl.hpp>
+
 #include "common.hpp"
 #include "server_interface.hpp"
 
 namespace cobridge_base
 {
-
 class ServerFactory
 {
 public:
-  template<typename ConnectionHandle>
-  static std::unique_ptr<ServerInterface<ConnectionHandle>> create_server(
-    const std::string & name,
-    const std::function<void(WebSocketLogLevel, char const *)> & log_handler,
-    const ServerOptions & options);
+  template <typename ConnectionHandle>
+  static std::unique_ptr<ServerInterface<ConnectionHandle> > create_server(
+    const std::string &name,
+    const std::function<void(WebSocketLogLevel, char const *)> &log_handler,
+    const ServerOptions &options);
 };
 }  // namespace cobridge_base
 

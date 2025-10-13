@@ -11,30 +11,29 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <filesystem>
-
 #include <gtest/gtest.h>
+
+#include <chrono>
+#include <filesystem>
+#include <future>
+#include <memory>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include <json.hpp>
 #include <rclcpp_components/component_manager.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <std_srvs/srv/set_bool.hpp>
-#include <websocketpp/config/asio_client.hpp>
-
-#include <json.hpp>
 #include <test/test_client.hpp>
 #include <websocket_client.hpp>
-
-#include <chrono>
-#include <future>
-#include <thread>
-#include <string>
-#include <vector>
-#include <memory>
+#include <websocketpp/config/asio_client.hpp>
 
 constexpr char URI[] = "ws://localhost:21274";
 
 // Binary representation of std_msgs/msg/String for "hello world"
 constexpr uint8_t HELLO_WORLD_BINARY[] = {0, 1, 0, 0, 12, 0, 0, 0, 104, 101,
-  108, 108, 111, 32, 119, 111, 114, 108, 100, 0};
+                                          108, 108, 111, 32, 119, 111, 114, 108, 100, 0};
 
 constexpr auto THREE_SECOND = std::chrono::seconds(3);
 constexpr auto DEFAULT_TIMEOUT = std::chrono::seconds(10);
@@ -42,13 +41,14 @@ constexpr auto DEFAULT_TIMEOUT = std::chrono::seconds(10);
 using json = nlohmann::json;
 
 void CompareJsonWithoutFields(
-  const std::string & jsonStr1, const std::string & jsonStr2,
-  const std::vector<std::string> & keysToErase = {"sessionId", "metadata"})
+  const std::string &jsonStr1, const std::string &jsonStr2,
+  const std::vector<std::string> &keysToErase = {"sessionId", "metadata"})
 {
   json obj1 = json::parse(jsonStr1);
   json obj2 = json::parse(jsonStr2);
 
-  for (const auto & key : keysToErase) {
+  for (const auto &key : keysToErase)
+  {
     obj1.erase(key);
     obj2.erase(key);
   }
@@ -82,6 +82,7 @@ protected:
   void SetUp() override
   {
     auto nodeOptions = rclcpp::NodeOptions();
+
     nodeOptions.allow_undeclared_parameters(true);
     _paramNode1 = rclcpp::Node::make_shared(NODE_1_NAME, nodeOptions);
     auto p1Param = rcl_interfaces::msg::ParameterDescriptor{};
@@ -104,10 +105,10 @@ protected:
     _executor.add_node(_paramNode2);
     _executorThread = std::thread(
       [this]() {
-        _executor.spin();
-      });
+      _executor.spin();
+    });
 
-    _wsClient = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
+    _wsClient = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client> >();
     ASSERT_EQ(std::future_status::ready, _wsClient->connect(URI).wait_for(DEFAULT_TIMEOUT));
 
     _wsClient->login("test user", "test-user-id-0000");
@@ -123,7 +124,7 @@ protected:
   rclcpp::Node::SharedPtr _paramNode1;
   rclcpp::Node::SharedPtr _paramNode2;
   std::thread _executorThread;
-  std::shared_ptr<cobridge_base::Client<websocketpp::config::asio_client>> _wsClient;
+  std::shared_ptr<cobridge_base::Client<websocketpp::config::asio_client> > _wsClient;
 };
 
 class ServiceTest : public ::testing::Test
@@ -137,16 +138,16 @@ protected:
     _node = rclcpp::Node::make_shared("node");
     _service = _node->create_service<std_srvs::srv::SetBool>(
       SERVICE_NAME, [&](std::shared_ptr<std_srvs::srv::SetBool::Request> req,
-      std::shared_ptr<std_srvs::srv::SetBool::Response> res) {
-        res->message = "hello";
-        res->success = req->data;
-      });
+                        std::shared_ptr<std_srvs::srv::SetBool::Response> res) {
+      res->message = "hello";
+      res->success = req->data;
+    });
 
     _executor.add_node(_node);
     _executorThread = std::thread(
       [this]() {
-        _executor.spin();
-      });
+      _executor.spin();
+    });
   }
 
   void TearDown() override
@@ -159,7 +160,7 @@ protected:
   rclcpp::Node::SharedPtr _node;
   rclcpp::ServiceBase::SharedPtr _service;
   std::thread _executorThread;
-  std::shared_ptr<cobridge_base::Client<websocketpp::config::asio_client>> _wsClient;
+  std::shared_ptr<cobridge_base::Client<websocketpp::config::asio_client> > _wsClient;
 };
 
 class ExistingPublisherTest : public ::testing::Test
@@ -176,8 +177,8 @@ protected:
     _executor.add_node(_node);
     _executorThread = std::thread(
       [this]() {
-        _executor.spin();
-      });
+      _executor.spin();
+    });
   }
 
   void TearDown() override
@@ -192,8 +193,8 @@ protected:
   std::thread _executorThread;
 };
 
-template<class T>
-std::shared_ptr<rclcpp::SerializedMessage> serializeMsg(const T * msg)
+template <class T>
+std::shared_ptr<rclcpp::SerializedMessage> serializeMsg(const T *msg)
 {
   using rosidl_typesupport_cpp::get_message_type_support_handle;
   auto type_support_hdl = get_message_type_support_handle<T>();
@@ -203,8 +204,8 @@ std::shared_ptr<rclcpp::SerializedMessage> serializeMsg(const T * msg)
   return result;
 }
 
-template<class T>
-std::shared_ptr<T> deserializeMsg(const rcl_serialized_message_t * msg)
+template <class T>
+std::shared_ptr<T> deserializeMsg(const rcl_serialized_message_t *msg)
 {
   using rosidl_typesupport_cpp::get_message_type_support_handle;
   auto type_support_hdl = get_message_type_support_handle<T>();
@@ -214,19 +215,21 @@ std::shared_ptr<T> deserializeMsg(const rcl_serialized_message_t * msg)
   return result;
 }
 
-TEST(SmokeTest, testMultiConnection) {
-  auto client_0 = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
+TEST(SmokeTest, testMultiConnection)
+{
+  auto client_0 = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client> >();
   auto client0_login_future = cobridge_base::wait_for_login(client_0, "login");
+
   EXPECT_EQ(std::future_status::ready, client_0->connect(URI).wait_for(DEFAULT_TIMEOUT));
   EXPECT_EQ(std::future_status::ready, client0_login_future.wait_for(THREE_SECOND));
   CompareJsonWithoutFields(
     "{\"op\":\"login\",\"userId\":\"\",\"username\":\"\"}",
     client0_login_future.get(),
     {"infoPort", "lanCandidates", "macAddr", "linkType"}
-  );
+    );
   client_0->login("user_0", "test-user-id-0000");
 
-  auto client_1 = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
+  auto client_1 = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client> >();
   auto client1_login_future = cobridge_base::wait_for_login(client_1, "login");
   EXPECT_EQ(std::future_status::ready, client_1->connect(URI).wait_for(DEFAULT_TIMEOUT));
   EXPECT_EQ(std::future_status::ready, client1_login_future.wait_for(THREE_SECOND));
@@ -254,10 +257,12 @@ TEST(SmokeTest, testMultiConnection) {
     "\"supportedEncodings\":[\"cdr\"]}", server_info_future.get());
 }
 
-TEST(SmokeTest, testSubscription) {
+TEST(SmokeTest, testSubscription)
+{
   // Publish a string message on a latched ros topic
   const std::string topic_name = "/pub_topic";
   std_msgs::msg::String ros_msg;
+
   ros_msg.data = "hello world";
 
   auto node = rclcpp::Node::make_shared("tester");
@@ -269,9 +274,10 @@ TEST(SmokeTest, testSubscription) {
 
   // Connect a few clients and make sure that they receive the correct message
   const auto client_count = 3;
-  for (auto i = 0; i < client_count; ++i) {
+  for (auto i = 0; i < client_count; ++i)
+  {
     // Set up a client and subscribe to the channel.
-    auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
+    auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client> >();
     auto channel_future = cobridge_base::wait_for_channel(client, topic_name);
     ASSERT_EQ(std::future_status::ready, client->connect(URI).wait_for(THREE_SECOND));
     client->login("test user", "test-user-id-0000");
@@ -281,7 +287,7 @@ TEST(SmokeTest, testSubscription) {
 
     // Subscribe to the channel and confirm that the promise resolves
     auto msg_future = cobridge_base::wait_for_channel_msg(client.get(), subscription_id);
-    client->subscribe({{subscription_id, channel.id}});
+    client->subscribe({ {subscription_id, channel.id} });
     ASSERT_EQ(std::future_status::ready, msg_future.wait_for(DEFAULT_TIMEOUT));
     const auto msg_data = msg_future.get();
     ASSERT_EQ(sizeof(HELLO_WORLD_BINARY), msg_data.size());
@@ -292,8 +298,10 @@ TEST(SmokeTest, testSubscription) {
   }
 }
 
-TEST(SmokeTest, testPublishing) {
+TEST(SmokeTest, testPublishing)
+{
   cobridge_base::ClientAdvertisement advertisement;
+
   advertisement.channel_id = 1;
   advertisement.topic = "/foo";
   advertisement.encoding = "cdr";
@@ -309,12 +317,12 @@ TEST(SmokeTest, testPublishing) {
   auto node = rclcpp::Node::make_shared("tester");
   auto sub = node->create_subscription<std_msgs::msg::String>(
     advertisement.topic, 10, [&msg_promise](const std_msgs::msg::String::SharedPtr msg) {
-      msg_promise.set_value(msg->data);
-    });
+    msg_promise.set_value(msg->data);
+  });
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node);
 
-  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
+  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client> >();
   ASSERT_EQ(std::future_status::ready, client->connect(URI).wait_for(THREE_SECOND));
 
   client->login("test user", "test-user-id-0000");
@@ -336,8 +344,10 @@ TEST(SmokeTest, testPublishing) {
   EXPECT_EQ("hello world", msg_future.get());
 }
 
-TEST_F(ExistingPublisherTest, testPublishingWithExistingPublisher) {
+TEST_F(ExistingPublisherTest, testPublishingWithExistingPublisher)
+{
   cobridge_base::ClientAdvertisement advertisement;
+
   advertisement.channel_id = 1;
   advertisement.topic = TOPIC_NAME;
   advertisement.encoding = "cdr";
@@ -353,13 +363,13 @@ TEST_F(ExistingPublisherTest, testPublishingWithExistingPublisher) {
   auto node = rclcpp::Node::make_shared("tester");
   auto sub = node->create_subscription<std_msgs::msg::String>(
     advertisement.topic, 10, [&msg_promise](const std_msgs::msg::String::SharedPtr msg) {
-      msg_promise.set_value(msg->data);
-    });
+    msg_promise.set_value(msg->data);
+  });
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node);
 
   // Set up the client, advertise and publish the binary message
-  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
+  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client> >();
   ASSERT_EQ(std::future_status::ready, client->connect(URI).wait_for(THREE_SECOND));
 
   client->login("test user", "test-user-id-0000");
@@ -383,9 +393,11 @@ TEST_F(ExistingPublisherTest, testPublishingWithExistingPublisher) {
   EXPECT_EQ("hello world", msg_future.get());
 }
 
-TEST_F(ParameterTest, testGetAllParams) {
+TEST_F(ParameterTest, testGetAllParams)
+{
   const std::string requestId = "req-testGetAllParams";
   auto future = cobridge_base::wait_for_parameters(_wsClient, requestId);
+
   _wsClient->get_parameters({}, optional<std::string>(requestId));
   ASSERT_EQ(std::future_status::ready, future.wait_for(DEFAULT_TIMEOUT));
   std::vector<cobridge_base::Parameter> params = future.get();
@@ -393,9 +405,11 @@ TEST_F(ParameterTest, testGetAllParams) {
   EXPECT_GE(params.size(), 2UL);
 }
 
-TEST_F(ParameterTest, testGetNonExistingParameters) {
+TEST_F(ParameterTest, testGetNonExistingParameters)
+{
   const std::string requestId = "req-testGetNonExistingParameters";
   auto future = cobridge_base::wait_for_parameters(_wsClient, requestId);
+
   _wsClient->get_parameters(
     {"/foo_1.non_existing_parameter", "/foo_2.non_existing.nested_parameter"},
     optional<std::string>(requestId));
@@ -405,46 +419,50 @@ TEST_F(ParameterTest, testGetNonExistingParameters) {
   EXPECT_TRUE(params.empty());
 }
 
-TEST_F(ParameterTest, testGetParameters) {
+TEST_F(ParameterTest, testGetParameters)
+{
   const auto p1 = NODE_1_NAME + "." + PARAM_1_NAME;
   const auto p2 = NODE_2_NAME + "." + PARAM_2_NAME;
 
   const std::string requestId = "req-testGetParameters";
   auto future = cobridge_base::wait_for_parameters(_wsClient, requestId);
+
   _wsClient->get_parameters({p1, p2}, optional<std::string>(requestId));
   ASSERT_EQ(std::future_status::ready, future.wait_for(DEFAULT_TIMEOUT));
   std::vector<cobridge_base::Parameter> params = future.get();
 
   EXPECT_EQ(2UL, params.size());
   auto p1Iter = std::find_if(
-    params.begin(), params.end(), [&p1](const auto & param) {
-      return param.get_name() == p1;
-    });
+    params.begin(), params.end(), [&p1](const auto &param) {
+    return param.get_name() == p1;
+  });
   auto p2Iter = std::find_if(
-    params.begin(), params.end(), [&p2](const auto & param) {
-      return param.get_name() == p2;
-    });
+    params.begin(), params.end(), [&p2](const auto &param) {
+    return param.get_name() == p2;
+  });
   ASSERT_NE(p1Iter, params.end());
   EXPECT_EQ(PARAM_1_DEFAULT_VALUE, p1Iter->get_value().getValue<PARAM_1_TYPE>());
   ASSERT_NE(p2Iter, params.end());
 
   std::vector<int64_t> int_array_val;
   const auto array_params =
-    p2Iter->get_value().getValue<std::vector<cobridge_base::ParameterValue>>();
-  for (const auto & paramValue : array_params) {
+    p2Iter->get_value().getValue<std::vector<cobridge_base::ParameterValue> >();
+  for (const auto &paramValue : array_params)
+  {
     int_array_val.push_back(paramValue.getValue<int64_t>());
   }
   EXPECT_EQ(int_array_val, PARAM_2_DEFAULT_VALUE);
 }
 
-TEST_F(ParameterTest, testSetParameters) {
+TEST_F(ParameterTest, testSetParameters)
+{
   const auto p1 = NODE_1_NAME + "." + PARAM_1_NAME;
   const auto p2 = NODE_2_NAME + "." + PARAM_2_NAME;
   const PARAM_1_TYPE newP1value = "world";
   const std::vector<cobridge_base::ParameterValue> newP2value =
   {cobridge_base::ParameterValue(4),
-    cobridge_base::ParameterValue(5),
-    cobridge_base::ParameterValue(6)
+   cobridge_base::ParameterValue(5),
+   cobridge_base::ParameterValue(6)
   };
 
   const std::vector<cobridge_base::Parameter> parameters = {
@@ -461,28 +479,30 @@ TEST_F(ParameterTest, testSetParameters) {
 
   EXPECT_EQ(2UL, params.size());
   auto p1Iter = std::find_if(
-    params.begin(), params.end(), [&p1](const auto & param) {
-      return param.get_name() == p1;
-    });
+    params.begin(), params.end(), [&p1](const auto &param) {
+    return param.get_name() == p1;
+  });
   auto p2Iter = std::find_if(
-    params.begin(), params.end(), [&p2](const auto & param) {
-      return param.get_name() == p2;
-    });
+    params.begin(), params.end(), [&p2](const auto &param) {
+    return param.get_name() == p2;
+  });
   ASSERT_NE(p1Iter, params.end());
   EXPECT_EQ(newP1value, p1Iter->get_value().getValue<PARAM_1_TYPE>());
   ASSERT_NE(p2Iter, params.end());
 
   std::vector<int64_t> int_array_val;
   const auto array_params = p2Iter->get_value()
-    .getValue<std::vector<cobridge_base::ParameterValue>>();
-  for (const auto & paramValue : array_params) {
+                            .getValue<std::vector<cobridge_base::ParameterValue> >();
+  for (const auto &paramValue : array_params)
+  {
     int_array_val.push_back(paramValue.getValue<int64_t>());
   }
   const std::vector<int64_t> expected_value = {4, 5, 6};
   EXPECT_EQ(int_array_val, expected_value);
 }
 
-TEST_F(ParameterTest, testSetParametersWithReqId) {
+TEST_F(ParameterTest, testSetParametersWithReqId)
+{
   const auto p1 = NODE_1_NAME + "." + PARAM_1_NAME;
   const PARAM_1_TYPE newP1value = "world";
   const std::vector<cobridge_base::Parameter> parameters = {
@@ -491,6 +511,7 @@ TEST_F(ParameterTest, testSetParametersWithReqId) {
 
   const std::string requestId = "req-testSetParameters";
   auto future = cobridge_base::wait_for_parameters(_wsClient, requestId);
+
   _wsClient->set_parameters(parameters, optional<std::string>(requestId));
   ASSERT_EQ(std::future_status::ready, future.wait_for(DEFAULT_TIMEOUT));
   std::vector<cobridge_base::Parameter> params = future.get();
@@ -498,7 +519,8 @@ TEST_F(ParameterTest, testSetParametersWithReqId) {
   EXPECT_EQ(1UL, params.size());
 }
 
-TEST_F(ParameterTest, testSetFloatParametersWithIntegers) {
+TEST_F(ParameterTest, testSetFloatParametersWithIntegers)
+{
   const auto floatParamName = NODE_2_NAME + "." + PARAM_3_NAME;
   const auto floatArrayParamName = NODE_2_NAME + "." + PARAM_4_NAME;
   const int64_t floatParamVal = 10;
@@ -506,21 +528,22 @@ TEST_F(ParameterTest, testSetFloatParametersWithIntegers) {
   const std::string requestId = "req-testSetFloatParametersWithIntegers";
   auto future = cobridge_base::wait_for_parameters(_wsClient, requestId);
   const nlohmann::json::array_t parameters = {
-    {{"name", floatParamName}, {"value", floatParamVal}, {"type", "float64"}},
-    {{"name", floatArrayParamName}, {"value", floatArrayParamVal}, {"type", "float64_array"}},
+    { {"name", floatParamName}, {"value", floatParamVal}, {"type", "float64"} },
+    { {"name", floatArrayParamName}, {"value", floatArrayParamVal}, {"type", "float64_array"} },
   };
+
   _wsClient->send_text(
-    nlohmann::json{{"op", "setParameters"}, {"id", requestId},
-      {"parameters", parameters}}.dump());
+    nlohmann::json{ {"op", "setParameters"}, {"id", requestId},
+      {"parameters", parameters} }.dump());
   ASSERT_EQ(std::future_status::ready, future.wait_for(THREE_SECOND));
   std::vector<cobridge_base::Parameter> params = future.get();
 
   {
     const auto param =
       std::find_if(
-      params.begin(), params.end(), [floatParamName](const cobridge_base::Parameter & p) {
-        return p.get_name() == floatParamName;
-      });
+        params.begin(), params.end(), [floatParamName](const cobridge_base::Parameter &p) {
+      return p.get_name() == floatParamName;
+    });
     ASSERT_NE(param, params.end());
     EXPECT_EQ(param->get_type(), cobridge_base::ParameterType::PARAMETER_DOUBLE);
     EXPECT_NEAR(
@@ -530,15 +553,16 @@ TEST_F(ParameterTest, testSetFloatParametersWithIntegers) {
   {
     const auto param = std::find_if(
       params.begin(), params.end(),
-      [floatArrayParamName](const cobridge_base::Parameter & p) {
-        return p.get_name() == floatArrayParamName;
-      });
+      [floatArrayParamName](const cobridge_base::Parameter &p) {
+      return p.get_name() == floatArrayParamName;
+    });
     ASSERT_NE(param, params.end());
     EXPECT_EQ(param->get_type(), cobridge_base::ParameterType::PARAMETER_ARRAY);
     const auto paramValue = param->get_value()
-      .getValue<std::vector<cobridge_base::ParameterValue>>();
+                            .getValue<std::vector<cobridge_base::ParameterValue> >();
     ASSERT_EQ(paramValue.size(), floatArrayParamVal.size());
-    for (size_t i = 0; i < paramValue.size(); ++i) {
+    for (size_t i = 0; i < paramValue.size(); ++i)
+    {
       EXPECT_NEAR(
         paramValue[i].getValue<double>(), static_cast<double>(floatArrayParamVal[i]),
         1e-9);
@@ -546,7 +570,8 @@ TEST_F(ParameterTest, testSetFloatParametersWithIntegers) {
   }
 }
 
-TEST_F(ParameterTest, testUnsetParameter) {
+TEST_F(ParameterTest, testUnsetParameter)
+{
   const auto p1 = NODE_1_NAME + "." + DELETABLE_PARAM_NAME;
   const std::vector<cobridge_base::Parameter> parameters = {
     cobridge_base::Parameter(p1),
@@ -554,6 +579,7 @@ TEST_F(ParameterTest, testUnsetParameter) {
 
   const std::string requestId = "req-testUnsetParameter";
   auto future = cobridge_base::wait_for_parameters(_wsClient, requestId);
+
   _wsClient->set_parameters(parameters, optional<std::string>(requestId));
   ASSERT_EQ(std::future_status::ready, future.wait_for(DEFAULT_TIMEOUT));
   std::vector<cobridge_base::Parameter> params = future.get();
@@ -561,14 +587,15 @@ TEST_F(ParameterTest, testUnsetParameter) {
   EXPECT_EQ(0UL, params.size());
 }
 
-TEST_F(ParameterTest, testParameterSubscription) {
+TEST_F(ParameterTest, testParameterSubscription)
+{
   const auto p1 = NODE_1_NAME + "." + PARAM_1_NAME;
 
   _wsClient->subscribe_parameter_updates({p1});
   auto future = cobridge_base::wait_for_parameters(_wsClient);
   _wsClient->set_parameters(
     {cobridge_base::Parameter(p1, cobridge_base::ParameterValue("foo"))}
-  );
+    );
   ASSERT_EQ(std::future_status::ready, future.wait_for(DEFAULT_TIMEOUT));
   std::vector<cobridge_base::Parameter> params = future.get();
 
@@ -578,14 +605,15 @@ TEST_F(ParameterTest, testParameterSubscription) {
   _wsClient->unsubscribe_parameter_updates({p1});
   _wsClient->set_parameters(
     {cobridge_base::Parameter(p1, cobridge_base::ParameterValue("bar"))}
-  );
+    );
 
   future = cobridge_base::wait_for_parameters(_wsClient);
   ASSERT_EQ(std::future_status::timeout, future.wait_for(THREE_SECOND));
 }
 
-TEST_F(ServiceTest, testCallService) {
-  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
+TEST_F(ServiceTest, testCallService)
+{
+  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client> >();
 
   ASSERT_EQ(std::future_status::ready, client->connect(URI).wait_for(THREE_SECOND));
 
@@ -597,7 +625,7 @@ TEST_F(ServiceTest, testCallService) {
   std_srvs::srv::SetBool::Request request_msg;
   request_msg.data = true;
   const auto serialized_request = serializeMsg(&request_msg);
-  const auto & ser_request_msg = serialized_request->get_rcl_serialized_message();
+  const auto &ser_request_msg = serialized_request->get_rcl_serialized_message();
 
   cobridge_base::ServiceRequest request;
   request.service_id = service.id;
@@ -616,7 +644,7 @@ TEST_F(ServiceTest, testCallService) {
   EXPECT_EQ(response.encoding, request.encoding);
 
   rclcpp::SerializedMessage serialized_response_msg(response.serv_data.size());
-  auto & ser_msg = serialized_response_msg.get_rcl_serialized_message();
+  auto &ser_msg = serialized_response_msg.get_rcl_serialized_message();
   std::memcpy(ser_msg.buffer, response.serv_data.data(), response.serv_data.size());
   ser_msg.buffer_length = response.serv_data.size();
   const auto res_msg = deserializeMsg<std_srvs::srv::SetBool::Response>(&ser_msg);
@@ -625,10 +653,12 @@ TEST_F(ServiceTest, testCallService) {
   EXPECT_EQ(res_msg->success, request_msg.data);
 }
 
-TEST(SmokeTest, receiveMessagesOfMultipleTransientLocalPublishers) {
+TEST(SmokeTest, receiveMessagesOfMultipleTransientLocalPublishers)
+{
   const std::string topic_name = "/latched";
   auto node = rclcpp::Node::make_shared("node");
   rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(1));
+
   qos.transient_local();
   qos.reliable();
 
@@ -636,12 +666,13 @@ TEST(SmokeTest, receiveMessagesOfMultipleTransientLocalPublishers) {
   executor.add_node(node);
   auto spinnerThread = std::thread(
     [&executor]() {
-      executor.spin();
-    });
+    executor.spin();
+  });
 
   constexpr size_t nPubs = 15;
   std::vector<rclcpp::Publisher<std_msgs::msg::String>::SharedPtr> pubs;
-  for (size_t i = 0; i < nPubs; ++i) {
+  for (size_t i = 0; i < nPubs; ++i)
+  {
     auto pub = pubs.emplace_back(node->create_publisher<std_msgs::msg::String>(topic_name, qos));
     std_msgs::msg::String msg;
     msg.data = "Hello";
@@ -649,7 +680,7 @@ TEST(SmokeTest, receiveMessagesOfMultipleTransientLocalPublishers) {
   }
 
   // Set up a client and subscribe to the channel.
-  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
+  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client> >();
   auto channel_future = cobridge_base::wait_for_channel(client, topic_name);
   ASSERT_EQ(std::future_status::ready, client->connect(URI).wait_for(THREE_SECOND));
   client->login("test user", "test-user-id-0000");
@@ -662,13 +693,14 @@ TEST(SmokeTest, receiveMessagesOfMultipleTransientLocalPublishers) {
   std::atomic<size_t> n_received_messages = 0;
   client->set_binary_message_handler(
     [&promise, &n_received_messages](const uint8_t *, size_t) {
-      if (++n_received_messages == nPubs) {
-        promise.set_value();
-      }
-    });
+    if (++n_received_messages == nPubs)
+    {
+      promise.set_value();
+    }
+  });
 
   // Subscribe to the channel and confirm that the promise resolves
-  client->subscribe({{subscription_id, channel.id}});
+  client->subscribe({ {subscription_id, channel.id} });
   EXPECT_EQ(std::future_status::ready, promise.get_future().wait_for(DEFAULT_TIMEOUT));
   EXPECT_EQ(n_received_messages, nPubs);
   client->unsubscribe({subscription_id});
@@ -679,8 +711,10 @@ TEST(SmokeTest, receiveMessagesOfMultipleTransientLocalPublishers) {
   spinnerThread.join();
 }
 
-TEST(FetchAssetTest, fetchExistingAsset) {
-  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
+TEST(FetchAssetTest, fetchExistingAsset)
+{
+  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client> >();
+
   EXPECT_EQ(std::future_status::ready, client->connect(URI).wait_for(DEFAULT_TIMEOUT));
 
   client->login("test user", "test-user-id-0000");
@@ -690,7 +724,7 @@ TEST(FetchAssetTest, fetchExistingAsset) {
   const auto tmp_file_path =
     std::filesystem::temp_directory_path() / std::to_string(millis_since_epoch.count());
   constexpr char content[] = "Hello, world";
-  FILE * tmp_asset_file = std::fopen(tmp_file_path.c_str(), "w");
+  FILE *tmp_asset_file = std::fopen(tmp_file_path.c_str(), "w");
   std::fputs(content, tmp_asset_file);
   std::fclose(tmp_asset_file);
 
@@ -710,8 +744,10 @@ TEST(FetchAssetTest, fetchExistingAsset) {
   std::remove(tmp_file_path.c_str());
 }
 
-TEST(FetchAssetTest, fetchNonExistingAsset) {
-  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
+TEST(FetchAssetTest, fetchNonExistingAsset)
+{
+  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client> >();
+
   EXPECT_EQ(std::future_status::ready, client->connect(URI).wait_for(DEFAULT_TIMEOUT));
 
   client->login("test user", "test-user-id-0000");
@@ -730,7 +766,7 @@ TEST(FetchAssetTest, fetchNonExistingAsset) {
 }
 
 // Run all the tests that were declared with TEST()
-int main(int argc, char ** argv)
+int main(int argc, char **argv)
 {
   testing::InitGoogleTest(&argc, argv);
   rclcpp::init(argc, argv);
@@ -743,7 +779,8 @@ int main(int argc, char ** argv)
   rclcpp_components::ComponentManager componentManager(executor, "cobridge_component_manager");
   const auto componentResources = componentManager.get_component_resources("cobridge");
 
-  if (componentResources.empty()) {
+  if (componentResources.empty())
+  {
     RCLCPP_INFO(componentManager.get_logger(), "No loadable resources found");
     return EXIT_FAILURE;
   }
@@ -758,7 +795,7 @@ int main(int argc, char ** argv)
   executor->add_node(node.get_node_base_interface());
 
   std::thread spinnerThread([&executor]() {
-      executor->spin();
+                            executor->spin();
     });
 
   const auto testResult = RUN_ALL_TESTS();

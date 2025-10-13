@@ -12,30 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include <ros/connection.h>
 #include <ros/service_manager.h>
 #include <ros/service_server_link.h>
-
-#include <service_utils.hpp>
 
 #include <chrono>
 #include <future>
 #include <string>
 
+#include <service_utils.hpp>
+
 namespace cobridge
 {
-
 std::string retrieve_service_type(
-  const std::string & serviceName,
+  const std::string &serviceName,
   std::chrono::milliseconds timeout)
 {
   auto link = ros::ServiceManager::instance()->createServiceServerLink(
     serviceName, false, "*", "*",
-    {{"probe", "1"}});
-  if (!link) {
+    { {"probe", "1"} });
+
+  if (!link)
+  {
     throw std::runtime_error("Failed to create service link");
-  } else if (!link->getConnection()) {
+  }
+  else if (!link->getConnection())
+  {
     throw std::runtime_error("Failed to get service link connection");
   }
 
@@ -43,11 +45,14 @@ std::string retrieve_service_type(
   auto future = promise.get_future();
 
   link->getConnection()->setHeaderReceivedCallback(
-    [&promise](const ros::ConnectionPtr & conn, const ros::Header & header) {
+    [&promise](const ros::ConnectionPtr &conn, const ros::Header &header) {
       std::string serviceType;
-      if (header.getValue("type", serviceType)) {
+      if (header.getValue("type", serviceType))
+      {
         promise.set_value(serviceType);
-      } else {
+      }
+      else
+      {
         promise.set_exception(
           std::make_exception_ptr(
             std::runtime_error("Key 'type' not found in service connection header")));
@@ -57,7 +62,8 @@ std::string retrieve_service_type(
       return true;
     });
 
-  if (future.wait_for(timeout) != std::future_status::ready) {
+  if (future.wait_for(timeout) != std::future_status::ready)
+  {
     // Drop connection here, removes the link from the service manager instance and avoids
     // that the header-received callback is called after the promise has already been destroyed.
     link->getConnection()->drop(ros::Connection::DropReason::Destructing);
@@ -66,5 +72,4 @@ std::string retrieve_service_type(
 
   return future.get();
 }
-
 }  // namespace cobridge

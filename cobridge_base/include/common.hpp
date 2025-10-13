@@ -25,7 +25,6 @@
 
 namespace cobridge_base
 {
-
 using ChannelId = uint32_t;
 using ClientChannelId = uint32_t;
 using SubscriptionId = uint32_t;
@@ -85,7 +84,7 @@ struct ChannelWithoutId
   std::string schema;
   optional<std::string> schema_encoding;
 
-  bool operator==(const ChannelWithoutId & other) const
+  bool operator==(const ChannelWithoutId &other) const
   {
     return topic == other.topic && encoding == other.encoding && schema_name == other.schema_name &&
            schema == other.schema && schema_encoding == other.schema_encoding;
@@ -98,10 +97,11 @@ struct Channel : ChannelWithoutId
 
   Channel() = default;  // requirement for json conversions.
   Channel(ChannelId id, ChannelWithoutId ch)
-  : ChannelWithoutId(std::move(ch)), id(id)
-  {}
+    : ChannelWithoutId(std::move(ch)), id(id)
+  {
+  }
 
-  bool operator==(const Channel & other) const
+  bool operator==(const Channel &other) const
   {
     return id == other.id && ChannelWithoutId::operator==(other);
   }
@@ -127,9 +127,9 @@ struct ClientMessage
 
   ClientMessage(
     uint64_t log_time, uint64_t publish_time, uint32_t sequence,
-    const ClientAdvertisement & advertisement, size_t data_length,
-    const uint8_t * raw_data)
-  : log_time(log_time), publish_time(publish_time), sequence(sequence),
+    const ClientAdvertisement &advertisement, size_t data_length,
+    const uint8_t *raw_data)
+    : log_time(log_time), publish_time(publish_time), sequence(sequence),
     advertisement(advertisement),
     data_length(data_length), data(data_length)
   {
@@ -163,9 +163,10 @@ struct Service : ServiceWithoutId
 
   Service() = default;
 
-  Service(const ServiceWithoutId & s, const ServiceId & id)
-  : ServiceWithoutId(s), id(id)
-  {}
+  Service(const ServiceWithoutId &s, const ServiceId &id)
+    : ServiceWithoutId(s), id(id)
+  {
+  }
 };
 
 struct ServiceResponse
@@ -180,11 +181,11 @@ struct ServiceResponse
     return 4 + 4 + 4 + encoding.size() + serv_data.size();
   }
 
-  void read(const uint8_t * data, size_t size);
+  void read(const uint8_t *data, size_t size);
 
-  void write(uint8_t * data) const;
+  void write(uint8_t *data) const;
 
-  bool operator==(const ServiceResponse & other) const
+  bool operator==(const ServiceResponse &other) const
   {
     return service_id == other.service_id && call_id == other.call_id &&
            encoding == other.encoding && serv_data == other.serv_data;
@@ -210,10 +211,10 @@ struct FetchAssetResponse
 
 namespace std
 {
-template<>
+template <>
 struct hash<cobridge_base::ClientBinaryOpcode>
 {
-  std::size_t operator()(const cobridge_base::ClientBinaryOpcode & opcode) const
+  std::size_t operator()(const cobridge_base::ClientBinaryOpcode &opcode) const
   {
     return std::hash<uint8_t>()(static_cast<uint8_t>(opcode));
   }

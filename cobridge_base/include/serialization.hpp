@@ -23,8 +23,7 @@
 
 namespace cobridge_base
 {
-
-inline void write_uint64_LE(uint8_t * buf, uint64_t val)
+inline void write_uint64_LE(uint8_t *buf, uint64_t val)
 {
 #ifdef ARCH_IS_BIG_ENDIAN
   buf[0] = val & 0xff;
@@ -40,7 +39,7 @@ inline void write_uint64_LE(uint8_t * buf, uint64_t val)
 #endif
 }
 
-inline void write_uint32_LE(uint8_t * buf, uint32_t val)
+inline void write_uint32_LE(uint8_t *buf, uint32_t val)
 {
 #ifdef ARCH_IS_BIG_ENDIAN
   buf[0] = val & 0xff;
@@ -52,32 +51,34 @@ inline void write_uint32_LE(uint8_t * buf, uint32_t val)
 #endif
 }
 
-inline uint32_t read_uint32_LE(const uint8_t * buf)
+inline uint32_t read_uint32_LE(const uint8_t *buf)
 {
 #ifdef ARCH_IS_BIG_ENDIAN
   // Read little-endian bytes and convert to big-endian native format
   uint32_t val = buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24);
   return val;
+
 #else
   return reinterpret_cast<const uint32_t *>(buf)[0];
+
 #endif
 }
 
-void to_json(nlohmann::json & json_obj, const Channel & chan);
+void to_json(nlohmann::json &json_obj, const Channel &chan);
 
-void from_json(const nlohmann::json & json_obj, Channel & chan);
+void from_json(const nlohmann::json &json_obj, Channel &chan);
 
-void to_json(nlohmann::json & json_obj, const ParameterValue & param_val);
+void to_json(nlohmann::json &json_obj, const ParameterValue &param_val);
 
-void from_json(const nlohmann::json & json_obj, ParameterValue & param_val);
+void from_json(const nlohmann::json &json_obj, ParameterValue &param_val);
 
-void to_json(nlohmann::json & json_obj, const Parameter & param);
+void to_json(nlohmann::json &json_obj, const Parameter &param);
 
-void from_json(const nlohmann::json & json_obj, Parameter & param);
+void from_json(const nlohmann::json &json_obj, Parameter &param);
 
-void to_json(nlohmann::json & json_obj, const Service & service);
+void to_json(nlohmann::json &json_obj, const Service &service);
 
-void from_json(const nlohmann::json & json_obj, Service & service);
+void from_json(const nlohmann::json &json_obj, Service &service);
 }  // namespace cobridge_base
 
 #endif  // SERIALIZATION_HPP_

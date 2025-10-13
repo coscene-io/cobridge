@@ -28,18 +28,18 @@
 
 namespace cobridge_base
 {
-
 constexpr size_t DEFAULT_SEND_BUFFER_LIMIT_BYTES = 10000000UL;  // 10 MB
 
-using MapOfSets = std::unordered_map<std::string, std::unordered_set<std::string>>;
+using MapOfSets = std::unordered_map<std::string, std::unordered_set<std::string> >;
 
-template<typename IdType>
+template <typename IdType>
 class ExceptionWithId : public std::runtime_error
 {
 public:
-  explicit ExceptionWithId(IdType id, const std::string & what_arg)
-  : std::runtime_error(what_arg), _id(id)
-  {}
+  explicit ExceptionWithId(IdType id, const std::string &what_arg)
+    : std::runtime_error(what_arg), _id(id)
+  {
+  }
 
   IdType id() const
   {
@@ -81,7 +81,7 @@ struct ServerOptions
   std::vector<std::string> ip_addrs;
 };
 
-template<typename ConnectionHandle>
+template <typename ConnectionHandle>
 struct ServerHandlers
 {
   std::function<void(ChannelId, ConnectionHandle)> subscribe_handler;
@@ -90,61 +90,61 @@ struct ServerHandlers
   std::function<void(ClientChannelId, ConnectionHandle)> client_unadvertise_handler;
   std::function<void(const ClientMessage &, ConnectionHandle)> client_message_handler;
   std::function<void(const std::vector<std::string> &, const optional<std::string> &,
-    ConnectionHandle)> parameter_request_handler;
+                     ConnectionHandle)> parameter_request_handler;
   std::function<void(const std::vector<Parameter> &, const optional<std::string> &,
-    ConnectionHandle)> parameter_change_handler;
+                     ConnectionHandle)> parameter_change_handler;
   std::function<void(const std::vector<std::string> &, ParameterSubscriptionOperation,
-    ConnectionHandle)> parameter_subscription_handler;
+                     ConnectionHandle)> parameter_subscription_handler;
   std::function<void(const ServiceRequest &, ConnectionHandle)> service_request_handler;
   std::function<void(bool)> subscribe_connection_graph_handler;
   std::function<void(const std::string &, uint32_t, ConnectionHandle)> fetch_asset_handler;
 };
 
-template<typename ConnectionHandle>
+template <typename ConnectionHandle>
 class ServerInterface
 {
 public:
   virtual ~ServerInterface() = default;
 
-  virtual void start(const std::string & host, uint16_t port) = 0;
+  virtual void start(const std::string &host, uint16_t port) = 0;
 
   virtual void stop() = 0;
 
-  virtual std::vector<ChannelId> add_channels(const std::vector<ChannelWithoutId> & channels) = 0;
+  virtual std::vector<ChannelId> add_channels(const std::vector<ChannelWithoutId> &channels) = 0;
 
-  virtual void remove_channels(const std::vector<ChannelId> & channel_ids) = 0;
+  virtual void remove_channels(const std::vector<ChannelId> &channel_ids) = 0;
 
   virtual void publish_parameter_values(
     ConnectionHandle client_handle,
-    const std::vector<Parameter> & parameters,
-    const optional<std::string> & request_id) = 0;
+    const std::vector<Parameter> &parameters,
+    const optional<std::string> &request_id) = 0;
 
-  virtual void update_parameter_values(const std::vector<Parameter> & parameters) = 0;
+  virtual void update_parameter_values(const std::vector<Parameter> &parameters) = 0;
 
-  virtual std::vector<ServiceId> add_services(const std::vector<ServiceWithoutId> & services) = 0;
+  virtual std::vector<ServiceId> add_services(const std::vector<ServiceWithoutId> &services) = 0;
 
-  virtual void remove_services(const std::vector<ServiceId> & service_ids) = 0;
+  virtual void remove_services(const std::vector<ServiceId> &service_ids) = 0;
 
-  virtual void set_handlers(ServerHandlers<ConnectionHandle> && handlers) = 0;
+  virtual void set_handlers(ServerHandlers<ConnectionHandle> &&handlers) = 0;
 
   virtual void send_message(
     ConnectionHandle client_handle, ChannelId chan_id, uint64_t timestamp,
-    const uint8_t * payload, size_t payload_size) = 0;
+    const uint8_t *payload, size_t payload_size) = 0;
 
   virtual void broadcast_time(uint64_t timestamp) = 0;
 
   virtual void send_service_response(
     ConnectionHandle client_handle,
-    const ServiceResponse & response) = 0;
+    const ServiceResponse &response) = 0;
 
   virtual void update_connection_graph(
-    const MapOfSets & published_topics,
-    const MapOfSets & subscribed_topics,
-    const MapOfSets & advertised_services) = 0;
+    const MapOfSets &published_topics,
+    const MapOfSets &subscribed_topics,
+    const MapOfSets &advertised_services) = 0;
 
   virtual void send_fetch_asset_response(
     ConnectionHandle client_handle,
-    const FetchAssetResponse & response) = 0;
+    const FetchAssetResponse &response) = 0;
 
   virtual uint16_t get_port() = 0;
 

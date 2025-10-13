@@ -14,28 +14,30 @@
 #ifndef WEBSOCKET_LOGGING_HPP_
 #define WEBSOCKET_LOGGING_HPP_
 
+#include <functional>
+#include <string>
+
 #include <websocketpp/common/asio.hpp>
 #include <websocketpp/logger/levels.hpp>
 
-#include <string>
-#include <functional>
 #include "common.hpp"
 
 namespace cobridge_base
 {
-
 using LogCallback = std::function<void (WebSocketLogLevel, char const *)>;
 
-inline std::string ip_address_to_string(const websocketpp::lib::asio::ip::address & addr)
+inline std::string ip_address_to_string(const websocketpp::lib::asio::ip::address &addr)
 {
-  if (addr.is_v6()) {
+  if (addr.is_v6())
+  {
     return "[" + addr.to_string() + "]";
   }
   return addr.to_string();
 }
 
 inline void no_op_log_callback(WebSocketLogLevel, char const *)
-{}
+{
+}
 
 class CallbackLogger
 {
@@ -43,17 +45,18 @@ public:
   using channel_type_hint = websocketpp::log::channel_type_hint;
 
   explicit CallbackLogger(channel_type_hint::value hint = channel_type_hint::access)
-  : _static_channels(0xffffffff), _dynamic_channels(0), _channel_type_hint(hint),
+    : _static_channels(0xffffffff), _dynamic_channels(0), _channel_type_hint(hint),
     _callback(no_op_log_callback)
-  {}
+  {
+  }
 
   explicit CallbackLogger(
     websocketpp::log::level channels,
     channel_type_hint::value hint = channel_type_hint::access)
-  : _static_channels(channels), _dynamic_channels(0), _channel_type_hint(hint),
+    : _static_channels(channels), _dynamic_channels(0), _channel_type_hint(hint),
     _callback(no_op_log_callback)
-  {}
-
+  {
+  }
 
   void set_callback(LogCallback callback)
   {
@@ -62,7 +65,8 @@ public:
 
   void set_channels(websocketpp::log::level channels)
   {
-    if (channels == 0) {
+    if (channels == 0)
+    {
       clear_channels(0xffffffff);
       return;
     }
@@ -75,31 +79,46 @@ public:
     _dynamic_channels &= ~channels;
   }
 
-  void write(websocketpp::log::level channel, std::string const & msg)
+  void write(websocketpp::log::level channel, std::string const &msg)
   {
     write(channel, msg.c_str());
   }
 
-  void write(websocketpp::log::level channel, char const * msg)
+  void write(websocketpp::log::level channel, char const *msg)
   {
-    if (!this->dynamic_test(channel)) {
+    if (!this->dynamic_test(channel))
+    {
       return;
     }
 
-    if (_channel_type_hint == channel_type_hint::access) {
+    if (_channel_type_hint == channel_type_hint::access)
+    {
       _callback(WebSocketLogLevel::Info, msg);
-    } else {
-      if (channel == websocketpp::log::elevel::devel) {
+    }
+    else
+    {
+      if (channel == websocketpp::log::elevel::devel)
+      {
         _callback(WebSocketLogLevel::Debug, msg);
-      } else if (channel == websocketpp::log::elevel::library) {
+      }
+      else if (channel == websocketpp::log::elevel::library)
+      {
         _callback(WebSocketLogLevel::Debug, msg);
-      } else if (channel == websocketpp::log::elevel::info) {
+      }
+      else if (channel == websocketpp::log::elevel::info)
+      {
         _callback(WebSocketLogLevel::Info, msg);
-      } else if (channel == websocketpp::log::elevel::warn) {
+      }
+      else if (channel == websocketpp::log::elevel::warn)
+      {
         _callback(WebSocketLogLevel::Warn, msg);
-      } else if (channel == websocketpp::log::elevel::rerror) {
+      }
+      else if (channel == websocketpp::log::elevel::rerror)
+      {
         _callback(WebSocketLogLevel::Error, msg);
-      } else if (channel == websocketpp::log::elevel::fatal) {
+      }
+      else if (channel == websocketpp::log::elevel::fatal)
+      {
         _callback(WebSocketLogLevel::Critical, msg);
       }
     }

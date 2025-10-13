@@ -14,66 +14,64 @@
 #ifndef PARAMETER_INTERFACE_HPP_
 #define PARAMETER_INTERFACE_HPP_
 
-#include <rclcpp/rclcpp.hpp>
-#include <rclcpp/parameter_map.hpp>
-
-#include <parameter.hpp>
 #include <chrono>
 #include <functional>
 #include <mutex>
 #include <regex>
 #include <string>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
+#include <rclcpp/parameter_map.hpp>
+#include <rclcpp/rclcpp.hpp>
+
+#include <parameter.hpp>
 
 namespace cobridge
 {
-
 using ParameterList = std::vector<cobridge_base::Parameter>;
 using ParamUpdateFunc = std::function<void (const ParameterList &)>;
 
 class ParameterInterface
 {
 public:
-  ParameterInterface(rclcpp::Node * node, std::vector<std::regex> param_whitelist_patterns);
+  ParameterInterface(rclcpp::Node *node, std::vector<std::regex> param_whitelist_patterns);
 
   ParameterList get_params(
-    const std::vector<std::string> & param_names,
-    const std::chrono::duration<double> & timeout);
+    const std::vector<std::string> &param_names,
+    const std::chrono::duration<double> &timeout);
 
-  void set_params(const ParameterList & parameters, const std::chrono::duration<double> & timeout);
+  void set_params(const ParameterList &parameters, const std::chrono::duration<double> &timeout);
 
-  void subscribe_params(const std::vector<std::string> & param_names);
+  void subscribe_params(const std::vector<std::string> &param_names);
 
-  void unsubscribe_params(const std::vector<std::string> & param_names);
+  void unsubscribe_params(const std::vector<std::string> &param_names);
 
   void set_param_update_callback(ParamUpdateFunc param_update_func);
 
 private:
-  rclcpp::Node * _node;
+  rclcpp::Node *_node;
   std::vector<std::regex> _param_whitelist_patterns;
   rclcpp::CallbackGroup::SharedPtr _callback_group;
   std::mutex _mutex;
   std::unordered_map<std::string, rclcpp::AsyncParametersClient::SharedPtr> _param_clients_by_node;
-  std::unordered_map<std::string, std::unordered_set<std::string>> _subscribed_params_by_node;
+  std::unordered_map<std::string, std::unordered_set<std::string> > _subscribed_params_by_node;
   std::unordered_map<std::string, rclcpp::SubscriptionBase::SharedPtr> _param_subscriptions_by_node;
   ParamUpdateFunc _param_update_func;
 
   ParameterList get_node_parameters(
     const rclcpp::AsyncParametersClient::SharedPtr param_client,
-    const std::string & node_name,
-    const std::vector<std::string> & param_names,
-    const std::chrono::duration<double> & timeout);
+    const std::string &node_name,
+    const std::vector<std::string> &param_names,
+    const std::chrono::duration<double> &timeout);
 
   void set_node_parameters(
     rclcpp::AsyncParametersClient::SharedPtr param_client,
-    const std::string & node_name, const std::vector<rclcpp::Parameter> & params,
-    const std::chrono::duration<double> & timeout);
+    const std::string &node_name, const std::vector<rclcpp::Parameter> &params,
+    const std::chrono::duration<double> &timeout);
 
-  bool is_whitelisted_param(const std::string & param_name);
+  bool is_whitelisted_param(const std::string &param_name);
 };
-
 }  // namespace cobridge
 #endif  // PARAMETER_INTERFACE_HPP_

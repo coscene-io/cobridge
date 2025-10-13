@@ -26,7 +26,7 @@ else()
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
-set(AMENT_LINT_FILTERS "-build/include_order")
+set(AMENT_LINT_FILTERS "-build/include_order,-runtime/indentation_namespace")
 
 macro(enable_strict_compiler_warnings target)
     if(MSVC)
@@ -297,7 +297,26 @@ elseif(ROS_BUILD_TYPE STREQUAL "ament_cmake")
 
         find_package(ament_cmake_gtest REQUIRED)
         find_package(ament_lint_auto REQUIRED)
-        ament_lint_auto_find_test_dependencies()
+
+        # Configure custom uncrustify configuration for consistent formatting across all ROS distributions
+        set(UNCRUSTIFY_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/.uncrustify.cfg")
+        if(EXISTS "${UNCRUSTIFY_CONFIG_FILE}")
+            message(STATUS "Using custom uncrustify configuration: ${UNCRUSTIFY_CONFIG_FILE}")
+            # Exclude uncrustify from ament_lint_auto since we're configuring it manually
+            set(ament_cmake_uncrustify_FOUND TRUE)
+            list(APPEND AMENT_LINT_AUTO_EXCLUDE ament_cmake_uncrustify)
+            ament_lint_auto_find_test_dependencies()
+
+            # Manually configure ament_uncrustify with our custom config
+            find_package(ament_cmake_uncrustify REQUIRED)
+            ament_uncrustify(
+                CONFIG_FILE "${UNCRUSTIFY_CONFIG_FILE}"
+                TESTNAME "uncrustify"
+            )
+        else()
+            message(WARNING "Custom uncrustify configuration file not found at ${UNCRUSTIFY_CONFIG_FILE}. Using default configuration.")
+            ament_lint_auto_find_test_dependencies()
+        endif()
 
         ament_add_gtest(version_test cobridge_base/tests/version_test.cpp)
         target_link_libraries(version_test cobridge_base)
@@ -352,6 +371,24 @@ elseif(ROS_BUILD_TYPE STREQUAL "ament_cmake")
     install(FILES ros2_bridge/include/utils.hpp
             DESTINATION include/${PROJECT_NAME}/
     )
+
+    # Create AMENT_IGNORE files to exclude build artifacts from linting
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/AMENT_IGNORE
+      "# This file tells ament tools to ignore this directory and all subdirectories\n")
+
+    # Install AMENT_IGNORE to install directory
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/AMENT_IGNORE
+            DESTINATION ../
+    )
+
+    # Create AMENT_IGNORE in build directory (direct write, not installed)
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/../build/AMENT_IGNORE
+      "# This file tells ament tools to ignore this directory and all subdirectories\n")
+
+    # Create AMENT_IGNORE in vendor directory (ensure it exists)
+    file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/vendor/AMENT_IGNORE
+      "# This file tells ament tools to ignore this directory and all subdirectories\n")
+
     ament_export_libraries(cobridge_base cobridge_component http_server)
     ament_package()
 endif()

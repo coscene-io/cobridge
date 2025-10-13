@@ -12,32 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <websocketpp/config/asio_client.hpp>
-
-#include <serialization.hpp>
-#include <test/test_client.hpp>
-#include <websocket_client.hpp>
-
 #include <chrono>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include <websocketpp/config/asio_client.hpp>
+
+#include <serialization.hpp>
+#include <test/test_client.hpp>
+#include <websocket_client.hpp>
+
 namespace cobridge_base
 {
-
 std::future<std::string> wait_for_kicked(std::shared_ptr<ClientInterface> client)
 {
-  auto promise = std::make_shared<std::promise<std::string>>();
+  auto promise = std::make_shared<std::promise<std::string> >();
   auto future = promise->get_future();
 
   client->set_text_message_handler(
-    [promise](const std::string & payload) {
+    [promise](const std::string &payload) {
       const auto msg = nlohmann::json::parse(payload);
-      const auto & op = msg["op"].get<std::string>();
+      const auto &op = msg["op"].get<std::string>();
 
-      if (op == "kicked") {
+      if (op == "kicked")
+      {
         promise->set_value(msg.dump());
       }
     });
@@ -49,15 +49,16 @@ std::future<std::string> wait_for_login(
   std::shared_ptr<ClientInterface> client,
   std::string operate)
 {
-  auto promise = std::make_shared<std::promise<std::string>>();
+  auto promise = std::make_shared<std::promise<std::string> >();
   auto future = promise->get_future();
 
   client->set_text_message_handler(
-    [promise, operate](const std::string & payload) {
+    [promise, operate](const std::string &payload) {
       const auto msg = nlohmann::json::parse(payload);
       std::string op = msg["op"].get<std::string>();
 
-      if (op == operate) {
+      if (op == operate)
+      {
         promise->set_value(msg.dump());
       }
     });
@@ -65,16 +66,17 @@ std::future<std::string> wait_for_login(
   return future;
 }
 
-std::future<std::vector<uint8_t>> wait_for_channel_msg(
-  ClientInterface * client,
+std::future<std::vector<uint8_t> > wait_for_channel_msg(
+  ClientInterface *client,
   SubscriptionId subscription_id)
 {
-  auto promise = std::make_shared<std::promise<std::vector<uint8_t>>>();
+  auto promise = std::make_shared<std::promise<std::vector<uint8_t> > >();
   auto future = promise->get_future();
 
   client->set_binary_message_handler(
-    [promise, subscription_id](const uint8_t * data, size_t dataLength) {
-      if (read_uint32_LE(data + 1) != subscription_id) {
+    [promise, subscription_id](const uint8_t *data, size_t dataLength) {
+      if (read_uint32_LE(data + 1) != subscription_id)
+      {
         return;
       }
       const size_t offset = 1 + 4 + 8;
@@ -86,21 +88,22 @@ std::future<std::vector<uint8_t>> wait_for_channel_msg(
   return future;
 }
 
-std::future<std::vector<Parameter>> wait_for_parameters(
+std::future<std::vector<Parameter> > wait_for_parameters(
   std::shared_ptr<ClientInterface> client,
-  const std::string & request_id)
+  const std::string &request_id)
 {
-  auto promise = std::make_shared<std::promise<std::vector<Parameter>>>();
+  auto promise = std::make_shared<std::promise<std::vector<Parameter> > >();
   auto future = promise->get_future();
 
   client->set_text_message_handler(
-    [promise, request_id](const std::string & payload) {
+    [promise, request_id](const std::string &payload) {
       const auto msg = nlohmann::json::parse(payload);
-      const auto & op = msg["op"].get<std::string>();
+      const auto &op = msg["op"].get<std::string>();
       const auto id = msg.value("id", "");
 
-      if (op == "parameterValues" && (request_id.empty() || request_id == id)) {
-        const auto parameters = msg["parameters"].get<std::vector<Parameter>>();
+      if (op == "parameterValues" && (request_id.empty() || request_id == id))
+      {
+        const auto parameters = msg["parameters"].get<std::vector<Parameter> >();
         promise->set_value(std::move(parameters));
       }
     });
@@ -110,12 +113,13 @@ std::future<std::vector<Parameter>> wait_for_parameters(
 
 std::future<ServiceResponse> wait_for_service_response(std::shared_ptr<ClientInterface> client)
 {
-  auto promise = std::make_shared<std::promise<ServiceResponse>>();
+  auto promise = std::make_shared<std::promise<ServiceResponse> >();
   auto future = promise->get_future();
 
   client->set_binary_message_handler(
-    [promise](const uint8_t * data, size_t data_length) mutable {
-      if (static_cast<BinaryOpcode>(data[0]) != BinaryOpcode::SERVICE_CALL_RESPONSE) {
+    [promise](const uint8_t *data, size_t data_length) mutable {
+      if (static_cast<BinaryOpcode>(data[0]) != BinaryOpcode::SERVICE_CALL_RESPONSE)
+      {
         return;
       }
 
@@ -128,20 +132,23 @@ std::future<ServiceResponse> wait_for_service_response(std::shared_ptr<ClientInt
 
 std::future<Service> wait_for_service(
   std::shared_ptr<ClientInterface> client,
-  const std::string & service_name)
+  const std::string &service_name)
 {
-  auto promise = std::make_shared<std::promise<Service>>();
+  auto promise = std::make_shared<std::promise<Service> >();
   auto future = promise->get_future();
 
   client->set_text_message_handler(
-    [promise, service_name](const std::string & payload) mutable {
+    [promise, service_name](const std::string &payload) mutable {
       const auto msg = nlohmann::json::parse(payload);
-      const auto & op = msg["op"].get<std::string>();
+      const auto &op = msg["op"].get<std::string>();
 
-      if (op == "advertiseServices") {
-        const auto services = msg["services"].get<std::vector<Service>>();
-        for (const auto & service : services) {
-          if (service.name == service_name) {
+      if (op == "advertiseServices")
+      {
+        const auto services = msg["services"].get<std::vector<Service> >();
+        for (const auto &service : services)
+        {
+          if (service.name == service_name)
+          {
             promise->set_value(service);
             break;
           }
@@ -154,20 +161,23 @@ std::future<Service> wait_for_service(
 
 std::future<Channel> wait_for_channel(
   std::shared_ptr<ClientInterface> client,
-  const std::string & topic_name)
+  const std::string &topic_name)
 {
-  auto promise = std::make_shared<std::promise<Channel>>();
+  auto promise = std::make_shared<std::promise<Channel> >();
   auto future = promise->get_future();
 
   client->set_text_message_handler(
-    [promise, topic_name](const std::string & payload) mutable {
+    [promise, topic_name](const std::string &payload) mutable {
       const auto msg = nlohmann::json::parse(payload);
-      const auto & op = msg["op"].get<std::string>();
+      const auto &op = msg["op"].get<std::string>();
 
-      if (op == "advertise") {
-        const auto channels = msg["channels"].get<std::vector<Channel>>();
-        for (const auto & channel : channels) {
-          if (channel.topic == topic_name) {
+      if (op == "advertise")
+      {
+        const auto channels = msg["channels"].get<std::vector<Channel> >();
+        for (const auto &channel : channels)
+        {
+          if (channel.topic == topic_name)
+          {
             promise->set_value(channel);
             break;
           }
@@ -181,12 +191,13 @@ std::future<FetchAssetResponse> wait_for_fetch_asset_response(
   std::shared_ptr<ClientInterface>
   client)
 {
-  auto promise = std::make_shared<std::promise<FetchAssetResponse>>();
+  auto promise = std::make_shared<std::promise<FetchAssetResponse> >();
   auto future = promise->get_future();
 
   client->set_binary_message_handler(
-    [promise](const uint8_t * data, size_t data_length) mutable {
-      if (static_cast<BinaryOpcode>(data[0]) != BinaryOpcode::FETCH_ASSET_RESPONSE) {
+    [promise](const uint8_t *data, size_t data_length) mutable {
+      if (static_cast<BinaryOpcode>(data[0]) != BinaryOpcode::FETCH_ASSET_RESPONSE)
+      {
         return;
       }
 
@@ -199,7 +210,7 @@ std::future<FetchAssetResponse> wait_for_fetch_asset_response(
       const size_t errorMsgLength = static_cast<size_t>(read_uint32_LE(data + offset));
       offset += 4;
       response.error_message =
-      std::string(reinterpret_cast<const char *>(data + offset), errorMsgLength);
+        std::string(reinterpret_cast<const char *>(data + offset), errorMsgLength);
       offset += errorMsgLength;
       const auto payloadLength = data_length - offset;
       response.data.resize(payloadLength);
@@ -210,5 +221,4 @@ std::future<FetchAssetResponse> wait_for_fetch_asset_response(
 }
 
 template class Client<websocketpp::config::asio_client>;
-
 }  // namespace cobridge_base

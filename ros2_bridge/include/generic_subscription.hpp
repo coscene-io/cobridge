@@ -26,7 +26,6 @@
 
 namespace cobridge
 {
-
 /**
  * This class is an implementation of an rclcpp::Subscription for serialized messages whose topic
  * is not known at compile time (hence templating does not work).
@@ -48,16 +47,16 @@ public:
    * \param callback Callback for new messages of serialized form
    */
   GenericSubscription(
-    rclcpp::node_interfaces::NodeBaseInterface * node_base,
-    const rosidl_message_type_support_t & ts,
+    rclcpp::node_interfaces::NodeBaseInterface *node_base,
+    const rosidl_message_type_support_t &ts,
     std::string topic_name,
     std::string topic_type,
-    const rclcpp::QoS & qos,
+    const rclcpp::QoS &qos,
     std::function<void(std::shared_ptr<rclcpp::SerializedMessage>, uint64_t timestamp)> callback);
 
   GenericSubscription(const GenericSubscription &) = delete;
 
-  GenericSubscription & operator=(const GenericSubscription &) = delete;
+  GenericSubscription &operator=(const GenericSubscription &) = delete;
 
   // Same as create_serialized_message() as the subscription is to serialized_messages only
   std::shared_ptr<void> create_message() override;
@@ -65,18 +64,18 @@ public:
   std::shared_ptr<rclcpp::SerializedMessage> create_serialized_message() override;
 
   void handle_message(
-    std::shared_ptr<void> & message, const rclcpp::MessageInfo & message_info) override;
+    std::shared_ptr<void> &message, const rclcpp::MessageInfo &message_info) override;
 
   void handle_loaned_message(
-    void * loaned_message, const rclcpp::MessageInfo & message_info) override;
+    void *loaned_message, const rclcpp::MessageInfo &message_info) override;
 
   // Same as return_serialized_message() as the subscription is to serialized_messages only
-  void return_message(std::shared_ptr<void> & message) override;
+  void return_message(std::shared_ptr<void> &message) override;
 
-  void return_serialized_message(std::shared_ptr<rclcpp::SerializedMessage> & message) override;
+  void return_serialized_message(std::shared_ptr<rclcpp::SerializedMessage> &message) override;
 
   // Provide a const reference to the QoS Profile used to create this subscription.
-  const rclcpp::QoS & qos_profile() const;
+  const rclcpp::QoS &qos_profile() const;
 
 private:
   static std::shared_ptr<rclcpp::SerializedMessage> borrow_serialized_message(size_t capacity);
