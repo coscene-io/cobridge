@@ -10,7 +10,7 @@ ROS_BIN_PATH := /opt/ros/$(ROS_DISTRO)/bin
 
 lint:
 	/ros_entrypoint.sh $(ROS_BIN_PATH)/ament_cpplint --filter=-build/include_order cobridge_base ros1_bridge ros2_bridge
-	/ros_entrypoint.sh $(ROS_BIN_PATH)/ament_uncrustify -c .uncrustify.cfg cobridge_base ros1_bridge ros2_bridge
+	/ros_entrypoint.sh $(ROS_BIN_PATH)/ament_uncrustify cobridge_base ros1_bridge ros2_bridge
 	/ros_entrypoint.sh $(ROS_BIN_PATH)/ament_copyright cobridge_base ros1_bridge ros2_bridge
 	/ros_entrypoint.sh $(ROS_BIN_PATH)/ament_cppcheck cobridge_base ros1_bridge ros2_bridge
 	/ros_entrypoint.sh $(ROS_BIN_PATH)/ament_xmllint cobridge_base ros1_bridge ros2_bridge
