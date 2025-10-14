@@ -297,26 +297,7 @@ elseif(ROS_BUILD_TYPE STREQUAL "ament_cmake")
 
         find_package(ament_cmake_gtest REQUIRED)
         find_package(ament_lint_auto REQUIRED)
-
-        # Configure custom uncrustify configuration for consistent formatting across all ROS distributions
-        set(UNCRUSTIFY_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/.uncrustify.cfg")
-        if(EXISTS "${UNCRUSTIFY_CONFIG_FILE}")
-            message(STATUS "Using custom uncrustify configuration: ${UNCRUSTIFY_CONFIG_FILE}")
-            # Exclude uncrustify from ament_lint_auto since we're configuring it manually
-            set(ament_cmake_uncrustify_FOUND TRUE)
-            list(APPEND AMENT_LINT_AUTO_EXCLUDE ament_cmake_uncrustify)
-            ament_lint_auto_find_test_dependencies()
-
-            # Manually configure ament_uncrustify with our custom config
-            find_package(ament_cmake_uncrustify REQUIRED)
-            ament_uncrustify(
-                CONFIG_FILE "${UNCRUSTIFY_CONFIG_FILE}"
-                TESTNAME "uncrustify"
-            )
-        else()
-            message(WARNING "Custom uncrustify configuration file not found at ${UNCRUSTIFY_CONFIG_FILE}. Using default configuration.")
-            ament_lint_auto_find_test_dependencies()
-        endif()
+        ament_lint_auto_find_test_dependencies()
 
         ament_add_gtest(version_test cobridge_base/tests/version_test.cpp)
         target_link_libraries(version_test cobridge_base)

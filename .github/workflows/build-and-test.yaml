@@ -44,4 +44,3 @@ jobs:
         uses: 'ros-industrial/industrial_ci@master'
         env:
           ROS_DISTRO: ${{ matrix.ROS_DISTRO }}
-          NOT_TEST_INSTALL: true
