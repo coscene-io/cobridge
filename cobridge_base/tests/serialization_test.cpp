@@ -51,8 +51,8 @@ protected:
   std::vector<uint8_t> createValidMessage(
     uint32_t service_id = 100,
     uint32_t call_id = 200,
-    const std::string &encoding = "cdr",
-    const std::vector<uint8_t> &payload = {0x01, 0x02, 0x03})
+    const std::string & encoding = "cdr",
+    const std::vector<uint8_t> & payload = {0x01, 0x02, 0x03})
   {
     std::vector<uint8_t> message;
 
@@ -122,8 +122,7 @@ TEST_F(ServiceResponseReadTest, DifferentEncodings)
 {
   std::vector<std::string> encodings = {"cdr", "json", "protobuf", "msgpack"};
 
-  for (const auto &enc : encodings)
-  {
+  for (const auto & enc : encodings) {
     auto message = createValidMessage(1, 1, enc, {0x01});
     ServiceResponse response;
     EXPECT_NO_THROW(response.read(message.data(), message.size()));
@@ -135,8 +134,7 @@ TEST_F(ServiceResponseReadTest, DifferentEncodings)
 TEST_F(ServiceResponseReadTest, MessageTooShort)
 {
   // Test with various short lengths
-  for (size_t len = 0; len < 12; ++len)
-  {
+  for (size_t len = 0; len < 12; ++len) {
     std::vector<uint8_t> message(len, 0x00);
     ServiceResponse response;
 

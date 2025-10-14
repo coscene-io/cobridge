@@ -41,7 +41,7 @@ struct MessageSpec
 {
   MessageSpec(
     MessageDefinitionFormat format, std::string text,
-    const std::string &package_context);
+    const std::string & package_context);
 
   const std::set<std::string> dependencies;
   const std::string text;
@@ -53,7 +53,7 @@ struct DefinitionIdentifier
   MessageDefinitionFormat format;
   std::string package_resource_name;
 
-  bool operator==(const DefinitionIdentifier &di) const
+  bool operator==(const DefinitionIdentifier & di) const
   {
     return (format == di.format) && (package_resource_name == di.package_resource_name);
   }
@@ -66,7 +66,7 @@ private:
 
 public:
   explicit DefinitionNotFoundError(std::string name)
-    : _name(std::move(name))
+  : _name(std::move(name))
   {
   }
 
@@ -79,7 +79,6 @@ public:
 class MessageDefinitionCache final
 {
 public:
-
   /**
    * Concatenate the message definition with its dependencies into a self-contained schema.
    * The format is different for MSG and IDL definitions, and is described fully here:
@@ -89,15 +88,15 @@ public:
    * package resource name.
    */
   std::pair<MessageDefinitionFormat, std::string> get_full_msg_text(
-    const std::string &package_resource_name);
+    const std::string & package_resource_name);
 
-  std::unordered_map<std::string, std::pair<MessageDefinitionFormat, std::string> >
-  get_full_srv_text(const std::string &service_name);
+  std::unordered_map<std::string, std::pair<MessageDefinitionFormat, std::string>>
+  get_full_srv_text(const std::string & service_name);
 
 private:
   struct DefinitionIdentifierHash
   {
-    std::size_t operator()(const DefinitionIdentifier &di) const
+    std::size_t operator()(const DefinitionIdentifier & di) const
     {
       std::size_t h1 = std::hash<MessageDefinitionFormat>()(di.format);
       std::size_t h2 = std::hash<std::string>()(di.package_resource_name);
@@ -109,16 +108,16 @@ private:
    * Load and parse the message file referenced by the given datatype, or return it from
    * msg_specs_by_datatype
    */
-  const MessageSpec &load_message_spec(const DefinitionIdentifier &definition_identifier);
+  const MessageSpec & load_message_spec(const DefinitionIdentifier & definition_identifier);
 
-  const MessageSpec &load_service_spec(const DefinitionIdentifier &definition_identifier);
+  const MessageSpec & load_service_spec(const DefinitionIdentifier & definition_identifier);
 
   std::unordered_map<DefinitionIdentifier, MessageSpec, DefinitionIdentifierHash>
   msg_specs_by_definition_identifier_;
 };
 
 std::set<std::string> parse_dependencies(
-  MessageDefinitionFormat format, const std::string &text,
-  const std::string &package_context);
+  MessageDefinitionFormat format, const std::string & text,
+  const std::string & package_context);
 }  // namespace cobridge_base
 #endif  // MESSAGE_DEFINITION_CACHE_HPP_

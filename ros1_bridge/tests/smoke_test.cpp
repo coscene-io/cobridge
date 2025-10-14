@@ -32,7 +32,7 @@
 #define URI "ws://localhost:9876"
 
 constexpr uint8_t HELLO_WORLD_BINARY[] = {11, 0, 0, 0, 104, 101, 108, 108,
-                                          111, 32, 119, 111, 114, 108, 100};
+  111, 32, 119, 111, 114, 108, 100};
 
 constexpr auto THREE_SECOND = std::chrono::seconds(3);
 constexpr auto DEFAULT_TIMEOUT = std::chrono::seconds(8);
@@ -47,14 +47,13 @@ constexpr auto DEFAULT_TIMEOUT = std::chrono::seconds(8);
 using json = nlohmann::json;
 
 void CompareJsonWithoutFields(
-  const std::string &jsonStr1, const std::string &jsonStr2,
-  const std::vector<std::string> &keysToErase = {"sessionId", "metadata"})
+  const std::string & jsonStr1, const std::string & jsonStr2,
+  const std::vector<std::string> & keysToErase = {"sessionId", "metadata"})
 {
   json obj1 = json::parse(jsonStr1);
   json obj2 = json::parse(jsonStr2);
 
-  for (const auto &key : keysToErase)
-  {
+  for (const auto & key : keysToErase) {
     obj1.erase(key);
     obj2.erase(key);
   }
@@ -77,14 +76,14 @@ protected:
     const std::vector<double> param2_default = PARAM_2_DEFAULT_VALUE_INIT;
     nh_.setParam(PARAM_2_NAME, param2_default);
 
-    client_ = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client> >();
+    client_ = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
     ASSERT_EQ(std::future_status::ready, client_->connect(URI).wait_for(DEFAULT_TIMEOUT));
 
     client_->login("test user", "test-user-id-0000");
   }
 
   ros::NodeHandle nh_;
-  std::shared_ptr<cobridge_base::Client<websocketpp::config::asio_client> > client_;
+  std::shared_ptr<cobridge_base::Client<websocketpp::config::asio_client>> client_;
 };
 
 class ServiceTest : public ::testing::Test
@@ -101,7 +100,7 @@ private:
   ros::NodeHandle _nh;
   ros::ServiceServer _service;
 
-  static bool serviceCallback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res)
+  static bool serviceCallback(std_srvs::SetBool::Request & req, std_srvs::SetBool::Response & res)
   {
     res.message = "hello";
     res.success = req.data;
@@ -111,7 +110,7 @@ private:
 
 TEST(SmokeTest, testMultiConnection)
 {
-  auto client_0 = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client> >();
+  auto client_0 = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
   auto client0_login_future = cobridge_base::wait_for_login(client_0, "login");
 
   EXPECT_EQ(std::future_status::ready, client_0->connect(URI).wait_for(DEFAULT_TIMEOUT));
@@ -120,10 +119,10 @@ TEST(SmokeTest, testMultiConnection)
     "{\"op\":\"login\",\"userId\":\"\",\"username\":\"\"}",
     client0_login_future.get(),
     {"infoPort", "lanCandidates", "macAddr", "linkType"}
-    );
+  );
   client_0->login("user_0", "test-user-id-0000");
 
-  auto client_1 = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client> >();
+  auto client_1 = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
   auto client1_login_future = cobridge_base::wait_for_login(client_1, "login");
   EXPECT_EQ(std::future_status::ready, client_1->connect(URI).wait_for(DEFAULT_TIMEOUT));
   EXPECT_EQ(std::future_status::ready, client1_login_future.wait_for(THREE_SECOND));
@@ -158,7 +157,7 @@ TEST(SmokeTest, testSubscription)
   pub.publish(std::string("hello world"));
 
   // Set up a client and subscribe to the channel.
-  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client> >();
+  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
   auto channel_future = cobridge_base::wait_for_channel(client, topic_name);
   ASSERT_EQ(std::future_status::ready, client->connect(URI).wait_for(THREE_SECOND));
   client->login("test user", "test-user-id-0000");
@@ -168,7 +167,7 @@ TEST(SmokeTest, testSubscription)
 
   // Subscribe to the channel and confirm that the promise resolves
   auto msg_future = cobridge_base::wait_for_channel_msg(client.get(), subscription_id);
-  client->subscribe({ {subscription_id, channel.id} });
+  client->subscribe({{subscription_id, channel.id}});
   ASSERT_EQ(std::future_status::ready, msg_future.wait_for(THREE_SECOND));
   const auto msg_data = msg_future.get();
   ASSERT_EQ(sizeof(HELLO_WORLD_BINARY), msg_data.size());
@@ -181,7 +180,7 @@ TEST(SmokeTest, testSubscription)
 TEST(SmokeTest, testPublishing)
 {
   // cobridge_base::Client<websocketpp::config::asio_client> client;
-  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client> >();
+  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
 
   cobridge_base::ClientAdvertisement advertisement;
 
@@ -195,8 +194,8 @@ TEST(SmokeTest, testPublishing)
   std::promise<std::string> msg_promise;
   auto msg_future = msg_promise.get_future();
   auto subscriber = nh.subscribe<std_msgs::String>(
-    advertisement.topic, 10, [&msg_promise](const std_msgs::String::ConstPtr &msg) {
-    msg_promise.set_value(msg->data);
+    advertisement.topic, 10, [&msg_promise](const std_msgs::String::ConstPtr & msg) {
+      msg_promise.set_value(msg->data);
   });
 
   // Set up the client, advertise and publish the binary message
@@ -253,12 +252,12 @@ TEST_F(ParameterTest, testGetParameters)
 
   EXPECT_EQ(2UL, params.size());
   auto p1Iter = std::find_if(
-    params.begin(), params.end(), [](const cobridge_base::Parameter &param) {
-    return param.get_name() == PARAM_1_NAME;
+    params.begin(), params.end(), [](const cobridge_base::Parameter & param) {
+      return param.get_name() == PARAM_1_NAME;
   });
   auto p2Iter = std::find_if(
-    params.begin(), params.end(), [](const cobridge_base::Parameter &param) {
-    return param.get_name() == PARAM_2_NAME;
+    params.begin(), params.end(), [](const cobridge_base::Parameter & param) {
+      return param.get_name() == PARAM_2_NAME;
   });
   ASSERT_NE(p1Iter, params.end());
   EXPECT_EQ(PARAM_1_DEFAULT_VALUE, p1Iter->get_value().getValue<PARAM_1_TYPE>());
@@ -266,9 +265,8 @@ TEST_F(ParameterTest, testGetParameters)
 
   std::vector<double> double_array_val;
   const auto array_params =
-    p2Iter->get_value().getValue<std::vector<cobridge_base::ParameterValue> >();
-  for (const auto &paramValue : array_params)
-  {
+    p2Iter->get_value().getValue<std::vector<cobridge_base::ParameterValue>>();
+  for (const auto & paramValue : array_params) {
     double_array_val.push_back(paramValue.getValue<double>());
   }
   const std::vector<double> expected_value = PARAM_2_DEFAULT_VALUE_INIT;
@@ -296,12 +294,12 @@ TEST_F(ParameterTest, testSetParameters)
 
   EXPECT_EQ(2UL, params.size());
   auto p1Iter = std::find_if(
-    params.begin(), params.end(), [](const cobridge_base::Parameter &param) {
-    return param.get_name() == PARAM_1_NAME;
+    params.begin(), params.end(), [](const cobridge_base::Parameter & param) {
+      return param.get_name() == PARAM_1_NAME;
   });
   auto p2Iter = std::find_if(
-    params.begin(), params.end(), [](const cobridge_base::Parameter &param) {
-    return param.get_name() == PARAM_2_NAME;
+    params.begin(), params.end(), [](const cobridge_base::Parameter & param) {
+      return param.get_name() == PARAM_2_NAME;
   });
   ASSERT_NE(p1Iter, params.end());
   EXPECT_EQ(newP1value, p1Iter->get_value().getValue<PARAM_1_TYPE>());
@@ -309,9 +307,8 @@ TEST_F(ParameterTest, testSetParameters)
 
   std::vector<double> double_array_val;
   const auto array_params =
-    p2Iter->get_value().getValue<std::vector<cobridge_base::ParameterValue> >();
-  for (const auto &paramValue : array_params)
-  {
+    p2Iter->get_value().getValue<std::vector<cobridge_base::ParameterValue>>();
+  for (const auto & paramValue : array_params) {
     double_array_val.push_back(paramValue.getValue<double>());
   }
   const std::vector<double> expected_value = {4.1, 5.5, 6.6};
@@ -379,7 +376,7 @@ TEST_F(ParameterTest, testParameterSubscription)
 TEST_F(ServiceTest, testCallService)
 {
   // Connect a few clients (in parallel) and make sure that they can all call the service
-  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client> >();
+  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
 
   ASSERT_EQ(std::future_status::ready, client->connect(URI).wait_for(THREE_SECOND));
 
@@ -411,7 +408,7 @@ TEST_F(ServiceTest, testCallService)
 
 TEST(FetchAssetTest, fetchExistingAsset)
 {
-  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client> >();
+  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
 
   EXPECT_EQ(std::future_status::ready, client->connect(URI).wait_for(DEFAULT_TIMEOUT));
 
@@ -444,7 +441,7 @@ TEST(FetchAssetTest, fetchExistingAsset)
 
 TEST(FetchAssetTest, fetchNonExistingAsset)
 {
-  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client> >();
+  auto client = std::make_shared<cobridge_base::Client<websocketpp::config::asio_client>>();
 
   EXPECT_EQ(std::future_status::ready, client->connect(URI).wait_for(DEFAULT_TIMEOUT));
 

@@ -54,37 +54,33 @@ static const std::unordered_set<std::string> PRIMITIVE_TYPES{
 };
 
 static std::set<std::string> parse_msg_dependencies(
-  const std::string &text,
-  const std::string &package_context)
+  const std::string & text,
+  const std::string & package_context)
 {
   std::set<std::string> dependencies;
 
   for (std::sregex_iterator iter(text.begin(), text.end(), MSG_FIELD_TYPE_REGEX);
-       iter != std::sregex_iterator(); ++iter)
+    iter != std::sregex_iterator(); ++iter)
   {
     std::string type = (*iter)[1];
-    if (PRIMITIVE_TYPES.find(type) != PRIMITIVE_TYPES.end())
-    {
+    if (PRIMITIVE_TYPES.find(type) != PRIMITIVE_TYPES.end()) {
       continue;
     }
-    if (type.find('/') == std::string::npos)
-    {
+    if (type.find('/') == std::string::npos) {
       dependencies.insert(package_context + '/' + std::move(type));
-    }
-    else
-    {
+    } else {
       dependencies.insert(std::move(type));
     }
   }
   return dependencies;
 }
 
-static std::set<std::string> parse_idl_dependencies(const std::string &text)
+static std::set<std::string> parse_idl_dependencies(const std::string & text)
 {
   std::set<std::string> dependencies;
 
   for (std::sregex_iterator iter(text.begin(), text.end(), IDL_FIELD_TYPE_REGEX);
-       iter != std::sregex_iterator(); ++iter)
+    iter != std::sregex_iterator(); ++iter)
   {
     dependencies.insert((*iter)[1]);
   }
@@ -92,11 +88,10 @@ static std::set<std::string> parse_idl_dependencies(const std::string &text)
 }
 
 std::set<std::string> parse_dependencies(
-  MessageDefinitionFormat format, const std::string &text,
-  const std::string &package_context)
+  MessageDefinitionFormat format, const std::string & text,
+  const std::string & package_context)
 {
-  switch (format)
-  {
+  switch (format) {
     case MessageDefinitionFormat::MSG:
     case MessageDefinitionFormat::SRV_RESP:
     case MessageDefinitionFormat::SRV_REQ:
@@ -112,8 +107,7 @@ std::set<std::string> parse_dependencies(
 
 static const char * extension_for_format(MessageDefinitionFormat format)
 {
-  switch (format)
-  {
+  switch (format) {
     case MessageDefinitionFormat::MSG:
     case MessageDefinitionFormat::SRV_RESP:
     case MessageDefinitionFormat::SRV_REQ:
@@ -127,13 +121,12 @@ static const char * extension_for_format(MessageDefinitionFormat format)
   }
 }
 
-static std::string delimiter(const DefinitionIdentifier &definition_identifier)
+static std::string delimiter(const DefinitionIdentifier & definition_identifier)
 {
   std::string result =
     "================================================================================\n";
 
-  switch (definition_identifier.format)
-  {
+  switch (definition_identifier.format) {
     case MessageDefinitionFormat::MSG:
     case MessageDefinitionFormat::SRV_RESP:
     case MessageDefinitionFormat::SRV_REQ:
@@ -151,15 +144,14 @@ static std::string delimiter(const DefinitionIdentifier &definition_identifier)
 }
 
 static std::vector<std::string> split_string(
-  const std::string &str,
-  const std::string &delimiter = "\n")
+  const std::string & str,
+  const std::string & delimiter = "\n")
 {
   std::vector<std::string> strings;
   std::string::size_type pos = 0;
   std::string::size_type prev = 0;
 
-  while ((pos = str.find(delimiter, prev)) != std::string::npos)
-  {
+  while ((pos = str.find(delimiter, prev)) != std::string::npos) {
     strings.push_back(str.substr(prev, pos - prev));
     prev = pos + delimiter.size();
   }
@@ -174,14 +166,13 @@ static std::vector<std::string> split_string(
 /// @param action_definition The full action definition as read from a .action file
 /// @return A tuple holding goal, result and feedback definitions
 static std::tuple<std::string, std::string, std::string> split_action_msg_definition(
-  const std::string &action_definition)
+  const std::string & action_definition)
 {
   constexpr char SEP[] = "\n---\n";
 
   const auto definitions = split_string(action_definition, SEP);
 
-  if (definitions.size() != 3)
-  {
+  if (definitions.size() != 3) {
     throw std::invalid_argument("Invalid action definition:\n" + action_definition);
   }
 
@@ -189,53 +180,45 @@ static std::tuple<std::string, std::string, std::string> split_action_msg_defini
 }
 
 static std::pair<std::string, std::string> split_service_definition(
-  const std::string &service_definition)
+  const std::string & service_definition)
 {
   // Convert all \r\n and \r to \n for consistent line endings
   std::string normalized_definition = service_definition;
   // Replace \r\n with \n
   size_t pos = 0;
 
-  while ((pos = normalized_definition.find("\r\n", pos)) != std::string::npos)
-  {
+  while ((pos = normalized_definition.find("\r\n", pos)) != std::string::npos) {
     normalized_definition.replace(pos, 2, "\n");
   }
   // Replace remaining \r with \n
   pos = 0;
-  while ((pos = normalized_definition.find('\r', pos)) != std::string::npos)
-  {
+  while ((pos = normalized_definition.find('\r', pos)) != std::string::npos) {
     normalized_definition.replace(pos, 1, "\n");
   }
 
   std::string SERVICE_REQUEST_RESPONSE_SEPARATOR = "---";
   const auto definitions = split_string(normalized_definition);
-  if (definitions.size() == 1 && definitions[0] != SERVICE_REQUEST_RESPONSE_SEPARATOR)
-  {
+  if (definitions.size() == 1 && definitions[0] != SERVICE_REQUEST_RESPONSE_SEPARATOR) {
     throw std::invalid_argument("Invalid service definition:\n" + service_definition);
   }
 
   std::string request, response;
   bool is_request = true;
-  for (const auto &definition : definitions)
-  {
-    if (definition == SERVICE_REQUEST_RESPONSE_SEPARATOR)
-    {
+  for (const auto & definition : definitions) {
+    if (definition == SERVICE_REQUEST_RESPONSE_SEPARATOR) {
       is_request = false;
       continue;
     }
-    if (is_request)
-    {
+    if (is_request) {
       request += definition + "\n";
-    }
-    else
-    {
+    } else {
       response += definition + "\n";
     }
   }
   return {request, response};
 }
 
-inline bool ends_with(const std::string &str, const std::string &suffix)
+inline bool ends_with(const std::string & str, const std::string & suffix)
 {
   return str.size() >= suffix.size() &&
          0 == str.compare(str.size() - suffix.size(), suffix.size(), suffix);
@@ -251,10 +234,8 @@ std::string remove_action_subtype(const std::string action_type)
     std::string(ACTION_GOAL_SERVICE_SUFFIX) + SERVICE_RESPONSE_MESSAGE_SUFFIX,
   };
 
-  for (const auto &suffix : action_subtype_suffixes)
-  {
-    if (ends_with(action_type, suffix))
-    {
+  for (const auto & suffix : action_subtype_suffixes) {
+    if (ends_with(action_type, suffix)) {
       return action_type.substr(0, action_type.length() - suffix.length());
     }
   }
@@ -264,21 +245,21 @@ std::string remove_action_subtype(const std::string action_type)
 
 MessageSpec::MessageSpec(
   MessageDefinitionFormat format, std::string text,
-  const std::string &package_context)
-  : dependencies(parse_dependencies(format, text, package_context)), text(std::move(text)), format(
+  const std::string & package_context)
+: dependencies(parse_dependencies(format, text, package_context)), text(std::move(text)), format(
     format)
 {
 }
 
-const MessageSpec &MessageDefinitionCache::load_service_spec(
-  const DefinitionIdentifier &definition_identifier)
+const MessageSpec & MessageDefinitionCache::load_service_spec(
+  const DefinitionIdentifier & definition_identifier)
 {
   DefinitionIdentifier cache{
     definition_identifier.format, definition_identifier.package_resource_name
   };
 
   if (auto it = msg_specs_by_definition_identifier_.find(cache);
-      it != msg_specs_by_definition_identifier_.end())
+    it != msg_specs_by_definition_identifier_.end())
   {
     return it->second;
   }
@@ -294,20 +275,18 @@ const MessageSpec &MessageDefinitionCache::load_service_spec(
   const std::string package = match[1].str();
   const std::string subfolder = match[2].str();
   const std::string type_name = match[3].str();
-  if (subfolder != "srv" && !subfolder.empty())
-  {
+  if (subfolder != "srv" && !subfolder.empty()) {
     throw std::invalid_argument("Invalid subfolder: " + subfolder);
   }
   bool is_service = subfolder == "srv";
   const std::string filename = is_service ?
-                               type_name + ".srv" :
-                               type_name + extension_for_format(definition_identifier.format);
+    type_name + ".srv" :
+    type_name + extension_for_format(definition_identifier.format);
   const std::string share_dir = ament_index_cpp::get_package_share_directory(package);
 
   // Get the rosidl_interfaces index contents for this package
   std::string index_contents;
-  if (!ament_index_cpp::get_resource("rosidl_interfaces", package, index_contents))
-  {
+  if (!ament_index_cpp::get_resource("rosidl_interfaces", package, index_contents)) {
     throw DefinitionNotFoundError(
             "get resource of 'rosidl_interfaces' failed: " +
             definition_identifier.package_resource_name);
@@ -315,40 +294,35 @@ const MessageSpec &MessageDefinitionCache::load_service_spec(
 
   const auto lines = split_string(index_contents);
   const auto lines_iter = std::find_if(
-    lines.begin(), lines.end(), [&filename](const std::string &line)
+    lines.begin(), lines.end(), [&filename](const std::string & line)
     {
       std::filesystem::path filePath(line);
       return filePath.filename() == filename;
     });
-  if (lines_iter == lines.end())
-  {
+  if (lines_iter == lines.end()) {
     throw DefinitionNotFoundError(
             "find " + filename + " in index_contents failed: " + index_contents);
   }
 
   const std::string full_path = share_dir + std::filesystem::path::preferred_separator +
-                                *lines_iter;
+    *lines_iter;
   std::ifstream file{full_path};
-  if (!file.good())
-  {
+  if (!file.good()) {
     throw DefinitionNotFoundError(
             "file " + full_path + " not found:" + definition_identifier.package_resource_name);
   }
-  const std::string contents{std::istreambuf_iterator(file), {} };
+  const std::string contents{std::istreambuf_iterator(file), {}};
 
   std::string return_val;
-  if (is_service)
-  {
+  if (is_service) {
     return_val = definition_identifier.format == MessageDefinitionFormat::SRV_REQ ?
-                 split_service_definition(contents).first :
-                 split_service_definition(contents).second;
-  }
-  else
-  {
+      split_service_definition(contents).first :
+      split_service_definition(contents).second;
+  } else {
     return_val = contents;
   }
 
-  const MessageSpec &spec =
+  const MessageSpec & spec =
     msg_specs_by_definition_identifier_
     .emplace(
       definition_identifier,
@@ -357,11 +331,11 @@ const MessageSpec &MessageDefinitionCache::load_service_spec(
   return spec;
 }
 
-const MessageSpec &MessageDefinitionCache::load_message_spec(
-  const DefinitionIdentifier &definition_identifier)
+const MessageSpec & MessageDefinitionCache::load_message_spec(
+  const DefinitionIdentifier & definition_identifier)
 {
   if (auto it = msg_specs_by_definition_identifier_.find(definition_identifier);
-      it != msg_specs_by_definition_identifier_.end())
+    it != msg_specs_by_definition_identifier_.end())
   {
     return it->second;
   }
@@ -383,46 +357,41 @@ const MessageSpec &MessageDefinitionCache::load_message_spec(
   // Type name: Fibonacci_FeedbackMessage -> Action name: Fibonacci
   const std::string action_name = is_action_type ? remove_action_subtype(type_name) : "";
   const std::string filename = is_action_type ?
-                               action_name + ".action" :
-                               type_name + extension_for_format(definition_identifier.format);
+    action_name + ".action" :
+    type_name + extension_for_format(definition_identifier.format);
 
   // Get the package share directory, or throw a PackageNotFoundError
   const std::string share_dir = ament_index_cpp::get_package_share_directory(package);
 
   // Get the rosidl_interfaces index contents for this package
   std::string index_contents;
-  if (!ament_index_cpp::get_resource("rosidl_interfaces", package, index_contents))
-  {
+  if (!ament_index_cpp::get_resource("rosidl_interfaces", package, index_contents)) {
     throw DefinitionNotFoundError(definition_identifier.package_resource_name);
   }
 
   // Find the first line that ends with the filename we're looking for
   const auto lines = split_string(index_contents);
   const auto lines_iter = std::find_if(
-    lines.begin(), lines.end(), [&filename](const std::string &line)
+    lines.begin(), lines.end(), [&filename](const std::string & line)
     {
       std::filesystem::path filePath(line);
       return filePath.filename() == filename;
     });
-  if (lines_iter == lines.end())
-  {
+  if (lines_iter == lines.end()) {
     throw DefinitionNotFoundError(definition_identifier.package_resource_name);
   }
 
   // Read the file
   const std::string full_path = share_dir + std::filesystem::path::preferred_separator +
-                                *lines_iter;
+    *lines_iter;
   std::ifstream file{full_path};
-  if (!file.good())
-  {
+  if (!file.good()) {
     throw DefinitionNotFoundError(definition_identifier.package_resource_name);
   }
-  const std::string contents{std::istreambuf_iterator(file), {} };
+  const std::string contents{std::istreambuf_iterator(file), {}};
 
-  if (is_action_type)
-  {
-    if (definition_identifier.format == MessageDefinitionFormat::MSG)
-    {
+  if (is_action_type) {
+    if (definition_identifier.format == MessageDefinitionFormat::MSG) {
       const auto [goalDef, resultDef, feedbackDef] = split_action_msg_definition(contents);
 
       // Define type definitions for each action subtype.
@@ -449,8 +418,7 @@ const MessageSpec &MessageDefinitionCache::load_message_spec(
       };
 
       // Create a MessageSpec instance for every action subtype and add it to the cache.
-      for (const auto & [action_suffix, definition] : action_type_definitions)
-      {
+      for (const auto & [action_suffix, definition] : action_type_definitions) {
         DefinitionIdentifier definition_id;
         definition_id.format = definition_identifier.format;
         definition_id.package_resource_name = package + "/action/" + action_name + action_suffix;
@@ -460,24 +428,19 @@ const MessageSpec &MessageDefinitionCache::load_message_spec(
 
       // Find the the subtype that was originally requested and return it.
       const auto iter = msg_specs_by_definition_identifier_.find(definition_identifier);
-      if (iter == msg_specs_by_definition_identifier_.end())
-      {
+      if (iter == msg_specs_by_definition_identifier_.end()) {
         throw DefinitionNotFoundError(definition_identifier.package_resource_name);
       }
       return iter->second;
-    }
-    else
-    {
+    } else {
       RCUTILS_LOG_ERROR_NAMED(
         "cobridge",
         "Action IDL definitions are currently not supported");
       throw DefinitionNotFoundError(definition_identifier.package_resource_name);
     }
-  }
-  else
-  {
+  } else {
     // Normal message type.
-    const MessageSpec &spec =
+    const MessageSpec & spec =
       msg_specs_by_definition_identifier_
       .emplace(
         definition_identifier,
@@ -490,22 +453,20 @@ const MessageSpec &MessageDefinitionCache::load_message_spec(
   }
 }
 
-std::unordered_map<std::string, std::pair<MessageDefinitionFormat, std::string> >
-MessageDefinitionCache::get_full_srv_text(const std::string &service_name)
+std::unordered_map<std::string, std::pair<MessageDefinitionFormat, std::string>>
+MessageDefinitionCache::get_full_srv_text(const std::string & service_name)
 {
   std::unordered_set<DefinitionIdentifier, DefinitionIdentifierHash> seen_deps;
 
   std::function<std::string(const DefinitionIdentifier &)> append_recursive =
-    [&](const DefinitionIdentifier &def_identifier)
+    [&](const DefinitionIdentifier & def_identifier)
     {
-      const MessageSpec &spec = load_service_spec(def_identifier);
+      const MessageSpec & spec = load_service_spec(def_identifier);
       std::string result = spec.text;
-      for (const auto &dep_name : spec.dependencies)
-      {
+      for (const auto & dep_name : spec.dependencies) {
         DefinitionIdentifier dep{def_identifier.format, dep_name};
         bool inserted = seen_deps.insert(dep).second;
-        if (inserted)
-        {
+        if (inserted) {
           result += "\n";
           result += delimiter(dep);
           result += append_recursive(dep);
@@ -524,34 +485,32 @@ MessageDefinitionCache::get_full_srv_text(const std::string &service_name)
       DefinitionIdentifier{
         MessageDefinitionFormat::SRV_RESP, service_name
       });
-  } catch (const DefinitionNotFoundError &err) {
+  } catch (const DefinitionNotFoundError & err) {
     RCUTILS_LOG_WARN_NAMED(
       "cobridge", "no .msg definition for %s, falling back to IDL",
       err.what());
   }
 
-  return std::unordered_map<std::string, std::pair<MessageDefinitionFormat, std::string> >{
+  return std::unordered_map<std::string, std::pair<MessageDefinitionFormat, std::string>>{
     {"request", std::make_pair(MessageDefinitionFormat::SRV_REQ, request)},
     {"response", std::make_pair(MessageDefinitionFormat::SRV_RESP, response)}
   };
 }
 
 std::pair<MessageDefinitionFormat, std::string> MessageDefinitionCache::get_full_msg_text(
-  const std::string &root_package_resource_name)
+  const std::string & root_package_resource_name)
 {
   std::unordered_set<DefinitionIdentifier, DefinitionIdentifierHash> seen_deps;
 
   std::function<std::string(const DefinitionIdentifier &)> append_recursive =
-    [&](const DefinitionIdentifier &definition_identifier)
+    [&](const DefinitionIdentifier & definition_identifier)
     {
-      const MessageSpec &spec = load_message_spec(definition_identifier);
+      const MessageSpec & spec = load_message_spec(definition_identifier);
       std::string result = spec.text;
-      for (const auto &dep_name : spec.dependencies)
-      {
+      for (const auto & dep_name : spec.dependencies) {
         DefinitionIdentifier dep{definition_identifier.format, dep_name};
         bool inserted = seen_deps.insert(dep).second;
-        if (inserted)
-        {
+        if (inserted) {
           result += "\n";
           result += delimiter(dep);
           result += append_recursive(dep);
@@ -565,7 +524,7 @@ std::pair<MessageDefinitionFormat, std::string> MessageDefinitionCache::get_full
 
   try {
     result = append_recursive(DefinitionIdentifier{format, root_package_resource_name});
-  } catch (const DefinitionNotFoundError &err) {
+  } catch (const DefinitionNotFoundError & err) {
     // log that we've fallen back
     RCUTILS_LOG_WARN_NAMED(
       "cobridge", "no .msg definition for %s, falling back to IDL",

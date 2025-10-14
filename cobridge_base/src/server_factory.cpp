@@ -23,31 +23,28 @@
 #include <websocket_tls.hpp>
 namespace cobridge_base
 {
-template <>
-std::unique_ptr<ServerInterface<websocketpp::connection_hdl> > ServerFactory::create_server(
-  const std::string &name,
-  const std::function<void(WebSocketLogLevel, char const *)> &log_handler,
-  const ServerOptions &options)
+template<>
+std::unique_ptr<ServerInterface<websocketpp::connection_hdl>> ServerFactory::create_server(
+  const std::string & name,
+  const std::function<void(WebSocketLogLevel, char const *)> & log_handler,
+  const ServerOptions & options)
 {
-  if (options.use_tls)
-  {
-    return std::unique_ptr<Server<WebSocketTls> >(
+  if (options.use_tls) {
+    return std::unique_ptr<Server<WebSocketTls>>(
       new Server<WebSocketTls>(name, log_handler, options));
-  }
-  else
-  {
-    return std::unique_ptr<Server<WebSocketNoTls> >(
+  } else {
+    return std::unique_ptr<Server<WebSocketNoTls>>(
       new Server<WebSocketNoTls>(name, log_handler, options));
   }
 }
 
-template <>
+template<>
 inline void Server<WebSocketNoTls>::setup_tls_handler()
 {
   _server.get_alog().write(APP, "Server running without TLS");
 }
 
-template <>
+template<>
 inline void Server<WebSocketTls>::setup_tls_handler()
 {
   _server.set_tls_init_handler(
@@ -67,19 +64,18 @@ inline void Server<WebSocketTls>::setup_tls_handler()
         // Ciphers are taken from the websocketpp example echo tls server:
         // https://github.com/zaphoyd/websocketpp/blob/1b11fd301/examples/echo_server_tls/echo_server_tls.cpp#L119
         constexpr char ciphers[] =
-          "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:"
-          "ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+"
-          "AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-"
-          "AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-"
-          "ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-"
-          "AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!3DES:"
-          "!MD5:!PSK";
+        "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:"
+        "ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+"
+        "AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-"
+        "AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-"
+        "ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-"
+        "AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!3DES:"
+        "!MD5:!PSK";
 
-        if (SSL_CTX_set_cipher_list(ctx->native_handle(), ciphers) != 1)
-        {
+        if (SSL_CTX_set_cipher_list(ctx->native_handle(), ciphers) != 1) {
           _server.get_elog().write(RECOVERABLE, "Error setting cipher list");
         }
-      } catch (const std::exception &ex) {
+      } catch (const std::exception & ex) {
         _server.get_elog().write(
           RECOVERABLE,
           std::string("Exception in TLS handshake: ") + ex.what());

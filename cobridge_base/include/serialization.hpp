@@ -64,21 +64,21 @@ inline uint32_t read_uint32_LE(const uint8_t *buf)
 #endif
 }
 
-void to_json(nlohmann::json &json_obj, const Channel &chan);
+void to_json(nlohmann::json & json_obj, const Channel & chan);
 
-void from_json(const nlohmann::json &json_obj, Channel &chan);
+void from_json(const nlohmann::json & json_obj, Channel & chan);
 
-void to_json(nlohmann::json &json_obj, const ParameterValue &param_val);
+void to_json(nlohmann::json & json_obj, const ParameterValue & param_val);
 
-void from_json(const nlohmann::json &json_obj, ParameterValue &param_val);
+void from_json(const nlohmann::json & json_obj, ParameterValue & param_val);
 
-void to_json(nlohmann::json &json_obj, const Parameter &param);
+void to_json(nlohmann::json & json_obj, const Parameter & param);
 
-void from_json(const nlohmann::json &json_obj, Parameter &param);
+void from_json(const nlohmann::json & json_obj, Parameter & param);
 
-void to_json(nlohmann::json &json_obj, const Service &service);
+void to_json(nlohmann::json & json_obj, const Service & service);
 
-void from_json(const nlohmann::json &json_obj, Service &service);
+void from_json(const nlohmann::json & json_obj, Service & service);
 }  // namespace cobridge_base
 
 #endif  // SERIALIZATION_HPP_

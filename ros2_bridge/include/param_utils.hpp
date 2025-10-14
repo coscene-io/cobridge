@@ -50,7 +50,7 @@ void declare_parameters(rclcpp::Node *node);
 
 std::vector<std::regex> parse_regex_strings(
   rclcpp::Node *node,
-  const std::vector<std::string> &strings);
+  const std::vector<std::string> & strings);
 }  // namespace cobridge
 
 #endif  // PARAM_UTILS_HPP_

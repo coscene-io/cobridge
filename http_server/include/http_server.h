@@ -38,7 +38,7 @@ namespace http_server
   {
 public:
     HttpServer(int port,
-               const std::string &mac_addresses,
+               const std::string & mac_addresses,
                const std::vector < std::string > &ip_addresses,
                LogHandler log_handler = nullptr);
     ~HttpServer();
@@ -49,7 +49,7 @@ public:
 private:
     void run_server();
     void log(LogLevel level, const char *message);
-    void log(LogLevel level, const std::string &message);
+    void log(LogLevel level, const std::string & message);
 
     int _port;
     std::string _mac_addresses;
@@ -59,8 +59,8 @@ private:
     LogHandler _log_handler;
   };
 
-  bool get_dev_mac_addr(std::string &mac_addresses);
+  bool get_dev_mac_addr(std::string & mac_addresses);
 
-  bool get_dev_ip_addrs(std::vector < std::string > &ip_addresses, std::string &colink_ip);
+  bool get_dev_ip_addrs(std::vector < std::string > &ip_addresses, std::string & colink_ip);
 }  // namespace http_server
 #endif  // HTTP_SERVER_H_

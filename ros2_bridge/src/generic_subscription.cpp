@@ -22,7 +22,7 @@
 
 namespace
 {
-rcl_subscription_options_t get_subscription_options(const rclcpp::QoS &qos)
+rcl_subscription_options_t get_subscription_options(const rclcpp::QoS & qos)
 {
   auto options = rcl_subscription_get_default_options();
 
@@ -35,12 +35,12 @@ namespace cobridge
 {
 GenericSubscription::GenericSubscription(
   rclcpp::node_interfaces::NodeBaseInterface *node_base,
-  const rosidl_message_type_support_t &ts,
+  const rosidl_message_type_support_t & ts,
   std::string topic_name,
   std::string topic_type,
-  const rclcpp::QoS &qos,
+  const rclcpp::QoS & qos,
   std::function<void(std::shared_ptr<rclcpp::SerializedMessage>, uint64_t timestamp)> callback)
-  : SubscriptionBase(node_base, ts, topic_name, get_subscription_options(qos), true),
+: SubscriptionBase(node_base, ts, topic_name, get_subscription_options(qos), true),
   _default_allocator(rcutils_get_default_allocator()),
   _callback(std::move(callback)),
   _qos(qos),
@@ -61,7 +61,7 @@ std::shared_ptr<rclcpp::SerializedMessage> GenericSubscription::create_serialize
 }
 
 void GenericSubscription::handle_message(
-  std::shared_ptr<void> &message, const rclcpp::MessageInfo &message_info)
+  std::shared_ptr<void> & message, const rclcpp::MessageInfo & message_info)
 {
   auto typed_message = std::static_pointer_cast<rclcpp::SerializedMessage>(message);
 
@@ -71,13 +71,13 @@ void GenericSubscription::handle_message(
 }
 
 void GenericSubscription::handle_loaned_message(
-  void *message, const rclcpp::MessageInfo &message_info)
+  void *message, const rclcpp::MessageInfo & message_info)
 {
   (void)message;
   (void)message_info;
 }
 
-void GenericSubscription::return_message(std::shared_ptr<void> &message)
+void GenericSubscription::return_message(std::shared_ptr<void> & message)
 {
   auto typed_message = std::static_pointer_cast<rclcpp::SerializedMessage>(message);
 
@@ -85,12 +85,12 @@ void GenericSubscription::return_message(std::shared_ptr<void> &message)
 }
 
 void GenericSubscription::return_serialized_message(
-  std::shared_ptr<rclcpp::SerializedMessage> &message)
+  std::shared_ptr<rclcpp::SerializedMessage> & message)
 {
   message.reset();
 }
 
-const rclcpp::QoS &GenericSubscription::qos_profile() const
+const rclcpp::QoS & GenericSubscription::qos_profile() const
 {
   return _qos;
 }

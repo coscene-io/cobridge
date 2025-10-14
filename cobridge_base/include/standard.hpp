@@ -20,43 +20,43 @@
 #include <typeinfo>
 #include <utility>
 
-template <typename T>
+template<typename T>
 struct remove_cv
 {
   typedef T type;
 };
 
-template <typename T>
+template<typename T>
 struct remove_cv<const T>
 {
   typedef T type;
 };
 
-template <typename T>
+template<typename T>
 struct remove_cv<volatile T>
 {
   typedef T type;
 };
 
-template <typename T>
+template<typename T>
 struct remove_cv<const volatile T>
 {
   typedef T type;
 };
 
-template <typename T>
+template<typename T>
 struct remove_reference
 {
   typedef T type;
 };
 
-template <typename T>
+template<typename T>
 struct remove_reference<T &>
 {
   typedef T type;
 };
 
-template <typename T>
+template<typename T>
 struct decay
 {
   typedef typename remove_cv<typename remove_reference<T>::type>::type type;
@@ -78,17 +78,17 @@ private:
   {
     virtual ~_Storage_base() = default;
     virtual _Storage_base * _M_clone() const = 0;
-    virtual const std::type_info &_M_type() const = 0;
+    virtual const std::type_info & _M_type() const = 0;
   };
 
-  template <typename _Tp>
+  template<typename _Tp>
   struct _Storage : _Storage_base
   {
     _Tp M_value;
 
-    template <typename _Up>
-    explicit _Storage(const _Up &_value)
-      : M_value(_value)
+    template<typename _Up>
+    explicit _Storage(const _Up & _value)
+    : M_value(_value)
     {
     }
 
@@ -97,7 +97,7 @@ private:
       return new _Storage(M_value);
     }
 
-    virtual const std::type_info &_M_type() const
+    virtual const std::type_info & _M_type() const
     {
       return typeid(_Tp);
     }
@@ -107,18 +107,18 @@ private:
 
 public:
   any()
-    : M_storage(nullptr)
+  : M_storage(nullptr)
   {
   }
 
-  any(const any &_other)
-    : M_storage(_other.M_storage ? _other.M_storage->_M_clone() : nullptr)
+  any(const any & _other)
+  : M_storage(_other.M_storage ? _other.M_storage->_M_clone() : nullptr)
   {
   }
 
-  template <typename _Tp>
-  explicit any(const _Tp &_value)
-    : M_storage(new _Storage<typename decay<_Tp>::type>(_value))
+  template<typename _Tp>
+  explicit any(const _Tp & _value)
+  : M_storage(new _Storage<typename decay<_Tp>::type>(_value))
   {
   }
 
@@ -127,18 +127,17 @@ public:
     delete M_storage;
   }
 
-  any &operator=(const any &_rhs)
+  any & operator=(const any & _rhs)
   {
-    if (this != &_rhs)
-    {
+    if (this != &_rhs) {
       delete M_storage;
       M_storage = _rhs.M_storage ? _rhs.M_storage->_M_clone() : nullptr;
     }
     return *this;
   }
 
-  template <typename Tp>
-  any &operator=(const Tp &_rhs)
+  template<typename Tp>
+  any & operator=(const Tp & _rhs)
   {
     delete M_storage;
     M_storage = new _Storage<typename decay<Tp>::type>(_rhs);
@@ -150,7 +149,7 @@ public:
     return M_storage != nullptr;
   }
 
-  const std::type_info &type() const
+  const std::type_info & type() const
   {
     return M_storage ? M_storage->_M_type() : typeid(void);
   }
@@ -161,7 +160,7 @@ public:
     M_storage = nullptr;
   }
 
-  void swap(any &_other)
+  void swap(any & _other)
   {
     _Storage_base *_tmp = M_storage;
 
@@ -169,18 +168,17 @@ public:
     _other.M_storage = _tmp;
   }
 
-  template <typename _Tp>
+  template<typename _Tp>
   friend _Tp * any_cast(any *_operand);
 
-  template <typename _Tp>
+  template<typename _Tp>
   friend const _Tp * any_cast(const any *_operand);
 };
 
-template <typename Tp>
+template<typename Tp>
 Tp * any_cast(any *_operand)
 {
-  if (_operand && _operand->type() == typeid(Tp))
-  {
+  if (_operand && _operand->type() == typeid(Tp)) {
     typedef any::_Storage<Tp> _Storage_type;
     _Storage_type *_storage = static_cast<_Storage_type *>(_operand->M_storage);
     return &_storage->M_value;
@@ -188,31 +186,29 @@ Tp * any_cast(any *_operand)
   return nullptr;
 }
 
-template <typename Tp>
+template<typename Tp>
 const Tp * any_cast(const any *_operand)
 {
   return any_cast<Tp>(const_cast<any *>(_operand));
 }
 
-template <typename Tp>
-Tp any_cast(const any &_operand)
+template<typename Tp>
+Tp any_cast(const any & _operand)
 {
   typedef typename remove_reference<Tp>::type Up;
   const Up *_result = any_cast<Up>(&_operand);
-  if (!_result)
-  {
+  if (!_result) {
     throw bad_any_cast();
   }
   return static_cast<Tp>(*_result);
 }
 
-template <typename Tp>
-Tp any_cast(any &_operand)
+template<typename Tp>
+Tp any_cast(any & _operand)
 {
   typedef typename remove_reference<Tp>::type _Up;
   _Up *_result = any_cast<_Up>(&_operand);
-  if (!_result)
-  {
+  if (!_result) {
     throw bad_any_cast();
   }
   return static_cast<Tp>(*_result);
@@ -226,22 +222,22 @@ private:
 
 public:
   constexpr string_view()
-    : data_(nullptr), size_(0)
+  : data_(nullptr), size_(0)
   {
   }
 
   constexpr string_view(const char *str)   // NOLINT(runtime/explicit)
-    : data_(str), size_(str ? strlen_constexpr(str) : 0)
+  : data_(str), size_(str ? strlen_constexpr(str) : 0)
   {
   }
 
-  explicit string_view(const std::string &str)
-    : data_(str.data()), size_(str.size())
+  explicit string_view(const std::string & str)
+  : data_(str.data()), size_(str.size())
   {
   }
 
   constexpr string_view(const char *data, std::size_t size)
-    : data_(data), size_(size)
+  : data_(data), size_(size)
   {
   }
 
@@ -285,7 +281,7 @@ public:
     return string_view(
       data_ + (pos > size_ ? size_ : pos),
       len > size_ - (pos > size_ ? size_ : pos) ? size_ - (pos > size_ ? size_ : pos) : len
-      );
+    );
   }
 
   std::string to_string() const
@@ -302,13 +298,14 @@ private:
 
 struct nullopt_t
 {
-  explicit constexpr nullopt_t(int)
+  struct init_tag {};
+  explicit constexpr nullopt_t(init_tag)
   {
   }
 };
-constexpr nullopt_t nullopt{0};
+constexpr nullopt_t nullopt{nullopt_t::init_tag{}};
 
-template <typename T>
+template<typename T>
 class optional
 {
 private:
@@ -317,27 +314,27 @@ private:
 
 public:
   optional()
-    : has_value_(false)
+  : has_value_(false)
   {
   }
 
-  explicit optional(const T &value)
-    : has_value_(true), value_(value)
+  explicit optional(const T & value)
+  : has_value_(true), value_(value)
   {
   }
 
   explicit optional(nullopt_t)
-    : has_value_(false)
+  : has_value_(false)
   {
   }
 
-  optional &operator=(nullopt_t)
+  optional & operator=(nullopt_t)
   {
     has_value_ = false;
     return *this;
   }
 
-  optional &operator=(const T &value)
+  optional & operator=(const T & value)
   {
     has_value_ = true;
     value_ = value;
@@ -349,24 +346,22 @@ public:
     return has_value_;
   }
 
-  const T &value() const
+  const T & value() const
   {
     return value_;
   }
 
-  T &value()
+  T & value()
   {
     return value_;
   }
 
-  bool operator==(const optional<T> &other) const
+  bool operator==(const optional<T> & other) const
   {
-    if (has_value_ != other.has_value_)
-    {
+    if (has_value_ != other.has_value_) {
       return false;
     }
-    if (!has_value_)
-    {
+    if (!has_value_) {
       return true;
     }
     return value_ == other.value_;

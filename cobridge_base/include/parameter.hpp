@@ -55,23 +55,23 @@ public:
 
   explicit ParameterValue(double value);
 
-  explicit ParameterValue(const std::string &value);
+  explicit ParameterValue(const std::string & value);
 
   explicit ParameterValue(const char *value);
 
-  explicit ParameterValue(const std::vector<unsigned char> &value);
+  explicit ParameterValue(const std::vector<unsigned char> & value);
 
-  explicit ParameterValue(const std::vector<ParameterValue> &value);
+  explicit ParameterValue(const std::vector<ParameterValue> & value);
 
-  explicit ParameterValue(const std::unordered_map<std::string, ParameterValue> &value);
+  explicit ParameterValue(const std::unordered_map<std::string, ParameterValue> & value);
 
   inline ParameterType getType() const
   {
     return _type;
   }
 
-  template <typename T>
-  inline const T &getValue() const
+  template<typename T>
+  inline const T & getValue() const
   {
     return any_cast<const T &>(_value);
   }
@@ -86,11 +86,11 @@ class Parameter
 public:
   Parameter();
 
-  explicit Parameter(const std::string &name);
+  explicit Parameter(const std::string & name);
 
-  Parameter(const std::string &name, const ParameterValue &value);
+  Parameter(const std::string & name, const ParameterValue & value);
 
-  inline const std::string &get_name() const
+  inline const std::string & get_name() const
   {
     return _name;
   }
@@ -100,7 +100,7 @@ public:
     return _value.getType();
   }
 
-  inline const ParameterValue &get_value() const
+  inline const ParameterValue & get_value() const
   {
     return _value;
   }

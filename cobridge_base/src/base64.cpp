@@ -19,7 +19,7 @@
 
 namespace cobridge_base
 {
-std::string base64_encode(const string_view &input)
+std::string base64_encode(const string_view & input)
 {
   constexpr const char ALPHABET[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -32,15 +32,13 @@ std::string base64_encode(const string_view &input)
   const unsigned char *data = reinterpret_cast<const unsigned char *>(input.data());
 
   size_t i = 0;
-  for (; i + 2 < input.size(); i += 3)
-  {
+  for (; i + 2 < input.size(); i += 3) {
     result.push_back(ALPHABET[data[i] >> 2]);
     result.push_back(ALPHABET[((data[i] & 0x03) << 4) | (data[i + 1] >> 4)]);
     result.push_back(ALPHABET[((data[i + 1] & 0x0F) << 2) | (data[i + 2] >> 6)]);
     result.push_back(ALPHABET[data[i + 2] & 0x3F]);
   }
-  switch (input.size() - i)
-  {
+  switch (input.size() - i) {
     case 2:
       result.push_back(ALPHABET[data[i] >> 2]);
       result.push_back(ALPHABET[((data[i] & 0x03) << 4) | (data[i + 1] >> 4)]);
@@ -58,10 +56,9 @@ std::string base64_encode(const string_view &input)
   return result;
 }
 
-std::vector<unsigned char> base64_decode(const std::string &input)
+std::vector<unsigned char> base64_decode(const std::string & input)
 {
-  if (input.length() % 4)
-  {
+  if (input.length() % 4) {
     throw std::runtime_error("Invalid base64 length!");
   }
 
@@ -69,14 +66,11 @@ std::vector<unsigned char> base64_decode(const std::string &input)
 
   std::size_t padding{};
 
-  if (input.length())
-  {
-    if (input[input.length() - 1] == kPadCharacter)
-    {
+  if (input.length()) {
+    if (input[input.length() - 1] == kPadCharacter) {
       padding++;
     }
-    if (input[input.length() - 2] == kPadCharacter)
-    {
+    if (input[input.length() - 2] == kPadCharacter) {
       padding++;
     }
   }
@@ -87,35 +81,21 @@ std::vector<unsigned char> base64_decode(const std::string &input)
   std::uint32_t temp{};
   auto it = input.begin();
 
-  while (it < input.end())
-  {
-    for (std::size_t i = 0; i < 4; ++i)
-    {
+  while (it < input.end()) {
+    for (std::size_t i = 0; i < 4; ++i) {
       temp <<= 6;
-      if (*it >= 0x41 && *it <= 0x5A)
-      {
+      if (*it >= 0x41 && *it <= 0x5A) {
         temp |= *it - 0x41;
-      }
-      else if (*it >= 0x61 && *it <= 0x7A)
-      {
+      } else if (*it >= 0x61 && *it <= 0x7A) {
         temp |= *it - 0x47;
-      }
-      else if (*it >= 0x30 && *it <= 0x39)
-      {
+      } else if (*it >= 0x30 && *it <= 0x39) {
         temp |= *it + 0x04;
-      }
-      else if (*it == 0x2B)
-      {
+      } else if (*it == 0x2B) {
         temp |= 0x3E;
-      }
-      else if (*it == 0x2F)
-      {
+      } else if (*it == 0x2F) {
         temp |= 0x3F;
-      }
-      else if (*it == kPadCharacter)
-      {
-        switch (input.end() - it)
-        {
+      } else if (*it == kPadCharacter) {
+        switch (input.end() - it) {
           case 1:
             decoded.push_back((temp >> 16) & 0x000000FF);
             decoded.push_back((temp >> 8) & 0x000000FF);
@@ -128,9 +108,7 @@ std::vector<unsigned char> base64_decode(const std::string &input)
           default:
             throw std::runtime_error("Invalid padding in base64!");
         }
-      }
-      else
-      {
+      } else {
         throw std::runtime_error("Invalid character in base64!");
       }
 

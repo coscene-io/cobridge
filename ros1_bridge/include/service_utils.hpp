@@ -24,7 +24,7 @@ namespace cobridge
  * This is necessary as the service type is not stored on the ROS master.
  */
 std::string retrieve_service_type(
-  const std::string &service_name,
+  const std::string & service_name,
   std::chrono::milliseconds timeout_ms);
 }  // namespace cobridge
 #endif  // SERVICE_UTILS_HPP_

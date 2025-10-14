@@ -185,25 +185,24 @@ void declare_parameters(rclcpp::Node *node)
     PARAM_ASSET_URI_ALLOWLIST,
     std::vector<std::string>(
       {"^package://(?:\\w+/"
-       ")*\\w+\\.(?:dae|fbx|glb|gltf|jpeg|jpg|mtl|obj|png|stl|tif|tiff|urdf|webp|xacro)$"}),
+        ")*\\w+\\.(?:dae|fbx|glb|gltf|jpeg|jpg|mtl|obj|png|stl|tif|tiff|urdf|webp|xacro)$"}),
     param_whitelist_description);
 }
 
 std::vector<std::regex> parse_regex_strings(
   rclcpp::Node *node,
-  const std::vector<std::string> &strings)
+  const std::vector<std::string> & strings)
 {
   std::vector<std::regex> regex_vector;
 
   regex_vector.reserve(strings.size());
 
-  for (const auto &pattern : strings)
-  {
+  for (const auto & pattern : strings) {
     try {
       regex_vector.emplace_back(
         pattern,
         std::regex_constants::ECMAScript | std::regex_constants::icase);
-    } catch (const std::exception &ex) {
+    } catch (const std::exception & ex) {
       RCLCPP_ERROR(
         node->get_logger(), "Ignoring invalid regular expression '%s': %s",
         pattern.c_str(), ex.what());

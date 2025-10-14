@@ -37,8 +37,7 @@ std::shared_ptr<void> allocate_message(const MessageMembers *members)
 {
   void *buffer = malloc(members->size_of_);
 
-  if (buffer == nullptr)
-  {
+  if (buffer == nullptr) {
     throw std::runtime_error("Failed to allocate memory");
   }
   memset(buffer, 0, members->size_of_);
@@ -46,7 +45,7 @@ std::shared_ptr<void> allocate_message(const MessageMembers *members)
   return std::shared_ptr<void>(buffer, free);
 }
 
-std::string get_type_introspection_symbol_name(const std::string &serviceType)
+std::string get_type_introspection_symbol_name(const std::string & serviceType)
 {
   const auto [pkg_name, middle_module, type_name] = extract_type_identifier(serviceType);
 
@@ -72,12 +71,12 @@ std::string get_type_introspection_symbol_name(const std::string &serviceType)
  * \param[in] service_type The service type, e.g. "test_msgs/srv/BasicTypes"
  * \return Symbol name for getting the service type support handle
  */
-std::string get_service_type_support_handle_symbol_name(const std::string &service_type)
+std::string get_service_type_support_handle_symbol_name(const std::string & service_type)
 {
   const auto [pkg_name, middle_module, type_name] = extract_type_identifier(service_type);
-  const auto length_prefixed_string = [](const std::string &s) {
-                                        return std::to_string(s.size()) + s;
-                                      };
+  const auto length_prefixed_string = [](const std::string & s) {
+      return std::to_string(s.size()) + s;
+    };
 
   return "_ZN" + length_prefixed_string(TYPESUPPORT_LIB_NAME) +
          length_prefixed_string("get_service_type_support_handle") + "IN" +
@@ -91,8 +90,8 @@ GenericClient::GenericClient(
   rclcpp::node_interfaces::NodeBaseInterface *node_base,
   rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph,
   std::string service_name, std::string service_type,
-  rcl_client_options_t &client_options)
-  : rclcpp::ClientBase(node_base, node_graph)
+  rcl_client_options_t & client_options)
+: rclcpp::ClientBase(node_base, node_graph)
 {
   const auto [pkg_name, middle_module, type_name] = extract_type_identifier(service_type);
   const auto request_type_name = service_type + "_Request";
@@ -101,14 +100,12 @@ GenericClient::GenericClient(
   _type_support_lib = cobridge::get_typesupport_library(service_type, TYPESUPPORT_LIB_NAME);
   _type_introspection_lib =
     cobridge::get_typesupport_library(service_type, TYPESUPPORT_INTROSPECTION_LIB_NAME);
-  if (!_type_support_lib || !_type_introspection_lib)
-  {
+  if (!_type_support_lib || !_type_introspection_lib) {
     throw std::runtime_error("Failed to load shared library for service type " + service_type);
   }
 
   const auto type_support_symbol_name = get_service_type_support_handle_symbol_name(service_type);
-  if (!_type_support_lib->has_symbol(type_support_symbol_name))
-  {
+  if (!_type_support_lib->has_symbol(type_support_symbol_name)) {
     throw std::runtime_error(
             "Failed to find symbol '" + type_support_symbol_name + "' in " +
             _type_support_lib->get_library_path());
@@ -122,7 +119,7 @@ GenericClient::GenericClient(
 
   // This will throw runtime_error if the symbol was not found.
   _type_introspection_handle = (reinterpret_cast<decltype(get_ts)>(
-                                  _type_introspection_lib->get_symbol(type_introspection_symbol_name)))();
+      _type_introspection_lib->get_symbol(type_introspection_symbol_name)))();
 
   _request_type_support_handle =
     cobridge::get_typesupport_handle(request_type_name, TYPESUPPORT_LIB_NAME, _type_support_lib);
@@ -132,10 +129,8 @@ GenericClient::GenericClient(
   rcl_ret_t ret = rcl_client_init(
     this->get_client_handle().get(), this->get_rcl_node_handle(),
     _service_type_support_handle, service_name.c_str(), &client_options);
-  if (ret != RCL_RET_OK)
-  {
-    if (ret == RCL_RET_SERVICE_NAME_INVALID)
-    {
+  if (ret != RCL_RET_OK) {
+    if (ret == RCL_RET_SERVICE_NAME_INVALID) {
       auto rcl_node_handle = this->get_rcl_node_handle();
       // this will throw on any validation problem
       rcl_reset_error();
@@ -171,15 +166,13 @@ void GenericClient::handle_response(
     response.get(), _response_type_support_handle,
     &ser_response->get_rcl_serialized_message());
 
-  if (r != RMW_RET_OK)
-  {
+  if (r != RMW_RET_OK) {
     RCUTILS_LOG_ERROR_NAMED("cobridge", "Failed to serialize service response. Ignoring...");
     return;
   }
 
   // TODO(esteve) this should throw instead since it is not expected to happen in the first place
-  if (this->pending_requests_.count(sequence_number) == 0)
-  {
+  if (this->pending_requests_.count(sequence_number) == 0) {
     RCUTILS_LOG_ERROR_NAMED("cobridge", "Received invalid sequence number. Ignoring...");
     return;
   }
@@ -203,7 +196,7 @@ GenericClient::SharedFuture GenericClient::async_send_request(SharedRequest requ
 
 GenericClient::SharedFuture GenericClient::async_send_request(
   SharedRequest request,
-  CallbackType &&cb)
+  CallbackType && cb)
 {
   std::lock_guard<std::mutex> lock(pending_requests_mutex_);
   int64_t sequence_number;
@@ -213,13 +206,11 @@ GenericClient::SharedFuture GenericClient::async_send_request(
 
   const rmw_serialized_message_t *sm = &request->get_rcl_serialized_message();
 
-  if (const auto ret = rmw_deserialize(sm, _request_type_support_handle, buf.get()) != RCL_RET_OK)
-  {
+  if (const auto ret = rmw_deserialize(sm, _request_type_support_handle, buf.get()) != RCL_RET_OK) {
     rclcpp::exceptions::throw_from_rcl_error(ret, "failed to desirialize request");
   }
   rcl_ret_t ret = rcl_send_request(get_client_handle().get(), buf.get(), &sequence_number);
-  if (RCL_RET_OK != ret)
-  {
+  if (RCL_RET_OK != ret) {
     rclcpp::exceptions::throw_from_rcl_error(ret, "failed to send request");
   }
 

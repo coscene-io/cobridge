@@ -33,18 +33,18 @@ public:
   using SharedRequest = std::shared_ptr<rclcpp::SerializedMessage>;
   using SharedResponse = std::shared_ptr<rclcpp::SerializedMessage>;
   using Promise = std::promise<SharedResponse>;
-  using PromiseWithRequest = std::promise<std::pair<SharedRequest, SharedResponse> >;
+  using PromiseWithRequest = std::promise<std::pair<SharedRequest, SharedResponse>>;
   using SharedPromise = std::shared_ptr<Promise>;
   using SharedPromiseWithRequest = std::shared_ptr<PromiseWithRequest>;
   using SharedFuture = std::shared_future<SharedResponse>;
-  using SharedFutureWithRequest = std::shared_future<std::pair<SharedRequest, SharedResponse> >;
+  using SharedFutureWithRequest = std::shared_future<std::pair<SharedRequest, SharedResponse>>;
   using CallbackType = std::function<void (SharedFuture)>;
   using CallbackWithRequestType = std::function<void (SharedFutureWithRequest)>;
 
   using SharedPtr = std::shared_ptr<GenericClient>;
   using ConstSharedPtr = std::shared_ptr<const GenericClient>;
 
-  template <typename ... Args>
+  template<typename ... Args>
   static std::shared_ptr<GenericClient> make_shared(Args && ... args)
   {
     return std::make_shared<GenericClient>(std::forward<Args>(args)...);
@@ -54,11 +54,11 @@ public:
     rclcpp::node_interfaces::NodeBaseInterface *node_base,
     rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph,
     std::string service_name, std::string service_type,
-    rcl_client_options_t &client_options);
+    rcl_client_options_t & client_options);
 
   GenericClient(const GenericClient &) = delete;
 
-  GenericClient &operator=(const GenericClient &) = delete;
+  GenericClient & operator=(const GenericClient &) = delete;
 
   ~GenericClient() override = default;
 
@@ -72,10 +72,10 @@ public:
 
   SharedFuture async_send_request(SharedRequest request);
 
-  SharedFuture async_send_request(SharedRequest request, CallbackType &&cb);
+  SharedFuture async_send_request(SharedRequest request, CallbackType && cb);
 
 private:
-  std::map<int64_t, std::tuple<SharedPromise, CallbackType, SharedFuture> > pending_requests_;
+  std::map<int64_t, std::tuple<SharedPromise, CallbackType, SharedFuture>> pending_requests_;
   std::mutex pending_requests_mutex_;
   std::shared_ptr<rcpputils::SharedLibrary> _type_support_lib;
   std::shared_ptr<rcpputils::SharedLibrary> _type_introspection_lib;

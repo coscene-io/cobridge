@@ -28,11 +28,11 @@ namespace cobridge_base
 class ServerFactory
 {
 public:
-  template <typename ConnectionHandle>
-  static std::unique_ptr<ServerInterface<ConnectionHandle> > create_server(
-    const std::string &name,
-    const std::function<void(WebSocketLogLevel, char const *)> &log_handler,
-    const ServerOptions &options);
+  template<typename ConnectionHandle>
+  static std::unique_ptr<ServerInterface<ConnectionHandle>> create_server(
+    const std::string & name,
+    const std::function<void(WebSocketLogLevel, char const *)> & log_handler,
+    const ServerOptions & options);
 };
 }  // namespace cobridge_base
 

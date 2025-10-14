@@ -32,23 +32,23 @@ std::future<std::string> wait_for_login(
   std::shared_ptr<ClientInterface> client,
   std::string operate);
 
-std::future<std::vector<uint8_t> > wait_for_channel_msg(
+std::future<std::vector<uint8_t>> wait_for_channel_msg(
   ClientInterface *client,
   SubscriptionId subscription_id);
 
-std::future<std::vector<Parameter> > wait_for_parameters(
+std::future<std::vector<Parameter>> wait_for_parameters(
   std::shared_ptr<ClientInterface> client,
-  const std::string &request_id = std::string());
+  const std::string & request_id = std::string());
 
 std::future<ServiceResponse> wait_for_service_response(std::shared_ptr<ClientInterface> client);
 
 std::future<Service> wait_for_service(
   std::shared_ptr<ClientInterface> client,
-  const std::string &service_name);
+  const std::string & service_name);
 
 std::future<Channel> wait_for_channel(
   std::shared_ptr<ClientInterface> client,
-  const std::string &topic_name);
+  const std::string & topic_name);
 
 std::future<FetchAssetResponse> wait_for_fetch_asset_response(
   std::shared_ptr<ClientInterface>

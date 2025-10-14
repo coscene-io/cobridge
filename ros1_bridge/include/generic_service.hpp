@@ -28,14 +28,14 @@ struct GenericService
   std::string md5sum;
   std::vector<uint8_t> data;
 
-  template <typename Stream>
-  inline void write(Stream &stream) const
+  template<typename Stream>
+  inline void write(Stream & stream) const
   {
     std::memcpy(stream.getData(), data.data(), data.size());
   }
 
-  template <typename Stream>
-  inline void read(Stream &stream)
+  template<typename Stream>
+  inline void read(Stream & stream)
   {
     data.resize(stream.getLength());
     std::memcpy(data.data(), stream.getData(), stream.getLength());
@@ -46,10 +46,10 @@ namespace ros
 {
 namespace service_traits
 {
-template <>
+template<>
 struct MD5Sum<cobridge::GenericService>
 {
-  static const char * value(const cobridge::GenericService &m)
+  static const char * value(const cobridge::GenericService & m)
   {
     return m.md5sum.c_str();
   }
@@ -60,10 +60,10 @@ struct MD5Sum<cobridge::GenericService>
   }
 };
 
-template <>
+template<>
 struct DataType<cobridge::GenericService>
 {
-  static const char * value(const cobridge::GenericService &m)
+  static const char * value(const cobridge::GenericService & m)
   {
     return m.type.c_str();
   }
@@ -77,22 +77,22 @@ struct DataType<cobridge::GenericService>
 
 namespace serialization
 {
-template <>
+template<>
 struct Serializer<cobridge::GenericService>
 {
-  template <typename Stream>
-  inline static void write(Stream &stream, const cobridge::GenericService &m)
+  template<typename Stream>
+  inline static void write(Stream & stream, const cobridge::GenericService & m)
   {
     m.write(stream);
   }
 
-  template <typename Stream>
-  inline static void read(Stream &stream, cobridge::GenericService &m)
+  template<typename Stream>
+  inline static void read(Stream & stream, cobridge::GenericService & m)
   {
     m.read(stream);
   }
 
-  inline static uint32_t serializedLength(const cobridge::GenericService &m)
+  inline static uint32_t serializedLength(const cobridge::GenericService & m)
   {
     return m.data.size();
   }

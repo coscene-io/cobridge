@@ -34,9 +34,9 @@ namespace cobridge
 {
 std::shared_ptr<GenericSubscription> create_generic_subscription(
   rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr topics_interface,
-  const std::string &topic,
-  const std::string &type,
-  const rclcpp::QoS &qos,
+  const std::string & topic,
+  const std::string & type,
+  const rclcpp::QoS & qos,
   std::function<void(std::shared_ptr<rclcpp::SerializedMessage>, uint64_t timestamp)> callback)
 {
   auto library_generic_subscriber = cobridge::get_typesupport_library(
@@ -55,7 +55,7 @@ std::shared_ptr<GenericSubscription> create_generic_subscription(
       callback);
 
     topics_interface->add_subscription(subscription, nullptr);
-  } catch (const std::runtime_error &ex) {
+  } catch (const std::runtime_error & ex) {
     std::runtime_error("Error subscribing to topic '" + topic + "'. Error: " + ex.what());
   }
 
