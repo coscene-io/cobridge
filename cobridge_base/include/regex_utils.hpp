@@ -22,7 +22,6 @@
 
 namespace cobridge_base
 {
-
 inline bool is_whitelisted(const std::string & name, const std::vector<std::regex> & regex_patterns)
 {
   return std::find_if(

@@ -22,7 +22,6 @@
 
 namespace cobridge_base
 {
-
 struct WebSocketTls : public websocketpp::config::core
 {
   typedef WebSocketTls type;

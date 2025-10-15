@@ -14,30 +14,29 @@
 #ifndef PARAMETER_INTERFACE_HPP_
 #define PARAMETER_INTERFACE_HPP_
 
-#include <rclcpp/rclcpp.hpp>
-#include <rclcpp/parameter_map.hpp>
-
-#include <parameter.hpp>
 #include <chrono>
 #include <functional>
 #include <mutex>
 #include <regex>
 #include <string>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
+#include <rclcpp/parameter_map.hpp>
+#include <rclcpp/rclcpp.hpp>
+
+#include <parameter.hpp>
 
 namespace cobridge
 {
-
 using ParameterList = std::vector<cobridge_base::Parameter>;
 using ParamUpdateFunc = std::function<void (const ParameterList &)>;
 
 class ParameterInterface
 {
 public:
-  ParameterInterface(rclcpp::Node * node, std::vector<std::regex> param_whitelist_patterns);
+  ParameterInterface(rclcpp::Node *node, std::vector<std::regex> param_whitelist_patterns);
 
   ParameterList get_params(
     const std::vector<std::string> & param_names,
@@ -52,7 +51,7 @@ public:
   void set_param_update_callback(ParamUpdateFunc param_update_func);
 
 private:
-  rclcpp::Node * _node;
+  rclcpp::Node *_node;
   std::vector<std::regex> _param_whitelist_patterns;
   rclcpp::CallbackGroup::SharedPtr _callback_group;
   std::mutex _mutex;
@@ -74,6 +73,5 @@ private:
 
   bool is_whitelisted_param(const std::string & param_name);
 };
-
 }  // namespace cobridge
 #endif  // PARAMETER_INTERFACE_HPP_

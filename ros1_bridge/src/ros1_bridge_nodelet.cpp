@@ -13,9 +13,9 @@
 // limitations under the License.
 
 // #include <shared_mutex>
-#include <nodelet/nodelet.h>
-#include <http_server.h>
 
+#include <http_server.h>
+#include <nodelet/nodelet.h>
 #include <pluginlib/class_list_macros.h>
 #include <resource_retriever/retriever.h>
 #include <ros/message_event.h>
@@ -24,7 +24,19 @@
 #include <ros_babel_fish/babel_fish_message.h>
 #include <ros_babel_fish/generation/providers/integrated_description_provider.h>
 #include <rosgraph_msgs/Clock.h>
-#include <websocketpp/common/connection_hdl.hpp>
+
+#include <algorithm>
+#include <atomic>
+#include <functional>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <regex>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include <cobridge.hpp>
 #include <generic_service.hpp>
@@ -33,19 +45,7 @@
 #include <server_factory.hpp>
 #include <service_utils.hpp>
 #include <websocket_server.hpp>
-
-#include <algorithm>
-#include <atomic>
-#include <functional>
-#include <memory>
-#include <mutex>
-#include <map>
-#include <regex>
-#include <string>
-#include <unordered_set>
-#include <unordered_map>
-#include <utility>
-#include <vector>
+#include <websocketpp/common/connection_hdl.hpp>
 
 namespace http_server
 {
@@ -54,22 +54,20 @@ class HttpServer;
 
 namespace
 {
-
 inline std::unordered_set<std::string> rpc_value_to_string_set(const XmlRpc::XmlRpcValue & v)
 {
   std::unordered_set<std::string> set;
+
   for (int i = 0; i < v.size(); ++i) {
     XmlRpc::XmlRpcValue item = v[i];
     set.insert(static_cast<std::string>(item));
   }
   return set;
 }
-
 }  // namespace
 
 namespace cobridge
 {
-
 constexpr int DEFAULT_PORT = 21274;
 constexpr char DEFAULT_ADDRESS[] = "0.0.0.0";
 constexpr int DEFAULT_MAX_UPDATE_MS = 5000;
@@ -102,6 +100,7 @@ public:
     const auto use_tls = nhp.param<bool>("tls", false);
     const auto certfile = nhp.param<std::string>("certfile", "");
     const auto keyfile = nhp.param<std::string>("keyfile", "");
+
     max_update_ms_ = static_cast<size_t>(nhp.param<int>("max_update_ms", DEFAULT_MAX_UPDATE_MS));
     const auto use_compression = nhp.param<bool>("use_compression", false);
     use_sim_time_ = nhp.param<bool>("/use_sim_time", false);
@@ -153,7 +152,7 @@ public:
       ROS_ERROR("Failed to parse one or more asset URI whitelist patterns");
     }
 
-    const char * ros_distro = std::getenv("ROS_DISTRO");
+    const char *ros_distro = std::getenv("ROS_DISTRO");
     ROS_INFO(
       "Starting cobridge (%s, %s@%s) with %s", ros_distro,
       cobridge_base::COBRIDGE_VERSION, cobridge_base::COBRIDGE_GIT_HASH,
@@ -165,7 +164,7 @@ public:
     http_server::get_dev_mac_addr(mac_addresses);
     http_server::get_dev_ip_addrs(ip_addresses, colink_ip);
 
-    auto http_log_handler = [this](http_server::LogLevel level, const char * msg) {
+    auto http_log_handler = [this](http_server::LogLevel level, const char *msg) {
         switch (level) {
           case http_server::LogLevel::Debug:
             ROS_DEBUG("[HTTP_SERVER] %s", msg);
@@ -216,7 +215,7 @@ public:
       //   std::make_unique<cobridge_base::CallbackQueue>(log_handler, 1 /* num_threads */);
       fetch_asset_queue_ =
         std::unique_ptr<cobridge_base::CallbackQueue>(
-        new cobridge_base::CallbackQueue(log_handler, 1 /* num_threads */));
+          new cobridge_base::CallbackQueue(log_handler, 1 /* num_threads */));
 
       _server = cobridge_base::ServerFactory::create_server<ConnectionHandle>(
         "cobridge",
@@ -249,9 +248,10 @@ public:
 
       if (has_capability(cobridge_base::CAPABILITY_ASSETS)) {
         hdlrs.fetch_asset_handler = [this](const std::string & uri, uint32_t requestId,
-            cobridge_base::ConnHandle hdl) {
+          cobridge_base::ConnHandle hdl) {
             fetch_asset_queue_->add_callback(
-              std::bind(&CoBridge::fetch_asset, this, uri, requestId, hdl));
+                                        std::bind(&CoBridge::fetch_asset, this, uri, requestId,
+              hdl));
           };
       }
 
@@ -279,6 +279,7 @@ public:
       throw err;
     }
   }
+
   ~CoBridge() override
   {
     xmlrpc_server_.shutdown();
@@ -306,6 +307,7 @@ private:
     std::lock_guard<std::mutex> lock(subscriptions_mutex_);
 
     auto it = advertised_topics_.find(channel_id);
+
     if (it == advertised_topics_.end()) {
       const std::string err_msg =
         "Received subscribe request for unknown channel " + std::to_string(channel_id);
@@ -343,7 +345,6 @@ private:
         ROS_INFO(
           "Subscribed to topic \"%s\" (%s) on channel %d", topic.c_str(), datatype.c_str(),
           channel_id);
-
       } else {
         ROS_INFO(
           "Added subscriber #%zu to topic \"%s\" (%s) on channel %d",
@@ -362,6 +363,7 @@ private:
     std::lock_guard<std::mutex> lock(subscriptions_mutex_);
 
     const auto channel_it = advertised_topics_.find(channel_id);
+
     if (channel_it == advertised_topics_.end()) {
       const std::string err_msg =
         "Received unsubscribe request for unknown channel " + std::to_string(channel_id);
@@ -464,6 +466,7 @@ private:
     std::lock_guard<std::mutex> lock(publications_mutex_);
 
     auto client_publications_it = client_advertised_topics_.find(client_handle);
+
     if (client_publications_it == client_advertised_topics_.end()) {
       throw cobridge_base::ClientChannelError(
               channel_id, "Ignoring client unadvertisement from " +
@@ -499,6 +502,7 @@ private:
     ConnectionHandle client_handle)
   {
     ros_babel_fish::BabelFishMessage::Ptr msg(new ros_babel_fish::BabelFishMessage);
+
     msg->read(client_msg);
 
     const auto channel_id = client_msg.advertisement.channel_id;
@@ -599,7 +603,7 @@ private:
     update_count_++;
     const auto next_update_ms = std::max(
       MIN_UPDATE_PERIOD_MS, static_cast<double>(std::min(
-        size_t(
+                                                  size_t(
           1) << update_count_, max_update_ms_)));
     update_timer_ = getMTNodeHandle().createTimer(
       ros::Duration(next_update_ms / 1e3), &CoBridge::update_advertised_topics_and_services, this);
@@ -609,6 +613,7 @@ private:
   {
     // Get the current list of visible topics and datatypes from the ROS graph
     std::vector<ros::master::TopicInfo> topic_names_and_types;
+
     if (!ros::master::getTopics(topic_names_and_types)) {
       ROS_WARN("Failed to retrieve published topics from ROS master.");
       return;
@@ -664,13 +669,13 @@ private:
     std::vector<cobridge_base::ChannelWithoutId> channels_to_add;
     for (const auto & topic_and_datatype : latest_topics) {
       if (std::find_if(
-          advertised_topics_.begin(), advertised_topics_.end(),
+            advertised_topics_.begin(), advertised_topics_.end(),
           [topic_and_datatype](const std::pair<cobridge_base::ChannelId,
           cobridge_base::ChannelWithoutId> & channel_id_and_channel) {
             const auto & channel = channel_id_and_channel.second;
             return channel.topic == topic_and_datatype.first &&
-            channel.schema_name == topic_and_datatype.second;
-          }) != advertised_topics_.end())
+                   channel.schema_name == topic_and_datatype.second;
+        }) != advertised_topics_.end())
       {
         continue;  // Topic already advertised
       }
@@ -734,10 +739,11 @@ private:
 
     // Remove advertisements for services that have been removed
     std::vector<cobridge_base::ServiceId> services_to_remove;
+
     for (const auto & service : advertised_services_) {
       const auto it =
         std::find_if(
-        service_names.begin(), service_names.end(), [service](const std::string & service_name) {
+          service_names.begin(), service_names.end(), [service](const std::string & service_name) {
           return service_name == service.second.name;
         });
       if (it == service_names.end()) {
@@ -753,11 +759,11 @@ private:
     std::vector<cobridge_base::ServiceWithoutId> new_services;
     for (const auto & service_name : service_names) {
       if (std::find_if(
-          advertised_services_.begin(), advertised_services_.end(),
+            advertised_services_.begin(), advertised_services_.end(),
           [&service_name](const std::pair<cobridge_base::ServiceId,
           cobridge_base::ServiceWithoutId> & id_with_service) {
             return id_with_service.second.name == service_name;
-          }) != advertised_services_.end())
+        }) != advertised_services_.end())
       {
         continue;  // Already advertised
       }
@@ -765,8 +771,8 @@ private:
       try {
         const auto service_type =
           retrieve_service_type(
-          service_name,
-          std::chrono::milliseconds(service_retrieval_timeout_ms_));
+            service_name,
+            std::chrono::milliseconds(service_retrieval_timeout_ms_));
         const auto srv_description = ros_type_info_provider_.getServiceDescription(service_type);
 
         cobridge_base::ServiceWithoutId service;
@@ -806,6 +812,7 @@ private:
   {
     const bool all_parameters_requested = parameters.empty();
     std::vector<std::string> parameter_names = parameters;
+
     if (all_parameters_requested) {
       if (!getMTNodeHandle().getParamNames(parameter_names)) {
         const auto err_msg = "Failed to retrieve parameter names";
@@ -907,6 +914,7 @@ private:
       (op ==
       cobridge_base::ParameterSubscriptionOperation::SUBSCRIBE) ? "subscribe" : "unsubscribe";
     bool success = true;
+
     for (const auto & param_name : parameters) {
       if (!is_whitelisted(param_name, param_whitelist_patterns)) {
         ROS_ERROR("Parameter '%s' is not allowlist", param_name.c_str());
@@ -959,7 +967,7 @@ private:
     }
   }
 
-  void log_handler(cobridge_base::WebSocketLogLevel level, char const * msg)
+  void log_handler(cobridge_base::WebSocketLogLevel level, char const *msg)
   {
     switch (level) {
       case cobridge_base::WebSocketLogLevel::Debug:
@@ -985,6 +993,7 @@ private:
     const ros::MessageEvent<ros_babel_fish::BabelFishMessage const> & msg_event)
   {
     const auto & msg = msg_event.getConstMessage();
+
     _server->send_message(
       client_handle, channel_id,
       msg_event.getReceiptTime().toNSec(),
@@ -998,6 +1007,7 @@ private:
   {
     std::lock_guard<std::mutex> lock(services_mutex_);
     const auto service_it = advertised_services_.find(request.service_id);
+
     if (service_it == advertised_services_.end()) {
       const auto err_msg =
         "Service with id " + std::to_string(request.service_id) + " does not exist";
@@ -1047,6 +1057,7 @@ private:
   void fetch_asset(const std::string & uri, uint32_t request_id, ConnectionHandle client_handle)
   {
     cobridge_base::FetchAssetResponse response;
+
     response.request_id = request_id;
 
     try {
@@ -1110,7 +1121,6 @@ private:
 
   std::unique_ptr<http_server::HttpServer> http_server_;
 };
-
 }  // namespace cobridge
 
 PLUGINLIB_EXPORT_CLASS(cobridge::CoBridge, nodelet::Nodelet)

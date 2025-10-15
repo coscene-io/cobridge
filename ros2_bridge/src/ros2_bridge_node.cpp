@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <rclcpp_components/component_manager.hpp>
 #include <memory>
 
-int main(int argc, char * argv[])
+#include <rclcpp_components/component_manager.hpp>
+
+int main(int argc, char *argv[])
 {
   rclcpp::init(argc, argv);
 

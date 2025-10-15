@@ -29,7 +29,6 @@
 
 namespace cobridge_base
 {
-
 class CallbackQueue
 {
 public:

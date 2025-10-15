@@ -18,17 +18,17 @@
 // #include <optional>
 // #include <shared_mutex>
 
+#include <functional>
+#include <future>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include <json.hpp>
 #include <websocketpp/client.hpp>
 #include <websocketpp/common/memory.hpp>
 #include <websocketpp/common/thread.hpp>
-
-#include <string>
-#include <memory>
-#include <functional>
-#include <future>
-#include <utility>
-#include <vector>
 
 #include "common.hpp"
 #include "parameter.hpp"
@@ -36,7 +36,6 @@
 
 namespace cobridge_base
 {
-
 inline void to_json(nlohmann::json & j, const ClientAdvertisement & p)
 {
   j = nlohmann::json{
@@ -73,7 +72,7 @@ public:
 
   virtual void unadvertise(const std::vector<ClientChannelId> & channel_ids) = 0;
 
-  virtual void publish(ClientChannelId channel_id, const uint8_t * buffer, size_t size) = 0;
+  virtual void publish(ClientChannelId channel_id, const uint8_t *buffer, size_t size) = 0;
 
   virtual void send_service_request(const ServiceRequest & request) = 0;
 
@@ -135,6 +134,7 @@ public:
     std::lock_guard<std::mutex> lock(_mutex);
 
     websocketpp::lib::error_code ec;
+
     _con = _endpoint.get_connection(uri, ec);
 
     if (ec) {
@@ -169,6 +169,7 @@ public:
   void close() override
   {
     std::lock_guard<std::mutex> lock(_mutex);
+
     if (_con->get_state() != websocketpp::session::state::open) {
       return;  // Already disconnected
     }
@@ -177,7 +178,7 @@ public:
 
   void message_handler(websocketpp::connection_hdl hdl, MessagePtr msg)
   {
-    (void) hdl;
+    (void)hdl;
     const OpCode op = msg->get_opcode();
 
     switch (op) {
@@ -193,7 +194,7 @@ public:
           const auto & payload = msg->get_payload();
           if (_binary_message_handler) {
             _binary_message_handler(
-              reinterpret_cast<const uint8_t *>(payload.data()), payload.size());
+            reinterpret_cast<const uint8_t *>(payload.data()), payload.size());
           }
         }
         break;
@@ -208,12 +209,14 @@ public:
       {"op", "login"},
       {"username", user_name},
       {"userId", user_id}}.dump();
+
     send_text(payload);
   }
 
   void subscribe(const std::vector<std::pair<SubscriptionId, ChannelId>> & subscriptions) override
   {
     nlohmann::json sub_json;
+
     for (const auto & subscription : subscriptions) {
       sub_json.push_back(
         {{"id", subscription.first},
@@ -233,6 +236,7 @@ public:
       nlohmann::json{
       {"op", "unsubscribe"},
       {"subscriptionIds", subscription_ids}}.dump();
+
     send_text(payload);
   }
 
@@ -241,6 +245,7 @@ public:
     const std::string payload = nlohmann::json{
       {"op", "advertise"},
       {"channels", channels}}.dump();
+
     send_text(payload);
   }
 
@@ -250,12 +255,14 @@ public:
       nlohmann::json{
       {"op", "unadvertise"},
       {"channelIds", channel_ids}}.dump();
+
     send_text(payload);
   }
 
-  void publish(ClientChannelId channel_id, const uint8_t * buffer, size_t size) override
+  void publish(ClientChannelId channel_id, const uint8_t *buffer, size_t size) override
   {
     std::vector<uint8_t> payload(1 + 4 + size);
+
     payload[0] = uint8_t(ClientBinaryOpcode::MESSAGE_DATA);
     write_uint32_LE(payload.data() + 1, channel_id);
     std::memcpy(payload.data() + 1 + 4, buffer, size);
@@ -265,6 +272,7 @@ public:
   void send_service_request(const ServiceRequest & request) override
   {
     std::vector<uint8_t> payload(1 + request.size());
+
     payload[0] = uint8_t(ClientBinaryOpcode::SERVICE_CALL_REQUEST);
     request.write(payload.data() + 1);
     send_binary(payload.data(), payload.size());
@@ -276,6 +284,7 @@ public:
   {
     nlohmann::json jsonPayload{{"op", "getParameters"},
       {"parameterNames", parameter_names}};
+
     if (request_id.has_value()) {
       jsonPayload["id"] = request_id.value();
     }
@@ -288,6 +297,7 @@ public:
   {
     nlohmann::json jsonPayload{{"op", "setParameters"},
       {"parameters", parameters}};
+
     if (request_id.has_value()) {
       jsonPayload["id"] = request_id.value();
     }
@@ -298,6 +308,7 @@ public:
   {
     nlohmann::json jsonPayload{{"op", "subscribeParameterUpdates"},
       {"parameterNames", parameter_names}};
+
     send_text(jsonPayload.dump());
   }
 
@@ -305,6 +316,7 @@ public:
   {
     nlohmann::json jsonPayload{{"op", "unsubscribeParameterUpdates"},
       {"parameterNames", parameter_names}};
+
     send_text(jsonPayload.dump());
   }
 
@@ -313,30 +325,35 @@ public:
     nlohmann::json jsonPayload{{"op", "fetchAsset"},
       {"uri", uri},
       {"requestId", request_id}};
+
     send_text(jsonPayload.dump());
   }
 
   void set_text_message_handler(TextMessageHandler handler) override
   {
     std::lock_guard<std::mutex> lock(_mutex);
+
     _text_message_handler = std::move(handler);
   }
 
   void set_binary_message_handler(BinaryMessageHandler handler) override
   {
     std::lock_guard<std::mutex> lock(_mutex);
+
     _binary_message_handler = std::move(handler);
   }
 
   void send_text(const std::string & payload)
   {
     std::lock_guard<std::mutex> lock(_mutex);
+
     _endpoint.send(_con, payload, OpCode::TEXT);
   }
 
-  void send_binary(const uint8_t * data, size_t dataLength)
+  void send_binary(const uint8_t *data, size_t dataLength)
   {
     std::lock_guard<std::mutex> lock(_mutex);
+
     _endpoint.send(_con, data, dataLength, OpCode::BINARY);
   }
 
@@ -348,6 +365,5 @@ protected:
   TextMessageHandler _text_message_handler;
   BinaryMessageHandler _binary_message_handler;
 };
-
 }  // namespace cobridge_base
 #endif  // WEBSOCKET_CLIENT_HPP_

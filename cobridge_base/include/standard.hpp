@@ -88,7 +88,9 @@ private:
 
     template<typename _Up>
     explicit _Storage(const _Up & _value)
-    : M_value(_value) {}
+    : M_value(_value)
+    {
+    }
 
     virtual _Storage_base * _M_clone() const
     {
@@ -101,18 +103,24 @@ private:
     }
   };
 
-  _Storage_base * M_storage;
+  _Storage_base *M_storage;
 
 public:
   any()
-  : M_storage(nullptr) {}
+  : M_storage(nullptr)
+  {
+  }
 
   any(const any & _other)
-  : M_storage(_other.M_storage ? _other.M_storage->_M_clone() : nullptr) {}
+  : M_storage(_other.M_storage ? _other.M_storage->_M_clone() : nullptr)
+  {
+  }
 
   template<typename _Tp>
   explicit any(const _Tp & _value)
-  : M_storage(new _Storage<typename decay<_Tp>::type>(_value)) {}
+  : M_storage(new _Storage<typename decay<_Tp>::type>(_value))
+  {
+  }
 
   ~any()
   {
@@ -154,31 +162,32 @@ public:
 
   void swap(any & _other)
   {
-    _Storage_base * _tmp = M_storage;
+    _Storage_base *_tmp = M_storage;
+
     M_storage = _other.M_storage;
     _other.M_storage = _tmp;
   }
 
   template<typename _Tp>
-  friend _Tp * any_cast(any * _operand);
+  friend _Tp * any_cast(any *_operand);
 
   template<typename _Tp>
-  friend const _Tp * any_cast(const any * _operand);
+  friend const _Tp * any_cast(const any *_operand);
 };
 
 template<typename Tp>
-Tp * any_cast(any * _operand)
+Tp * any_cast(any *_operand)
 {
   if (_operand && _operand->type() == typeid(Tp)) {
     typedef any::_Storage<Tp> _Storage_type;
-    _Storage_type * _storage = static_cast<_Storage_type *>(_operand->M_storage);
+    _Storage_type *_storage = static_cast<_Storage_type *>(_operand->M_storage);
     return &_storage->M_value;
   }
   return nullptr;
 }
 
 template<typename Tp>
-const Tp * any_cast(const any * _operand)
+const Tp * any_cast(const any *_operand)
 {
   return any_cast<Tp>(const_cast<any *>(_operand));
 }
@@ -187,7 +196,7 @@ template<typename Tp>
 Tp any_cast(const any & _operand)
 {
   typedef typename remove_reference<Tp>::type Up;
-  const Up * _result = any_cast<Up>(&_operand);
+  const Up *_result = any_cast<Up>(&_operand);
   if (!_result) {
     throw bad_any_cast();
   }
@@ -198,7 +207,7 @@ template<typename Tp>
 Tp any_cast(any & _operand)
 {
   typedef typename remove_reference<Tp>::type _Up;
-  _Up * _result = any_cast<_Up>(&_operand);
+  _Up *_result = any_cast<_Up>(&_operand);
   if (!_result) {
     throw bad_any_cast();
   }
@@ -208,28 +217,64 @@ Tp any_cast(any & _operand)
 class string_view
 {
 private:
-  const char * data_;
+  const char *data_;
   std::size_t size_;
 
 public:
   constexpr string_view()
-  : data_(nullptr), size_(0) {}
-  constexpr string_view(const char * str)
-  : data_(str), size_(str ? strlen_constexpr(str) : 0) {}
+  : data_(nullptr), size_(0)
+  {
+  }
+
+  constexpr string_view(const char *str)   // NOLINT(runtime/explicit)
+  : data_(str), size_(str ? strlen_constexpr(str) : 0)
+  {
+  }
+
   explicit string_view(const std::string & str)
-  : data_(str.data()), size_(str.size()) {}
-  constexpr string_view(const char * data, std::size_t size)
-  : data_(data), size_(size) {}
+  : data_(str.data()), size_(str.size())
+  {
+  }
 
-  constexpr const char * data() const {return data_;}
-  constexpr std::size_t size() const {return size_;}
-  constexpr std::size_t length() const {return size_;}
-  constexpr bool empty() const {return size_ == 0;}
+  constexpr string_view(const char *data, std::size_t size)
+  : data_(data), size_(size)
+  {
+  }
 
-  constexpr const char * begin() const {return data_;}
-  constexpr const char * end() const {return data_ + size_;}
+  constexpr const char * data() const
+  {
+    return data_;
+  }
 
-  constexpr char operator[](std::size_t pos) const {return data_[pos];}
+  constexpr std::size_t size() const
+  {
+    return size_;
+  }
+
+  constexpr std::size_t length() const
+  {
+    return size_;
+  }
+
+  constexpr bool empty() const
+  {
+    return size_ == 0;
+  }
+
+  constexpr const char * begin() const
+  {
+    return data_;
+  }
+
+  constexpr const char * end() const
+  {
+    return data_ + size_;
+  }
+
+  constexpr char operator[](std::size_t pos) const
+  {
+    return data_[pos];
+  }
 
   constexpr string_view substr(std::size_t pos = 0, std::size_t len = std::string::npos) const
   {
@@ -239,21 +284,26 @@ public:
     );
   }
 
-  std::string to_string() const {return std::string(data_, size_);}
+  std::string to_string() const
+  {
+    return std::string(data_, size_);
+  }
 
 private:
-  static constexpr std::size_t strlen_constexpr(const char * str)
+  static constexpr std::size_t strlen_constexpr(const char *str)
   {
     return *str ? 1 + strlen_constexpr(str + 1) : 0;
   }
 };
 
-
 struct nullopt_t
 {
-  explicit constexpr nullopt_t(int) {}
+  struct init_tag {};
+  explicit constexpr nullopt_t(init_tag)
+  {
+  }
 };
-constexpr nullopt_t nullopt{0};
+constexpr nullopt_t nullopt{nullopt_t::init_tag{}};
 
 template<typename T>
 class optional
@@ -264,11 +314,19 @@ private:
 
 public:
   optional()
-  : has_value_(false) {}
+  : has_value_(false)
+  {
+  }
+
   explicit optional(const T & value)
-  : has_value_(true), value_(value) {}
+  : has_value_(true), value_(value)
+  {
+  }
+
   explicit optional(nullopt_t)
-  : has_value_(false) {}
+  : has_value_(false)
+  {
+  }
 
   optional & operator=(nullopt_t)
   {
@@ -283,14 +341,29 @@ public:
     return *this;
   }
 
-  bool has_value() const {return has_value_;}
-  const T & value() const {return value_;}
-  T & value() {return value_;}
+  bool has_value() const
+  {
+    return has_value_;
+  }
+
+  const T & value() const
+  {
+    return value_;
+  }
+
+  T & value()
+  {
+    return value_;
+  }
 
   bool operator==(const optional<T> & other) const
   {
-    if (has_value_ != other.has_value_) {return false;}
-    if (!has_value_) {return true;}
+    if (has_value_ != other.has_value_) {
+      return false;
+    }
+    if (!has_value_) {
+      return true;
+    }
     return value_ == other.value_;
   }
 };
